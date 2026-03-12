@@ -1,0 +1,41 @@
+body{
+    /*background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.08), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(163, 230, 53, 0.08), transparent 30%),
+        #161616;*/
+    background: linear-gradient(135deg, #8b5cf6, #a3e635);
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family: Arial;
+}
+
+.login-box{
+    background: #1c1c1f;
+    box-shadow: 80px 80px 80px 90px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 28px;
+    padding:40px;
+    border-radius:15px;
+    width:300px;
+    text-align:center;
+    color:white;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border:none;
+    border-radius:8px;
+}
+
+button{
+    width:100%;
+    padding:10px;
+    border:none;
+    border-radius:20px;
+    background:white;
+    cursor:pointer;
+}
