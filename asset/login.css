@@ -1,8 +1,4 @@
-body{
-    /*background:
-        radial-gradient(circle at top left, rgba(139, 92, 246, 0.08), transparent 30%),
-        radial-gradient(circle at bottom right, rgba(163, 230, 53, 0.08), transparent 30%),
-        #161616;*/
+/*body{
     background: linear-gradient(135deg, #8b5cf6, #a3e635);
     height:100vh;
     display:flex;
@@ -38,4 +34,71 @@ button{
     border-radius:20px;
     background:white;
     cursor:pointer;
+}*/
+
+body {
+    background: linear-gradient(135deg, #4B1535, #7A3A5B, #F5F0E9);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Inter, Arial, sans-serif;
+    padding: 20px;
+}
+
+.login-box {
+    background: #FFFFFF;
+    box-shadow: 0 20px 50px rgba(75, 21, 53, 0.15);
+    border: 1px solid #E6D9DF;
+    border-radius: 24px;
+    padding: 40px;
+    width: 320px;
+    text-align: center;
+    color: #2B1A24;
+}
+
+.login-box h2 {
+    margin-bottom: 20px;
+    color: #4B1535;
+    font-size: 24px;
+}
+
+input {
+    width: 100%;
+    padding: 12px 14px;
+    margin: 10px 0;
+    border: 1px solid #E6D9DF;
+    border-radius: 10px;
+    background: #F9F5F2;
+    color: #2B1A24;
+    outline: none;
+    font-size: 14px;
+}
+
+input:focus {
+    border-color: #4B1535;
+    box-shadow: 0 0 0 3px rgba(75, 21, 53, 0.08);
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 20px;
+    background: #4B1535;
+    color: #FFFFFF;
+    cursor: pointer;
+    margin-top: 10px;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+button:hover {
+    background: #7A3A5B;
+}
+
+#error {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #B3261E;
 }
