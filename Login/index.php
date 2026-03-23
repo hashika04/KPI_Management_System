@@ -1,3 +1,13 @@
+<?php
+session_start();
+
+if (isset($_SESSION['username'])) {
+    header("Location: ../Dashboard/dashboard.php");
+    exit();
+}
+
+$error = $_GET['error'] ?? "";
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,18 +17,14 @@
 <body>
 
 <div class="login-box">
-<h2>KPI Management System</h2>
+    <h2>KPI Management System</h2>
+    <form action="login.php" method="POST">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">LOG IN</button>
+    </form>
 
-<input type="text" id="username" placeholder="Username">
-<input type="password" id="password" placeholder="Password">
-
-<button onclick="login()">LOG IN</button>
-
-<p id="error" style="color:red;"></p>
-
+    <p style="color: red;"><?php echo $error; ?></p>
 </div>
-
-<script src="login.js"></script>
-
 </body>
 </html>

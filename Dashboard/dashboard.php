@@ -1,4 +1,9 @@
 <?php
+session_start();
+if (!isset($_SESSION['username'])) {
+    header("Location: ../Login/index.php");
+    exit();
+}
 include 'data.php';
 ?>
 <!DOCTYPE html>
@@ -23,7 +28,7 @@ include 'data.php';
             </div>
 
             <div class="sidebar-bottom">
-                <button class="icon-btn">L</button>
+                <a href="../Login/logout.php" class="icon-btn">L</a>
                 <div class="avatar-main">P</div>
             </div>
         </div>
