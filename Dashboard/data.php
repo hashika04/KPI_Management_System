@@ -1,4 +1,6 @@
 <?php
+include("../config/db.php");
+echo "Connected successfully";
 $cards = [
     [
         "title" => "With no title",

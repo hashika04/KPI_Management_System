@@ -134,34 +134,6 @@ include 'data.php';
                     </div>
                 </div>
             </div>
-
-            <div class="right-panel">
-                <div class="message-card">
-                    <div class="chart-header">
-                        <div class="chart-title">Messages</div>
-                        <button class="small-round-btn">+</button>
-                    </div>
-
-                    <div class="search-box">Search message</div>
-
-                    <div class="message-list">
-                        <?php foreach ($messages as $index => $msg): ?>
-                            <div class="message-item">
-                                <div class="avatar a<?php echo ($index % 3) + 1; ?>">
-                                    <?php echo $msg['avatar']; ?>
-                                </div>
-                                <div class="message-content">
-                                    <div class="message-top">
-                                        <span class="message-name"><?php echo $msg['name']; ?></span>
-                                        <span class="message-time"><?php echo $msg['time']; ?></span>
-                                    </div>
-                                    <p class="message-text"><?php echo $msg['text']; ?></p>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 

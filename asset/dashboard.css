@@ -510,14 +510,14 @@
 }*/
 
 .dashboard {
-    max-width: 1400px;
+    min-height: 100vh;
     margin: 0 auto;
-    margin-left: 200px;
-    background: var(--bg-panel);
-    border: 1px solid var(--border-soft);
-    border-radius: 28px;
-    padding: 22px;
-    box-shadow: var(--shadow-soft);
+    border: none;
+    border-radius: 0px;
+    padding: 30px;
+    margin-left:220px;
+    width: 150vh;
+    overflow-x: hidden;
 }
 
 .sidebar-menu {
@@ -586,8 +586,9 @@
 
 .main-grid {
     display: grid;
-    grid-template-columns: 2fr 0.95fr;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     gap: 18px;
+    width: 100%;
 }
 
 .left-panel,
@@ -595,12 +596,13 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
+    min-width: 0;
 }
 
 .hero-row {
     display: grid;
-    grid-template-columns: 1.1fr 1.5fr;
-    gap: 18px;
+    grid-template-columns: minmax(0,1fr) minmax(0,1.4fr);
+    gap:18px;
 }
 
 .welcome-card,
@@ -1027,16 +1029,18 @@
     }
 
     .sidebar-menu {
-        position: static;
-        width: 100%;
-        height: auto;
-        margin-bottom: 20px;
+        position:fixed;
+        top:0;
+        left:0;
+        width:220px;
+        height:100vh;
     }
 }
 
 @media (max-width: 768px) {
     body {
-        padding: 15px;
+        margin:0;
+        padding:0;
     }
 
     .welcome-card h1 {
