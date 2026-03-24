@@ -36,11 +36,11 @@ include 'data.php';
         <div class="main-grid">
             <div class="left-panel">
                 <div class="hero-row">
-                    <div class="welcome-card">
+                    <a href="profile.php" class="welcome-card">
                         <p class="small">Welcome back,</p>
                         <h1>Darlene<br>Robertson</h1>
-                        <span class="badge">Premium</span>
-                    </div>
+                        <span class="badge">Supervisor</span>
+                    </a>
 
                     <div class="stats-grid">
                         <?php foreach ($cards as $card): ?>
