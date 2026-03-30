@@ -11,7 +11,7 @@ include 'data.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Dashboard</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="../asset/universal.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
 </head>
@@ -21,15 +21,17 @@ include 'data.php';
             <div class="sidebar-top">
                 <div class="logo">kpi</div>
                 <button class="nav-pill active">Overview</button>
-                <button class="nav-pill">Insights</button>
+                <a href="../Staff_Masterlist/staff_masterlist.php">
+                    <button class="nav-pill">Staff Masterlist</button>
+                </a>
                 <button class="nav-pill">Analytics</button>
-                <button class="nav-pill">Audiences</button>
                 <button class="nav-pill">Reports</button>
             </div>
 
             <div class="sidebar-bottom">
-                <a href="../Login/logout.php" class="icon-btn">L</a>
-                <div class="avatar-main">P</div>
+                <a href="../Login/logout.php" class="logout-btn">
+                    <img src="../asset/images/logout.jpg" alt="Logout">
+                </a>
             </div>
         </div>
 
@@ -51,91 +53,6 @@ include 'data.php';
                                 <p class="change"><?php echo $card['change']; ?></p>
                             </div>
                         <?php endforeach; ?>
-                    </div>
-                </div>
-
-                <div class="tabs-row">
-                    <div class="tab-group">
-                        <button class="filter-pill active">All</button>
-                        <button class="filter-pill">Engagement</button>
-                        <button class="filter-pill">Visit</button>
-                        <button class="filter-pill">Post</button>
-                    </div>
-
-                    <div class="action-group">
-                        <button class="icon-btn">⏷</button>
-                        <button class="icon-btn">🗓</button>
-                        <button class="download-btn">Download reports</button>
-                    </div>
-                </div>
-
-                <div class="bottom-grid">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title-wrap">
-                                <div class="chart-title">Engagement rate</div>
-                                <div class="segmented">
-                                    <button>Monthly</button>
-                                    <button class="active">Annually</button>
-                                </div>
-                            </div>
-                            <button class="small-round-btn">•••</button>
-                        </div>
-
-                        <div class="bar-chart">
-                            <?php foreach ($barData as $index => $value): ?>
-                                <div class="bar-wrap">
-                                    <div class="bar <?php echo $index === 3 ? 'active' : ''; ?>" style="height: <?php echo $value * 2; ?>px;">
-                                        <?php if ($index === 3): ?>
-                                            <div class="bar-tooltip">
-                                                <span>April, 2025</span><br>
-                                                <strong>379,502</strong>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="bar-label"><?php echo $months[$index]; ?></div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title-wrap">
-                                <div class="chart-title">Time visit</div>
-                                <div class="sub-pill">Follower ⏷</div>
-                            </div>
-                        </div>
-
-                        <div class="dot-legend">
-                            <span><span class="dot one"></span>&lt;500</span>
-                            <span><span class="dot two"></span>&gt;1,000</span>
-                            <span><span class="dot three"></span>&gt;2,000</span>
-                            <span><span class="dot two"></span>&gt;3,000</span>
-                        </div>
-
-                        <div class="heatmap-wrap">
-                            <table class="heatmap-table">
-                                <thead>
-                                    <tr>
-                                        <th></th>
-                                        <?php foreach ($heatmapCols as $col): ?>
-                                            <th><?php echo $col; ?></th>
-                                        <?php endforeach; ?>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($heatmapRows as $time => $row): ?>
-                                        <tr>
-                                            <td class="label"><?php echo $time; ?></td>
-                                            <?php foreach ($row as $cell): ?>
-                                                <td><div class="heat-cell lv<?php echo $cell; ?>"></div></td>
-                                            <?php endforeach; ?>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
             </div>

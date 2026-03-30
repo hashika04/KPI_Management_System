@@ -64,7 +64,7 @@ body {
 }
 
 input {
-    width: 100%;
+    width: 95%;
     padding: 12px 14px;
     margin: 10px 0;
     border: 1px solid #E6D9DF;
@@ -81,7 +81,7 @@ input:focus {
 }
 
 button {
-    width: 100%;
+    width: 98%;
     padding: 12px;
     border: none;
     border-radius: 20px;

@@ -555,7 +555,7 @@
 }
 
 .nav-pill,
-.icon-btn,
+icon-btn,
 .filter-pill,
 .sub-pill,
 .small-round-btn,
@@ -582,6 +582,25 @@
     background: var(--primary);
     color: #FFFFFF;
     font-weight: 700;
+}
+
+.logout-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    width:50px;
+    height:50px;
+
+    background:#4b1535;
+    border-radius:50%;
+
+    text-decoration:none;
+}
+
+.logout-btn img{
+    width:30px;
+    height:30px;
 }
 
 .main-grid {
