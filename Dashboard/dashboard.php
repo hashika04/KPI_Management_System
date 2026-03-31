@@ -1,10 +1,7 @@
 <?php
-session_start();
-if (!isset($_SESSION['username'])) {
-    header("Location: ../Login/index.php");
-    exit();
-}
+include("../includes/auth.php");
 include 'data.php';
+$activePage = 'dashboard';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,23 +14,7 @@ include 'data.php';
 </head>
 <body>
     <div class="dashboard">
-        <div class="sidebar-menu">
-            <div class="sidebar-top">
-                <div class="logo">kpi</div>
-                <button class="nav-pill active">Overview</button>
-                <a href="../Staff_Masterlist/staff_masterlist.php">
-                    <button class="nav-pill">Staff Masterlist</button>
-                </a>
-                <button class="nav-pill">Analytics</button>
-                <button class="nav-pill">Reports</button>
-            </div>
-
-            <div class="sidebar-bottom">
-                <a href="../Login/logout.php" class="logout-btn">
-                    <img src="../asset/images/logout.jpg" alt="Logout">
-                </a>
-            </div>
-        </div>
+        <?php include("../includes/sidebar.php"); ?>
 
         <div class="main-grid">
             <div class="left-panel">
@@ -45,20 +26,28 @@ include 'data.php';
                     </a>
 
                     <div class="stats-grid">
-                        <?php foreach ($cards as $card): ?>
-                            <div class="card <?php echo $card['highlight'] ? 'highlight' : ''; ?>">
-                                <div class="expand-btn">↗</div>
-                                <p class="mini-title"><?php echo $card['title']; ?></p>
-                                <div class="value"><?php echo $card['value']; ?></div>
-                                <p class="change"><?php echo $card['change']; ?></p>
+                        <div class="card kpi-overview-card">
+                            <div class="expand-btn">↗</div>
+
+                            <h2 class="kpi-overview-title">
+                                Average KPI Overview
+                            </h2>
+
+                            <div class="kpi-chart-container">
+                                <canvas id="kpiYearChart"></canvas>
                             </div>
-                        <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script>
+        const kpiYears = <?php echo json_encode($kpiYears); ?>;
+        const kpiYearPercentages = <?php echo json_encode($kpiYearPercentages); ?>;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

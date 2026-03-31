@@ -1,4 +1,4 @@
-
+/*dashboard.css*/
 .dashboard {
     min-height: 100vh;
     margin: 0 auto;
@@ -8,89 +8,6 @@
     margin-left:220px;
     width: 150vh;
     overflow-x: hidden;
-}
-
-.sidebar-menu {
-    position: fixed;
-    left: 20px;
-    top: 30px;
-    height: 85vh;
-    width: 180px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-soft);
-    border-radius: 24px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: var(--shadow-soft);
-}
-
-.sidebar-top {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.sidebar-top .nav-pill {
-    width: 100%;
-    text-align: left;
-}
-
-.sidebar-bottom {
-    display: flex;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.nav-pill,
-icon-btn,
-.filter-pill,
-.sub-pill,
-.small-round-btn,
-.download-btn {
-    border: 0;
-    outline: 0;
-    cursor: pointer;
-}
-
-.nav-pill {
-    background: var(--surface-soft);
-    color: var(--primary);
-    padding: 11px 16px;
-    border-radius: 14px;
-    font-size: 13px;
-    transition: 0.2s ease;
-}
-
-.nav-pill:hover {
-    background: var(--surface-hover);
-}
-
-.nav-pill.active {
-    background: var(--primary);
-    color: #FFFFFF;
-    font-weight: 700;
-}
-
-.logout-btn{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    width:50px;
-    height:50px;
-
-    background:#4b1535;
-    border-radius:50%;
-
-    text-decoration:none;
-}
-
-.logout-btn img{
-    width:30px;
-    height:30px;
 }
 
 .main-grid {
@@ -125,8 +42,8 @@ icon-btn,
 }
 
 .welcome-card {
-    padding: 24px;
-    min-height: 210px;
+    padding: 20px;
+    min-height: 180px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -157,8 +74,9 @@ icon-btn,
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(300px, 1fr));
+    grid-template-columns: 1fr;
     gap: 14px;
+    width: 110vh;
 }
 
 .card {
@@ -171,6 +89,31 @@ icon-btn,
 .card.highlight {
     background: var(--primary);
     color: #FFFFFF;
+}
+
+.kpi-overview-card {
+    padding: 22px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.kpi-overview-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 6px;
+}
+
+.kpi-chart-container {
+    margin-top: 10px;
+    height: 200px;
+}
+
+#kpiYearChart {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .card .mini-title {
@@ -531,6 +474,7 @@ icon-btn,
     text-overflow: ellipsis;
 }
 
+
 @media (max-width: 1200px) {
     .main-grid,
     .hero-row,
@@ -539,7 +483,9 @@ icon-btn,
     }
 
     .stats-grid {
-        grid-template-columns: 1fr 2fr;
+        display:grid;
+        grid-template-columns: 1fr;
+        width: 100%;
     }
 
     .dashboard {

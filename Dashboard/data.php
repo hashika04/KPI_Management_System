@@ -1,26 +1,42 @@
-
 <?php
 include("../config/db.php");
-$cards = [
-    [
-        "title" => "",
-        "value" => "975,124",
-        "change" => "+42.8% from previous week",
-        "highlight" => false
-    ],
-    [
-        "title" => "",
-        "value" => "296,241",
-        "change" => "+26.3% from previous week",
-        "highlight" => false
-    ],
-    [
-        "title" => "Overall",
-        "value" => "76,314",
-        "change" => "+18.4% from previous week",
-        "highlight" => true
-    ]
+
+$sqlYearlyKpi = "SELECT 
+                    YEAR(STR_TO_DATE(Date, '%m/%d/%Y')) AS year_num,
+                    ROUND(AVG(Score), 2) AS avg_kpi_score,
+                    ROUND((AVG(Score) / 5) * 100, 2) AS avg_kpi_percent,
+                    COUNT(*) AS total_kpi_records,
+                    SUM(Score) AS total_kpi_score
+                FROM kpi_data
+                WHERE YEAR(STR_TO_DATE(Date, '%m/%d/%Y')) IN (2022, 2023, 2024, 2025)
+                GROUP BY YEAR(STR_TO_DATE(Date, '%m/%d/%Y'))
+                ORDER BY year_num";
+
+$resultYearlyKpi = $conn->query($sqlYearlyKpi);
+
+$yearlyKpiData = [];
+
+while ($row = $resultYearlyKpi->fetch_assoc()) {
+    $year = $row['year_num'];
+
+    $yearlyKpiData[$year] = [
+        'avg_score' => (float)$row['avg_kpi_score'],
+        'avg_percent' => (float)$row['avg_kpi_percent'],
+        'total_records' => (int)$row['total_kpi_records'],
+        'total_score' => (int)$row['total_kpi_score']
+    ];
+}
+
+$avg2025 = $yearlyKpiData[2025]['avg_percent'] ?? 0;
+$avg2024 = $yearlyKpiData[2024]['avg_percent'] ?? 0;
+$avg2023 = $yearlyKpiData[2023]['avg_percent'] ?? 0;
+$avg2022 = $yearlyKpiData[2022]['avg_percent'] ?? 0;
+
+$kpiYears = ['2022', '2023', '2024', '2025'];
+$kpiYearPercentages = [
+    $avg2022,
+    $avg2023,
+    $avg2024,
+    $avg2025
 ];
-
-
 ?>
