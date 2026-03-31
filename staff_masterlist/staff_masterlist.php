@@ -37,10 +37,10 @@ $result = $conn->query($sql);
         <div class="sidebar-top">
             <div class="logo">kpi</div>
             <a href="../Dashboard/dashboard.php">
-                <button class="nav-pill active">Overview</button>
+                <button class="nav-pill">Overview</button>
             </a>
             <a href="../Staff_Masterlist/staff_masterlist.php">
-                <button class="nav-pill">Staff Masterlist</button>
+                <button class="nav-pill active">Staff Masterlist</button>
             </a>
             <button class="nav-pill">Analytics</button>
             <button class="nav-pill">Reports</button>
@@ -52,49 +52,88 @@ $result = $conn->query($sql);
         </div>
     </div>
 
-    <div class="staff-masterlist-content">
-        <h1>Staff Masterlist</h1>
+   <div class="staff-masterlist-content">
 
-        <div class="staff-grid">
-            <?php while($row = $result->fetch_assoc()): ?>
-                <?php
-                    $score = (float)($row['avg_score'] ?? 0);
-                    $scorePercent = min(($score / 5) * 100, 100);
+        <div class="staff-masterlist-header">
+            <h1>Staff Masterlist</h1>
 
-                    if ($score >= 4.5) {
-                        $scoreClass = "score-green";
-                    } elseif ($score >= 3.0) {
-                        $scoreClass = "score-yellow";
-                    } else {
-                        $scoreClass = "score-red";
-                    }
-                ?>
-                <div class="staff-card">
-                    <div class="staff-top">
-                        <div class="staff-avatar">
-                            <img src="<?php echo htmlspecialchars($row['profile_photo'] ?: '../asset/images/staff/default-profile.jpg'); ?>" alt="Staff Photo">
-                        </div>
+            <div class="staff-toolbar">
+                <input type="text" id="staffSearch" placeholder="Search staff...">
 
-                        <div class="staff-info">
-                            <h3><?php echo htmlspecialchars($row['full_name']); ?></h3>
-                            <p><?php echo htmlspecialchars($row['email'] ?? 'No email'); ?></p>
-                        </div>
-                    </div>
+                <select id="staffFilter">
+                    <option value="all">All Status</option>
+                    <option value="excellence">Excellence</option>
+                    <option value="good">Good</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="at risk">At Risk</option>
+                </select>
 
-                    <div class="staff-score-section">
-                        <div class="score-label">
-                            <span>KPI Score</span>
-                            <span><?php echo number_format($score, 2); ?></span>
-                        </div>
-
-                        <div class="score-bar">
-                            <div class="score-fill <?php echo $scoreClass; ?>" style="width: <?php echo $scorePercent; ?>%;"></div>
-                        </div>
-                    </div>
-                </div>
-            <?php endwhile; ?>
+                <select id="staffSort">
+                    <option value="name-asc">Sort: Name A-Z</option>
+                    <option value="name-desc">Sort: Name Z-A</option>
+                    <option value="score-high">Sort: KPI High-Low</option>
+                    <option value="score-low">Sort: KPI Low-High</option>
+                </select>
+            </div>
         </div>
+
+        <div class="staff-list-scroll">
+            <div class="staff-grid" id="staffGrid">
+                <?php while($row = $result->fetch_assoc()): ?>
+                    <?php
+                        $score = (float)($row['avg_score'] ?? 0);
+                        $scorePercent = min(($score / 5) * 100, 100);
+
+                        if ($score >= 4.5) {
+                            $scoreClass = "score-green";
+                            $statusText = "Excellence";
+                        } elseif ($score >= 3.5) {
+                            $scoreClass = "score-yellow";
+                            $statusText = "Good";
+                        } elseif ($score >= 2.5) {
+                            $scoreClass = "score-orange";
+                            $statusText = "Moderate";
+                        } else {
+                            $scoreClass = "score-red";
+                            $statusText = "At Risk";
+                        }
+                    ?>
+
+                    <div class="staff-card"
+                         data-name="<?php echo strtolower(htmlspecialchars($row['full_name'])); ?>"
+                         data-status="<?php echo strtolower($statusText); ?>"
+                         data-score="<?php echo $score; ?>">
+
+                        <div class="staff-top">
+                            <div class="staff-avatar">
+                                <img src="<?php echo htmlspecialchars($row['profile_photo'] ?: '../asset/images/staff/default-profile.jpg'); ?>" alt="Staff Photo">
+                            </div>
+
+                            <div class="staff-info">
+                                <h3><?php echo htmlspecialchars($row['full_name']); ?></h3>
+                                <p><?php echo htmlspecialchars($row['email'] ?? 'No email'); ?></p>
+                            </div>
+                        </div>
+
+                        <div class="staff-score-section">
+                            <div class="score-label">
+                                <span><?php echo $statusText; ?></span>
+                                <span><?php echo number_format($score, 2); ?>/5</span>
+                            </div>
+
+                            <div class="score-bar">
+                                <div class="score-fill <?php echo $scoreClass; ?>" style="width: <?php echo $scorePercent; ?>%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endwhile; ?>
+            </div>
+        </div>
+
     </div>
+</div>
+
+<script src="staff_masterlist.js"></script>
 </div>
 
 </body>
