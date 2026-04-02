@@ -8,14 +8,17 @@
            class="nav-pill <?php if($activePage=='dashboard') echo 'active'; ?>">
            Overview
         </a>
-
+       
         <a href="../staff_masterlist/staff_masterlist.php"
            class="nav-pill <?php if($activePage=='staff') echo 'active'; ?>">
-           Staff Masterlist
+           Staff List
+       
+        <a href="#" class="nav-pill">Analytics</a>
+        <a href="../Dashboard/reports.php"
+           class="nav-pill <?php if($activePage=='reports') echo 'active'; ?>">
+           Reports
         </a>
 
-        <a href="#" class="nav-pill">Analytics</a>
-        <a href="#" class="nav-pill">Reports</a>
 
     </div>
 
