@@ -24,7 +24,7 @@ $result = $conn->query($sql);
 <head>
     <title>Staff Masterlist</title>
     <link rel="stylesheet" href="../asset/universal.css">
-    <link rel="stylesheet" href="../asset/dashboard.css">
+    /<link rel="stylesheet" href="../asset/dashboard.css">
     <link rel="stylesheet" href="../asset/staff_masterlist.css">
 </head>
 <body>
