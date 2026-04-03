@@ -1,5 +1,29 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include("../config/db.php");
+
+// Fetch User Info based on the 'users' table structure
+if (isset($_SESSION['username'])) {
+    $session_username = $_SESSION['username'];
+    
+    // Select the specific columns visible in your database screenshot
+    $sqlUser = "SELECT full_name, email, position FROM users WHERE username = ?";
+    $stmt = $conn->prepare($sqlUser);
+    $stmt->bind_param("s", $session_username);
+    $stmt->execute();
+    $resUser = $stmt->get_result();
+
+    if ($rowUser = $resUser->fetch_assoc()) {
+        // Store the correct database values into the session
+        $_SESSION['full_name'] = $rowUser['full_name'];
+        $_SESSION['email']     = $rowUser['email'];
+        $_SESSION['position']  = $rowUser['position'];
+    }
+    $stmt->close();
+}
 
 $sqlYearlyKpi = "SELECT 
                     YEAR(STR_TO_DATE(Date, '%m/%d/%Y')) AS year_num,

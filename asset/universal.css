@@ -288,6 +288,23 @@ body {
   box-shadow: 0 4px 10px rgba(232,48,140,0.30);
 }
 
+.topbar-user-link {
+    display: flex;
+  align-items: center;
+  text-decoration: none; /* Removes underline */
+  color: inherit; /* Keeps your text-main color */
+  gap: 12px;
+  transition: opacity 0.2s ease;
+}
+
+.topbar-user-link:hover {
+  opacity: 0.8; /* Subtle feedback on hover */
+}
+
+.topbar-user {
+  text-align: right;
+}
+
 /* ══════════════════════════════
    RESPONSIVE
 ══════════════════════════════ */

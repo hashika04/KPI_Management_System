@@ -10,10 +10,16 @@ $navItems = [
     ['href' => 'reports.php',   'page' => 'reports',   'icon' => 'ph ph-file-text',       'label' => 'Reports'],
     ['href' => 'config.php',    'page' => 'config',    'icon' => 'ph ph-sliders-horizontal','label' => 'Configuration'],
 ];
-$userName  = $_SESSION['name']  ?? 'DR';
+$fullName  = $_SESSION['full_name']  ?? 'DR';
 $userEmail = $_SESSION['email'] ?? 'supervisor@company.com';
-$userRole  = $_SESSION['role']  ?? 'Supervisor';
-$initials  = strtoupper(substr($userName, 0, 2));
+$userRole  = $_SESSION['position']  ?? 'Supervisor';
+
+$nameParts = explode(' ', trim($fullName));
+if (count($nameParts) > 1) {
+    $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
+} else {
+    $initials = strtoupper(substr($fullName, 0, 2));
+}
 ?>
 
 <!-- Phosphor Icons — clean, modern, professional -->
@@ -33,11 +39,14 @@ $initials  = strtoupper(substr($userName, 0, 2));
         </div>
     </div>
     <div class="topbar-right">
-        <div class="topbar-user">
-            <div class="user-email"><?= htmlspecialchars($userEmail) ?></div>
-            <div class="user-role"><?= htmlspecialchars($userRole) ?></div>
-        </div>
-        <div class="avatar-main"><?= $initials ?></div>
+        <a href="../Dashboard/profile.php" class="topbar-user-link">
+            <div class="topbar-user">
+                <div class="user-email"><?= htmlspecialchars($fullName) ?></div>
+                <div class="user-role"><?= htmlspecialchars($userRole) ?></div>
+            </div>
+            <div class="avatar-main"><?= $initials ?></div>
+        </a>
+
         <a href="../Login/logout.php" class="topbar-logout" title="Logout">
             <i class="ph ph-sign-out"></i>
         </a>
