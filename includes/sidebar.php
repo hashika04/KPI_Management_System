@@ -17,13 +17,16 @@ $initials  = strtoupper(substr($userName, 0, 2));
 ?>
 
 <!-- Phosphor Icons — clean, modern, professional -->
+ <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
 
 <!-- TOP BAR — full width flush left to right -->
 <header class="topbar">
     <div class="topbar-brand">
-        <div class="logo">kpi</div>
+        <div class="logo">
+            <i class="ph ph-chart-bar"></i>
+        </div>
         <div>
             <div class="brand-name">KPI Monitor</div>
             <div class="brand-sub">Performance Tracking</div>
@@ -46,7 +49,9 @@ $initials  = strtoupper(substr($userName, 0, 2));
     <div class="sidebar-top">
         <!-- Logo -->
         <div class="sidebar-logo">
-            <div class="logo">kpi</div>
+            <div class="logo">
+                <i class="ph ph-chart-bar"></i>
+            </div>
             <span>Monitor</span>
         </div>
 
