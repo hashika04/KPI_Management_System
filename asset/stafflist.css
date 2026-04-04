@@ -1,494 +1,127 @@
-/* asset/staff_list.css */
-
-html, body {
-    height: 100%;
-    overflow: hidden;
-}
-
-.staff-list-content {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 60px);
-    width: 100%;
-}
-
-.staff-list-header {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    background: var(--bg-main);
-    padding-bottom: 18px;
-}
-
-.staff-list-header h1 {
-    margin-bottom: 18px;
-    color: var(--primary);
-    font-size: 32px;
+.staff-masterlist-header h1 {
+    font-size: 28px;
 }
 
 .subtitle {
-    color: var(--text-muted);
-    font-size: 14px;
-    margin-bottom: 24px;
+    color: #777;
+    margin-bottom: 15px;
 }
-
-/* Filters Card */
-.filters-card {
-    background: var(--bg-card);
-    border-radius: 20px;
-    padding: 20px;
-    border: 1px solid var(--border-soft);
-    margin-bottom: 24px;
-}
-
-.filters-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 16px;
-}
-
-.search-wrapper {
-    position: relative;
-}
-
-.search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-}
-
-.search-input {
-    width: 100%;
-    padding: 12px 12px 12px 42px;
-    border: 1px solid var(--border-soft);
-    border-radius: 14px;
-    font-size: 14px;
-    background: var(--bg-card);
-    color: var(--text-main);
-    outline: none;
-}
-
-.search-input:focus {
-    border-color: var(--primary);
-}
-
-.filter-select {
-    padding: 12px 16px;
-    border: 1px solid var(--border-soft);
-    border-radius: 14px;
-    font-size: 14px;
-    background: var(--bg-card);
-    color: var(--text-main);
-    cursor: pointer;
-    outline: none;
-}
-
-.filter-select:focus {
-    border-color: var(--primary);
-}
-
-/* Staff Table Container */
-.staff-table-container {
-    background: var(--bg-card);
-    border-radius: 20px;
-    border: 1px solid var(--border-soft);
-    overflow: hidden;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.staff-table-wrapper {
-    overflow-x: auto;
-}
-
-.staff-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.staff-table thead tr {
-    background: #FEFAF8;
-    border-bottom: 1px solid var(--border-soft);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.staff-table th {
-    text-align: left;
-    padding: 16px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-}
-
-.staff-table tbody tr {
-    border-bottom: 1px solid var(--border-soft);
-    transition: background 0.2s;
-}
-
-.staff-table tbody tr:hover {
-    background: var(--surface-soft);
-}
-
-.staff-table td {
-    padding: 16px 20px;
-    vertical-align: middle;
-}
-
-/* Staff Cell - Using same pattern as your working CSS */
-.staff-link {
+.staff-toolbar {
     display: flex;
-    align-items: center;
-    gap: 16px;
-    text-decoration: none;
-}
-
-/* IMPORTANT: Same as your working CSS - fixed dimensions */
-.staff-avatar-sm {
-    width: 78px;
-    height: 78px;
-    border-radius: 50%;
-    overflow: hidden;
-    flex-shrink: 0;
-    border: 3px solid var(--surface-soft);
-    background: #fff;
-}
-
-.staff-avatar-sm img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.staff-name {
-    font-weight: 600;
-    color: var(--text-main);
-    margin-bottom: 6px;
-    font-size: 18px;
-}
-
-.staff-link:hover .staff-name {
-    color: var(--primary);
-}
-
-.staff-id {
-    font-size: 13px;
-    color: var(--text-muted);
-}
-
-/* Department Cell */
-.staff-dept {
-    font-weight: 500;
-    color: var(--text-main);
+    gap: 12px;
+    flex-wrap: wrap;
     margin-bottom: 4px;
 }
 
-.staff-role {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-/* KPI Cell */
-.kpi-score {
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.score-high {
-    color: #22c55e;
-}
-
-.score-medium {
-    color: #eab308;
-}
-
-.score-low {
-    color: #ef4444;
-}
-
-.prev-score {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 4px;
-}
-
-/* Trend Badge */
-.trend-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 30px;
-    font-size: 13px;
-    font-weight: 500;
-    width: fit-content;
-}
-
-.trend-up {
-    background: #dcfce7;
-    color: #16a34a;
-}
-
-.trend-down {
-    background: #fee2e2;
-    color: #dc2626;
-}
-
-.trend-stable {
-    background: var(--surface-soft);
-    color: var(--text-muted);
-}
-
-/* Performance Badge */
-.performance-badge {
-    display: inline-block;
-    padding: 6px 14px;
-    border-radius: 30px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.performance-green {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.performance-blue {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.performance-gray {
-    background: #f3f4f6;
-    color: #4b5563;
-}
-
-.performance-orange {
-    background: #ffede6;
-    color: #c2410c;
-}
-
-/* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 8px;
-}
-
-.btn-add-kpi {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background: transparent;
-    border: 1px solid var(--border-soft);
-    border-radius: 10px;
-    font-size: 13px;
-    color: var(--text-main);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-add-kpi:hover {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
-}
-
-.btn-view {
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 16px;
-    background: transparent;
-    border: 1px solid var(--border-soft);
-    border-radius: 10px;
-    font-size: 13px;
-    color: var(--text-main);
-    text-decoration: none;
-    transition: all 0.2s;
-}
-
-.btn-view:hover {
-    background: var(--surface-soft);
-    border-color: var(--primary);
-    color: var(--primary);
-}
-
-/* Table Footer */
-.table-footer {
-    padding: 16px 20px;
-    border-top: 1px solid var(--border-soft);
-    background: #FEFAF8;
-}
-
-.staff-count {
-    font-size: 13px;
-    color: var(--text-muted);
-}
-
-/* Modal Styles - Keep as is */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
+.staff-toolbar input,
+.staff-toolbar select {
     background: var(--bg-card);
-    border-radius: 24px;
-    width: 90%;
-    max-width: 500px;
-    animation: modalSlideIn 0.3s ease;
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text-main);
+    outline: none;
+    min-width: 180px;
 }
 
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.staff-toolbar input:focus,
+.staff-toolbar select:focus {
+    border-color: var(--primary);
 }
 
-.modal-header {
+.staff-list-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+/* GRID */
+.staff-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 20px;
+}
+
+/* CARD */
+.staff-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #eee;
+}
+
+/* HEADER */
+.staff-header-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-soft);
 }
 
-.modal-header h3 {
-    font-size: 20px;
-    color: var(--primary);
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 28px;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: color 0.2s;
-}
-
-.modal-close:hover {
-    color: var(--primary);
-}
-
-.form-group {
-    margin-bottom: 20px;
-    padding: 0 24px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--primary);
-    margin-bottom: 8px;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--border-soft);
-    border-radius: 12px;
-    font-size: 14px;
-    background: var(--bg-card);
-    color: var(--text-main);
-    outline: none;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: var(--primary);
-}
-
-.form-group input[readonly] {
-    background: var(--surface-soft);
-    cursor: not-allowed;
-}
-
-.modal-actions {
+/* LEFT */
+.staff-left {
     display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    padding: 20px 24px;
-    border-top: 1px solid var(--border-soft);
+    gap: 15px;
+    align-items: center;
 }
 
-.btn-cancel {
-    padding: 10px 20px;
-    background: transparent;
-    border: 1px solid var(--border-soft);
-    border-radius: 12px;
+.staff-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.staff-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* INFO */
+.staff-info h3 {
+    margin: 0;
+}
+
+.staff-info p {
+    margin: 2px 0;
+    font-size: 13px;
+    color: #666;
+}
+
+/* KPI */
+.staff-kpi h2 {
+    margin: 0;
+    color: #16a34a;
+}
+
+.edit-btn {
+    margin-top: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: white;
     cursor: pointer;
-    font-size: 14px;
-    color: var(--text-main);
-    transition: all 0.2s;
 }
 
-.btn-cancel:hover {
-    background: var(--surface-soft);
+/* BOTTOM */
+.staff-bottom {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
 }
 
-.btn-submit {
-    padding: 10px 24px;
-    background: var(--primary);
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    font-size: 14px;
-    color: white;
-    transition: background 0.2s;
+/* STARS */
+.stars {
+    color: gold;
 }
 
-.btn-submit:hover {
-    background: var(--primary-soft);
+/* TREND */
+.trend {
+    font-size: 13px;
+    color: #777;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-    .filters-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-    }
-}
-
-@media (max-width: 768px) {
-    .staff-list-content {
-        padding: 16px;
-    }
-    
-    /* Smaller avatars on mobile */
-    .staff-avatar-sm {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .staff-name {
-        font-size: 16px;
-    }
-    
-    .kpi-score {
-        font-size: 22px;
-    }
+.trend span {
+    color: blue;
 }
