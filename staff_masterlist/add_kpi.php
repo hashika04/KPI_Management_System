@@ -16,12 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($stmt->execute()) {
         // Redirect back to the referring page
-        $redirect = $_SERVER['HTTP_REFERER'] ?? 'staff_list.php';
+        $redirect = $_SERVER['HTTP_REFERER'] ?? 'stafflist.php';
         header("Location: $redirect");
     } else {
         echo "Error adding KPI: " . $conn->error;
     }
 } else {
-    header("Location: staff_list.php");
+    header("Location: stafflist.php");
 }
 ?>

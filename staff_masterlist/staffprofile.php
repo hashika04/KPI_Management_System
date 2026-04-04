@@ -6,7 +6,7 @@ $activePage = 'staff';
 $staffId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if (!$staffId) {
-    header("Location: staff_list.php");
+    header("Location: stafflist.php");
     exit();
 }
 
@@ -18,7 +18,7 @@ $stmt->execute();
 $staff = $stmt->get_result()->fetch_assoc();
 
 if (!$staff) {
-    header("Location: staff_list.php");
+    header("Location: stafflist.php");
     exit();
 }
 
@@ -122,7 +122,7 @@ if ($scorePercentage >= 90) {
     <title><?php echo htmlspecialchars($staff['full_name']); ?> - Staff Profile</title>
     <link rel="stylesheet" href="../asset/universal.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
-    <link rel="stylesheet" href="../asset/staff_profile.css">
+    <link rel="stylesheet" href="../asset/staffprofile.css">
 </head>
 <body>
 
@@ -132,7 +132,7 @@ if ($scorePercentage >= 90) {
     <div class="staff-profile-content">
         <!-- Back Button -->
         <div class="back-nav">
-            <a href="staff_list.php" class="back-link">
+            <a href="stafflist.php" class="back-link">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                 </svg>
@@ -329,7 +329,7 @@ if ($scorePercentage >= 90) {
     </div>
 </div>
 
-<!-- Add KPI Modal (same as in staff_list.php) -->
+<!-- Add KPI Modal (same as in stafflist.php) -->
 <div id="addKPIModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -384,7 +384,7 @@ if ($scorePercentage >= 90) {
     </div>
 </div>
 
-<script src="staff_profile.js"></script>
+<script src="staffprofile.js"></script>
 
 </body>
 </html>

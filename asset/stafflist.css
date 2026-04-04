@@ -83,6 +83,11 @@
     margin: 0;
 }
 
+.staff-info a {
+    text-decoration: none;
+    color: inherit;
+}
+
 .staff-info p {
     margin: 2px 0;
     font-size: 13px;

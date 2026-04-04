@@ -6,8 +6,8 @@ $currentPage = $activePage ?? '';
 $navItems = [
     ['href' => '../Dashboard/dashboard.php', 'page' => 'dashboard', 'icon' => 'ph ph-chart-line-up',  'label' => 'Overview'],
     ['href' => '../staff_masterlist/stafflist.php',     'page' => 'staff',     'icon' => 'ph ph-users-three',     'label' => 'Staff List'],
-    ['href' => 'analytics.php', 'page' => 'analytics', 'icon' => 'ph ph-chart-bar',       'label' => 'Analytics'],
-    ['href' => 'reports.php',   'page' => 'reports',   'icon' => 'ph ph-file-text',       'label' => 'Reports'],
+    ['href' => '', 'page' => 'analytics', 'icon' => 'ph ph-chart-bar',       'label' => 'Analytics'],
+    ['href' => '../Dashboard/reports.php',   'page' => 'reports',   'icon' => 'ph ph-file-text',       'label' => 'Reports'],
     ['href' => 'config.php',    'page' => 'config',    'icon' => 'ph ph-sliders-horizontal','label' => 'Configuration'],
 ];
 $fullName  = $_SESSION['full_name']  ?? 'DR';

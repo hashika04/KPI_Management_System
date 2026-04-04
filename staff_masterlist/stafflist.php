@@ -91,7 +91,11 @@ $result = $conn->query($sql);
                     </div>
 
                     <div class="staff-info">
-                        <h3><?= $row['full_name'] ?></h3>
+                        <h3>
+                            <a href="staffprofile.php?id=<?= $row['id'] ?>">
+                                <?= $row['full_name'] ?>
+                            </a>
+                        </h3>
                         <p><?= $row['staff_code'] ?></p>
                         <p><?= $row['department'] ?></p>
                     </div>
