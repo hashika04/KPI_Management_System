@@ -490,85 +490,115 @@ if (count($trainingNeeds) > 0) {
         </div>
         <?php endif; ?>
 
-        <!-- Training Needs Analysis -->
-        <?php if (!empty($trainingNeeds)): ?>
-        <div class="report-card">
-            <div class="report-card-header">
-                <div class="report-icon training-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                    </svg>
-                </div>
-                <h2>Training Needs Analysis</h2>
-            </div>
-            
-            <?php
-            // Group by weakness category
-            $groupedNeeds = [];
-            foreach ($trainingNeeds as $need) {
-                foreach ($need['weaknesses'] as $weakness) {
-                    if (!isset($groupedNeeds[$weakness])) {
-                        $groupedNeeds[$weakness] = [];
-                    }
-                    $groupedNeeds[$weakness][] = $need['name'];
-                }
-            }
-            ?>
-            
-            <div class="training-needs-grid">
-                <?php foreach ($groupedNeeds as $category => $staffNames): ?>
-                    <div class="training-card">
-                        <div class="training-card-header">
-                            <h3><?php echo htmlspecialchars($category); ?></h3>
-                            <span class="training-count"><?php echo count($staffNames); ?> staff members</span>
-                        </div>
-                        <p class="training-desc">Staff requiring training in this area:</p>
-                        <div class="training-staff-list">
-                            <?php foreach (array_slice($staffNames, 0, 5) as $name): ?>
-                                <span class="training-staff-name"><?php echo htmlspecialchars($name); ?></span>
-                            <?php endforeach; ?>
-                            <?php if (count($staffNames) > 5): ?>
-                                <span class="training-more">+<?php echo count($staffNames) - 5; ?> more</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+<!-- Training Needs Analysis -->
+<?php if (!empty($trainingNeeds)): ?>
+<div class="report-card">
+    <div class="report-card-header">
+        <div class="report-icon training-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+            </svg>
         </div>
-        <?php endif; ?>
+        <h2>Training Needs Analysis</h2>
+    </div>
+    
+    <?php
+    // Group by weakness category with staff IDs
+    $groupedNeeds = [];
+    foreach ($trainingNeeds as $need) {
+        // Find staff ID for this staff member
+        $staffId = null;
+        foreach ($staffData as $staff) {
+            if ($staff['name'] === $need['name']) {
+                $staffId = $staff['id'];
+                break;
+            }
+        }
+        
+        foreach ($need['weaknesses'] as $weakness) {
+            if (!isset($groupedNeeds[$weakness])) {
+                $groupedNeeds[$weakness] = [];
+            }
+            $groupedNeeds[$weakness][] = [
+                'name' => $need['name'],
+                'id' => $staffId
+            ];
+        }
+    }
+    ?>
+    
+    <div class="training-needs-grid">
+        <?php foreach ($groupedNeeds as $category => $staffMembers): ?>
+            <div class="training-card">
+                <div class="training-card-header">
+                    <h3><?php echo htmlspecialchars($category); ?></h3>
+                    <span class="training-count"><?php echo count($staffMembers); ?> staff members</span>
+                </div>
+                <p class="training-desc">Staff requiring training in this area:</p>
+                <div class="training-staff-list">
+                    <?php 
+                    $displayedCount = 0;
+                    foreach ($staffMembers as $staffMember): 
+                        if ($displayedCount >= 5) break;
+                        $displayedCount++;
+                    ?>
+                        <a href="../staff_masterlist/staffprofile.php?id=<?php echo $staffMember['id']; ?>" class="training-staff-name" style="text-decoration: none;">
+                            <?php echo htmlspecialchars($staffMember['name']); ?>
+                        </a>
+                    <?php endforeach; ?>
+                    <?php if (count($staffMembers) > 5): ?>
+                        <span class="training-more">+<?php echo count($staffMembers) - 5; ?> more</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
 
         <!-- Anomalies Detection -->
-        <?php if (!empty($anomalies)): ?>
-        <div class="report-card">
-            <div class="report-card-header">
-                <div class="report-icon anomaly-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+<?php if (!empty($anomalies)): ?>
+<div class="report-card">
+    <div class="report-card-header">
+        <div class="report-icon anomaly-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+        </div>
+        <h2>Anomalies & Alerts</h2>
+    </div>
+    
+    <div class="anomalies-list">
+        <?php foreach ($anomalies as $anomaly): 
+            // Find staff ID for this anomaly staff member
+            $anomalyStaffId = null;
+            foreach ($staffData as $staff) {
+                if ($staff['name'] === $anomaly['staff']) {
+                    $anomalyStaffId = $staff['id'];
+                    break;
+                }
+            }
+        ?>
+            <div class="anomaly-item anomaly-<?php echo $anomaly['severity']; ?>">
+                <div class="anomaly-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
                 </div>
-                <h2>Anomalies & Alerts</h2>
-            </div>
-            
-            <div class="anomalies-list">
-                <?php foreach ($anomalies as $anomaly): ?>
-                    <div class="anomaly-item anomaly-<?php echo $anomaly['severity']; ?>">
-                        <div class="anomaly-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                        </div>
-                        <div class="anomaly-content">
-                            <div class="anomaly-header">
-                                <span class="anomaly-badge"><?php echo htmlspecialchars($anomaly['type']); ?></span>
-                                <span class="anomaly-staff"><?php echo htmlspecialchars($anomaly['staff']); ?></span>
-                            </div>
-                            <p class="anomaly-description"><?php echo htmlspecialchars($anomaly['description']); ?></p>
-                        </div>
+                <div class="anomaly-content">
+                    <div class="anomaly-header">
+                        <span class="anomaly-badge"><?php echo htmlspecialchars($anomaly['type']); ?></span>
+                        <a href="../staff_masterlist/staffprofile.php?id=<?php echo $anomalyStaffId; ?>" class="anomaly-staff" style="text-decoration: none;">
+                            <?php echo htmlspecialchars($anomaly['staff']); ?>
+                        </a>
                     </div>
-                <?php endforeach; ?>
+                    <p class="anomaly-description"><?php echo htmlspecialchars($anomaly['description']); ?></p>
+                </div>
             </div>
-        </div>
-        <?php endif; ?>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
 
         <!-- Summary Stats -->
         <div class="summary-stats">
