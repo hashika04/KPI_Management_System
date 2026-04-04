@@ -280,7 +280,7 @@ if (count($trainingNeeds) > 0) {
                                             $staffAvatar = isset($staffMember['avatar']) ? $staffMember['avatar'] : '../asset/images/staff/default-profile.jpg';
                                             $displayCount++;
                                             ?>
-                                            <a href="staff_profile.php?id=<?php echo $staffId; ?>" class="insight-staff-tag">
+                                            <a href="../staff_masterlist/staffprofile.php?id=<?php echo $staffId; ?>" class="insight-staff-tag">
                                                 <img src="<?php echo htmlspecialchars($staffAvatar); ?>" alt="">
                                                 <span><?php echo htmlspecialchars($staffName); ?></span>
                                             </a>
@@ -304,7 +304,7 @@ if (count($trainingNeeds) > 0) {
                                             $displayCount++;
                                             if ($staffId) {
                                                 ?>
-                                                <a href="staff_profile.php?id=<?php echo $staffId; ?>" class="insight-staff-tag">
+                                                <a href="../staff_masterlist/staffprofile.php?id=<?php echo $staffId; ?>" class="insight-staff-tag">
                                                     <img src="<?php echo htmlspecialchars($staffAvatar); ?>" alt="">
                                                     <span><?php echo htmlspecialchars($staffName); ?></span>
                                                 </a>
@@ -337,7 +337,7 @@ if (count($trainingNeeds) > 0) {
                                         $displayCount++;
                                         if ($staffId) {
                                             ?>
-                                            <a href="staff_profile.php?id=<?php echo $staffId; ?>" class="insight-staff-tag">
+                                            <a href="../staff_masterlist/staffprofile.php?id=<?php echo $staffId; ?>" class="insight-staff-tag">
                                                 <img src="<?php echo htmlspecialchars($staffAvatar); ?>" alt="">
                                                 <span><?php echo htmlspecialchars($staffName); ?></span>
                                             </a>
@@ -382,7 +382,7 @@ if (count($trainingNeeds) > 0) {
                                 <img src="<?php echo htmlspecialchars($staff['avatar']); ?>" alt="">
                             </div>
                             <div class="risk-info">
-                                <a href="staff_profile.php?id=<?php echo $staff['id']; ?>" class="risk-name">
+                                <a href="../staff_masterlist/staffprofile.php?id=<?php echo $staff['id']; ?>" class="risk-name">
                                     <?php echo htmlspecialchars($staff['name']); ?>
                                 </a>
                                 <p class="risk-email"><?php echo htmlspecialchars($staff['email']); ?></p>
