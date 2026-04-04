@@ -4,7 +4,7 @@
 // includes/sidebar.php
 $currentPage = $activePage ?? '';
 $navItems = [
-    ['href' => '../Dashboard/dashboard.php', 'page' => 'dashboard', 'icon' => 'ph ph-chart-line-up',  'label' => 'Overview'],
+    ['href' => '../Dashboard/overview.php', 'page' => 'dashboard', 'icon' => 'ph ph-chart-line-up',  'label' => 'Overview'],
     ['href' => '../staff_masterlist/stafflist.php',     'page' => 'staff',     'icon' => 'ph ph-users-three',     'label' => 'Staff List'],
     ['href' => '', 'page' => 'analytics', 'icon' => 'ph ph-chart-bar',       'label' => 'Analytics'],
     ['href' => '../Dashboard/reports.php',   'page' => 'reports',   'icon' => 'ph ph-file-text',       'label' => 'Reports'],

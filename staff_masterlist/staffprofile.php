@@ -1,6 +1,6 @@
 <?php
 // staff_masterlist/staff_profile.php
-include("../includes/auth.php");
+require_once __DIR__ . '/../config/db.php';
 $activePage = 'staff';
 
 $staffId = isset($_GET['id']) ? intval($_GET['id']) : 0;
