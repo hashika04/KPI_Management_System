@@ -18,7 +18,7 @@ if ($result->num_rows == 1) {
 
     if ($password == $user['password']) {
         $_SESSION['username'] = $user['username'];
-        header("Location: ../Dashboard/dashboard.php");
+        header("Location: ../Dashboard/overview.php");
         exit();
     } else {
         header("Location: index.php?error=Incorrect password");
