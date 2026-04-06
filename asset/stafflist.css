@@ -169,12 +169,25 @@
 .trend {
     font-size: 12px;
     color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .trend span {
     font-weight: 700;
-    color: #22c55e; /* Green for improving */
-    margin-left: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px; /* Space between icon and text */
+}
+
+/* Color Coding */
+.trend-up span { color: #22c55e; }      /* Green */
+.trend-down span { color: #ef4444; }    /* Red */
+.trend-stable span { color: #94a3b8; }  /* Slate Gray */
+
+.trend i {
+    font-size: 14px; /* Make the icon slightly larger than text */
 }
 
 .modal {

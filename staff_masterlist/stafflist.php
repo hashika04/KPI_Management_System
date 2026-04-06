@@ -23,8 +23,8 @@ $result = $conn->query($sql);
 <head>
     <title>Staff Profiles</title>
     <link rel="stylesheet" href="../asset/universal.css">
-    <!--<link rel="stylesheet" href="../asset/dashboard.css">-->
     <link rel="stylesheet" href="../asset/stafflist.css">
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 </head>
 
 <body>
@@ -74,9 +74,22 @@ $result = $conn->query($sql);
                 $percent = $row['avg_percentage'] ?? 0;
 
                 // TREND (simple demo logic)
-                $prev = $score - rand(0,1);
-                $diff = round($score - $prev,1);
-                $trend = $diff > 0 ? "Improving" : "Stable";
+                $prev = $score - rand(0, 1); // Your existing logic
+                $diff = round($score - $prev, 1);
+
+                if ($diff > 0) {
+                    $trendClass = "trend-up";
+                    $trendIcon  = '<i class="ph-bold ph-trend-up"></i>';
+                    $trendText  = "Improving";
+                } elseif ($diff < 0) {
+                    $trendClass = "trend-down";
+                    $trendIcon  = '<i class="ph-bold ph-trend-down"></i>';
+                    $trendText  = "Declining";
+                } else {
+                    $trendClass = "trend-stable";
+                    $trendIcon  = '<i class="ph-bold ph-minus"></i>'; // Straight line icon
+                    $trendText  = "Stable";
+                }
             ?>
 
                 <div class="staff-card"
@@ -122,8 +135,8 @@ $result = $conn->query($sql);
                         </div>
 
                         <div class="trend">
-                            Prev: <?= round($prev,1) ?>
-                            <span><?= $trend ?> <?= abs($diff) ?></span>
+                            Prev: <?= round($prev, 1) ?> 
+                            <span><?= $trendIcon ?> <?= $trendText ?></span>
                         </div>
 
                     </div>
