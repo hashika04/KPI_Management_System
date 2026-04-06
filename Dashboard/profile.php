@@ -1,12 +1,9 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['username'])) {
-    header("Location: ../Login/index.php");
-    exit();
-}
-
-include("../config/db.php");
+/**
+ * Supervisor Profile Page
+ * Allows supervisors to view and edit their profile information.
+ */
+include("../includes/auth.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = $_POST['id'];

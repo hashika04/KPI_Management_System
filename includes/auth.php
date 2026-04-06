@@ -17,6 +17,10 @@ $stmt->execute();
 $result = $stmt->get_result();
 $currentUser = $result->fetch_assoc();
 
+$_SESSION['full_name'] = $currentUser['full_name'];
+$_SESSION['email']     = $currentUser['email'];
+$_SESSION['position']  = $currentUser['position'];
+
 $nameParts = explode(" ", $currentUser['full_name']);
 
 $initials = strtoupper(substr($nameParts[0],0,1));

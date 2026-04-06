@@ -2,6 +2,11 @@
 
 <?php
 // includes/sidebar.php
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $currentPage = $activePage ?? '';
 $navItems = [
     ['href' => '../Dashboard/overview.php', 'page' => 'dashboard', 'icon' => 'ph ph-chart-line-up',  'label' => 'Overview'],
@@ -10,15 +15,19 @@ $navItems = [
     ['href' => '../Dashboard/reports.php',   'page' => 'reports',   'icon' => 'ph ph-file-text',       'label' => 'Reports'],
     ['href' => 'config.php',    'page' => 'config',    'icon' => 'ph ph-sliders-horizontal','label' => 'Configuration'],
 ];
-$fullName  = $_SESSION['full_name']  ?? 'DR';
+$fullName  = $_SESSION['full_name']  ?? 'Guest';
 $userEmail = $_SESSION['email'] ?? 'supervisor@company.com';
-$userRole  = $_SESSION['position']  ?? 'Supervisor';
+$userRole  = $_SESSION['position']  ?? 'Public Viewer';
 
-$nameParts = explode(' ', trim($fullName));
-if (count($nameParts) > 1) {
-    $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
+if ($fullName !== 'Guest') { 
+    $nameParts = explode(' ', trim($fullName));
+    if (count($nameParts) > 1) {
+        $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
+    } else {
+        $initials = strtoupper(substr($fullName, 0, 2));
+    }
 } else {
-    $initials = strtoupper(substr($fullName, 0, 2));
+    $initials = 'G';
 }
 ?>
 

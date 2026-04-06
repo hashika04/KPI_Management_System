@@ -5,7 +5,6 @@
  */
 require_once __DIR__ . '/../vendor/autoload.php';
 include("../includes/auth.php");
-include("../config/db.php");
 $activePage = 'dashboard';
 
 /* ══════════════════════════════════════════

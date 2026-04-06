@@ -9,7 +9,7 @@ $sql = "SELECT
         s.department,
         s.profile_photo,
         ROUND(AVG(k.Score),2) AS avg_score,
-        ROUND((AVG(k.Score)/5)*100,2) AS avg_percentage
+        ROUND((AVG(k.Score)/5)*100,1) AS avg_percentage
     FROM staff s
     LEFT JOIN kpi_data k ON s.full_name = k.Name
     GROUP BY s.id

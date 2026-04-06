@@ -24,7 +24,9 @@ if ($result->num_rows == 1) {
         header("Location: index.php?error=Incorrect password");
         exit();
     }
-} else {
+} 
+
+else {
     header("Location: index.php?error=Username not found");
     exit();
 }
