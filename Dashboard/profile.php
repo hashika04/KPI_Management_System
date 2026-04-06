@@ -52,7 +52,7 @@ $initials = strtoupper(substr($user['full_name'], 0, 1) . substr(explode(' ', $u
 
 <div class="profile-wrapper">
     <div class="profile-sidebar">
-        <a href="../Dashboard/dashboard.php" class="back-btn" title="Back to Dashboard">
+        <a href="../Dashboard/overview.php" class="back-btn" title="Back to Dashboard">
             <i class="ph ph-arrow-left"></i>
         </a>
 
