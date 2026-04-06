@@ -1,6 +1,7 @@
 <?php
 // staff_masterlist/add_kpi.php
 include("../includes/auth.php");
+include("../config/db.php");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $staffId = $_POST['staff_id'];

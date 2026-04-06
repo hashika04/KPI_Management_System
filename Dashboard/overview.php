@@ -5,118 +5,28 @@
  */
 require_once __DIR__ . '/../vendor/autoload.php';
 include("../includes/auth.php");
+include("../Dashboard/data.php");
 include("../config/db.php");
+
+$chartSql = "SELECT 
+                SUBSTRING_INDEX(Date, '/', -1) as kpi_year, 
+                ROUND((AVG(Score)/5)*100, 1) as yearly_avg 
+             FROM kpi_data 
+             WHERE SUBSTRING_INDEX(Date, '/', -1) BETWEEN '2022' AND '2025'
+             GROUP BY kpi_year 
+             ORDER BY kpi_year ASC";
+
+$chartRes = $conn->query($chartSql);
+$yearlyScores = [];
+
+while($row = $chartRes->fetch_assoc()) {
+    $yearlyScores[] = $row['yearly_avg'];
+}
+
+$jsDataString = implode(', ', $yearlyScores);
+
 $activePage = 'dashboard';
 
-/* ══════════════════════════════════════════
-   STAFF + COMPUTED KPI SCORES
-   Joins staff table with kpi_data to calculate
-   each staff member's average KPI score (0–100)
-   by averaging their Score values (each 1–5)
-   then normalising to a percentage: (avg/5)*100
-══════════════════════════════════════════ */
- 
-$sql = "
-    SELECT
-        s.id,
-        s.full_name   AS name,
-        s.staff_code  AS staffId,
-        s.department  AS dept,
-        s.profile_photo AS avatar,
-        ROUND(COALESCE((AVG(k.Score) / 5) * 100, 0), 1) AS score
-    FROM staff s
-    LEFT JOIN kpi_data k ON k.Name = s.full_name
-    GROUP BY s.id, s.full_name, s.staff_code, s.department, s.profile_photo
-    ORDER BY score DESC
-";
- 
-$result    = $conn->query($sql);
-$staffData = [];
- 
-while ($row = $result->fetch_assoc()) {
-    $score = (float)$row['score'];
- 
-    /* Classify level based on score */
-    if ($score >= 85) {
-        $level = 'top';
-    } elseif ($score >= 70) {
-        $level = 'good';
-    } elseif ($score >= 50) {
-        $level = 'average';
-    } elseif ($score > 0) {
-        $level = 'at-risk';
-    } else {
-        $level = 'critical';   /* score = 0 means no KPI data at all */
-    }
- 
-    /* Simple trend: compare last month's avg vs overall avg */
-    $sqlTrend = "
-        SELECT ROUND(COALESCE((AVG(Score)/5)*100, 0), 1) AS recent_score
-        FROM kpi_data
-        WHERE Name = ?
-          AND STR_TO_DATE(Date,'%m/%d/%Y') >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-    ";
-    $stmt = $conn->prepare($sqlTrend);
-    $stmt->bind_param('s', $row['name']);
-    $stmt->execute();
-    $trendRow    = $stmt->get_result()->fetch_assoc();
-    $recentScore = (float)($trendRow['recent_score'] ?? 0);
-    $trend       = ($recentScore >= $score) ? 'up' : 'down';
-    $stmt->close();
- 
-    $staffData[] = [
-        'id'      => (int)$row['id'],
-        'name'    => $row['name'],
-        'staffId' => $row['staffId'],
-        'dept'    => $row['dept'],
-        'avatar'  => $row['avatar'] ?? '',
-        'score'   => $score,
-        'level'   => $level,
-        'trend'   => $trend,
-    ];
-}
- 
-/* ── Computed summary stats ── */
-$totalStaff  = count($staffData);
-$avgKPI      = $totalStaff
-    ? round(array_sum(array_column($staffData, 'score')) / $totalStaff, 1)
-    : 0;
-$topCount    = count(array_filter($staffData, fn($s) => $s['level'] === 'top'));
-$atRiskCount = count(array_filter($staffData, fn($s) => in_array($s['level'], ['at-risk', 'critical'])));
- 
-/* ── Critical Category: department with lowest avg KPI ── */
-$sqlCrit = "
-    SELECT
-        s.department,
-        ROUND((AVG(k.Score)/5)*100, 1) AS dept_avg
-    FROM staff s
-    LEFT JOIN kpi_data k ON k.Name = s.full_name
-    GROUP BY s.department
-    ORDER BY dept_avg ASC
-    LIMIT 1
-";
-$critResult  = $conn->query($sqlCrit);
-$critRow     = $critResult->fetch_assoc();
-$criticalCat = $critRow ? $critRow['department'] : '—';
- 
-/* ── Top 3 performers (podium) ── */
-$tops = array_slice($staffData, 0, 3);
-
-$podium = [
-    'bronze' => $tops[2] ?? null,
-    'gold'   => $tops[0] ?? null,
-    'silver' => $tops[1] ?? null,
-];
- 
-/* ── At-risk staff (lowest scores first) ── */
-$atRisk = array_values(
-    array_filter($staffData, fn($s) => in_array($s['level'], ['at-risk', 'critical']))
-);
-usort($atRisk, fn($a, $b) => $a['score'] <=> $b['score']);
- 
-/* ── Departments for filter dropdown ── */
-$departments = array_unique(array_column($staffData, 'dept'));
-sort($departments);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -131,6 +41,8 @@ sort($departments);
   <link rel="stylesheet" href="../asset/overview.css">
   <!-- Icons -->
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <!-- ApexCharts for KPI trend visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 </head>
 <body>
 
@@ -158,7 +70,8 @@ sort($departments);
     <div class="stat-card">
       <div class="stat-icon teal"><i class="ph ph-trend-up"></i></div>
       <div class="stat-value"><?= $avgKPI ?></div>
-      <div class="stat-label">Average KPI</div>
+      <div class="stat-label">Average KPI 2025</div>
+      <div id="sparkline-kpi" class="sparkline-container"></div>
     </div>
 
     <div class="stat-card">
@@ -411,6 +324,15 @@ function filterTable() {
     row.style.display = show ? '' : 'none';
   });
 }
+</script>
+
+<script src="../Dashboard/script.js"></script>
+
+<script>
+    // The data now represents [2022_avg, 2023_avg, 2024_avg, 2025_avg]
+    const multiYearData = [<?php echo $jsDataString; ?>];
+    
+    renderSparkline('#sparkline-kpi', multiYearData, '#e8308c');
 </script>
 
 </body>

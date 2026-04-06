@@ -1,28 +1,65 @@
+/* ── 1. LAYOUT & SCROLL CONTROL ── */
+/* These replace the missing logic from dashboard.css */
+.dashboard {
+    height: 100vh;
+    margin-left: 220px; /* Sidebar width */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevents double scrollbars */
+    background: #fcf2fa; /* Your theme's pinkish background */
+}
+
+/* Container for the staff content area */
+.staff-masterlist-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding: 0 28px; /* Standard dashboard padding */
+}
+
+/* ── 2. STATIC HEADER & FILTERS ── */
+.staff-masterlist-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fcf2fa; /* Solid color to hide cards scrolling behind */
+    padding-top: 84px; /* Topbar offset */
+    padding-bottom: 20px;
+    border-bottom: 1.5px solid var(--border-soft);
+}
+
 .staff-masterlist-header h1 {
-    font-size: 28px;
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: var(--text-main);
 }
 
 .subtitle {
-    color: #777;
-    margin-bottom: 15px;
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
 }
+
+/* ── 3. TOOLBAR (FILTERS) ── */
 .staff-toolbar {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 4px;
 }
 
 .staff-toolbar input,
 .staff-toolbar select {
-    background: var(--bg-card);
-    border: 1px solid var(--border-soft);
+    background: #ffffff;
+    border: 1.5px solid var(--border-soft);
     border-radius: 14px;
     padding: 12px 16px;
     font-size: 14px;
     color: var(--text-main);
     outline: none;
-    min-width: 180px;
+    min-width: 110px;
+    font-family: 'Sora', sans-serif;
 }
 
 .staff-toolbar input:focus,
@@ -30,46 +67,53 @@
     border-color: var(--primary);
 }
 
+/* ── 4. SCROLLABLE GRID ── */
 .staff-list-scroll {
     flex: 1;
-    overflow-y: auto;
-    padding-right: 6px;
+    overflow-y: auto; /* This makes the grid scroll while header stays still */
+    padding: 30px 0 100px; /* Bottom padding so last card isn't cut off */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
 }
 
-/* GRID */
 .staff-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 24px;
 }
 
-/* CARD */
+/* ── 5. STAFF CARDS ── */
 .staff-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 20px;
-    border: 1px solid #eee;
+    background: #ffffff;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(200, 80, 140, 0.05);
+    transition: transform 0.2s ease;
 }
 
-/* HEADER */
+.staff-card:hover {
+    transform: translateY(-5px);
+}
+
 .staff-header-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
-/* LEFT */
 .staff-left {
     display: flex;
-    gap: 15px;
-    align-items: center;
+    gap: 16px;
 }
 
 .staff-avatar {
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
     border-radius: 50%;
     overflow: hidden;
+    border: 3px solid var(--surface-soft);
 }
 
 .staff-avatar img {
@@ -78,55 +122,218 @@
     object-fit: cover;
 }
 
-/* INFO */
-.staff-info h3 {
-    margin: 0;
-}
-
-.staff-info a {
+.staff-info h3 a {
     text-decoration: none;
-    color: inherit;
+    color: var(--text-main);
+    font-weight: 700;
 }
 
 .staff-info p {
-    margin: 2px 0;
-    font-size: 13px;
-    color: #666;
+    font-size: 12px;
+    color: var(--text-muted);
 }
 
-/* KPI */
 .staff-kpi h2 {
-    margin: 0;
-    color: #16a34a;
+    font-size: 24px;
+    font-weight: 800;
+    color: #22c55e;
+    text-align: right;
 }
 
 .edit-btn {
-    margin-top: 5px;
+    background: var(--surface-soft);
+    border: none;
     padding: 6px 12px;
     border-radius: 8px;
-    border: 1px solid #ddd;
-    background: white;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
     cursor: pointer;
+    margin-top: 5px;
 }
 
-/* BOTTOM */
 .staff-bottom {
     display: flex;
     justify-content: space-between;
-    margin-top: 15px;
+    align-items: flex-end;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-soft);
 }
 
-/* STARS */
 .stars {
-    color: gold;
+    color: #fbbf24;
+    font-weight: 700;
+    font-size: 14px;
 }
 
-/* TREND */
 .trend {
-    font-size: 13px;
-    color: #777;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .trend span {
-    color: blue;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px; /* Space between icon and text */
+}
+
+/* Color Coding */
+.trend-up span { color: #22c55e; }      /* Green */
+.trend-down span { color: #ef4444; }    /* Red */
+.trend-stable span { color: #94a3b8; }  /* Slate Gray */
+
+.trend i {
+    font-size: 14px; /* Make the icon slightly larger than text */
+}
+
+.modal {
+    display: none; /* Controlled by JS */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Dimmer overlay */
+    z-index: 9999; /* Higher than sticky header */
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px); /* Optional: adds modern touch */
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: 24px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    animation: modalSlideIn 0.3s ease;
+    overflow: hidden; /* Keeps header/footer tidy */
+}
+
+@keyframes modalSlideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.modal-header h3 {
+    font-size: 20px;
+    color: var(--primary);
+    margin: 0;
+    font-weight: 700;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--primary);
+}
+
+/* ── FORM ELEMENTS INSIDE MODAL ── */
+
+.modal form .form-group {
+    margin-bottom: 20px;
+    padding: 0 24px;
+}
+
+/* First form group needs some top padding */
+.modal form .form-group:first-of-type {
+    padding-top: 24px;
+}
+
+.modal .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.modal .form-group input,
+.modal .form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    font-size: 14px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.modal .form-group input:focus,
+.modal .form-group select:focus {
+    border-color: var(--primary);
+}
+
+.modal .form-group input[readonly] {
+    background: var(--surface-soft);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* ── MODAL ACTIONS ── */
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border-soft);
+    background: var(--bg-card);
+}
+
+.btn-cancel {
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.btn-submit {
+    padding: 10px 24px;
+    background: var(--primary);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: white;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.btn-submit:hover {
+    background: var(--primary-soft);
+}
+/* ── 6. RESPONSIVE ── */
+@media (max-width: 1200px) {
+    .dashboard { margin-left: 0; }
+}
+
+@media (max-width: 768px) {
+    .staff-grid { grid-template-columns: 1fr; }
+    .staff-masterlist-header { padding-top: 20px; }
 }

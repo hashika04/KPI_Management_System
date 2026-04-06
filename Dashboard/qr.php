@@ -44,7 +44,7 @@ $result = Builder::create()
     ->size(200)
     ->margin(10)
     ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
-    ->foregroundColor(new Color(102, 2, 31))   /* #66021F — brand burgundy */
+    ->foregroundColor(new Color(0, 0, 0))   /* #66021F — brand burgundy */
     ->backgroundColor(new Color(255, 255, 255))
     ->build();
 
