@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // GLOBAL PLOTLY THEME
 const plotlyTheme = {
   paper_bgcolor: 'rgba(0,0,0,0)',
@@ -26,38 +25,19 @@ const plotlyTheme = {
   }
 };
 
-document.addEventListener("DOMContentLoaded", function () {
-    const yearCanvas = document.getElementById("kpiYearChart");
-=======
-// Dashboard/script.js
->>>>>>> 7e6898ac135f0843800deebf63fd7b04c3b3e128
-
 function renderSparkline(elementSelector, dataPoints, colorCode) {
     const element = document.querySelector(elementSelector);
-    if (!element) return; // Exit if the div doesn't exist
+    if (!element) return;
 
     var options = {
-        series: [{
-            name: 'Avg Score',
-            data: dataPoints
-        }],
+        series: [{ name: 'Avg Score', data: dataPoints }],
         chart: {
-            type: 'area', // Changed to area for the nice gradient fill
+            type: 'area',
             height: 60,
-            sparkline: {
-                enabled: true
-            },
-            animations: {
-                enabled: true,
-                easing: 'easeinout',
-                speed: 800
-            }
+            sparkline: { enabled: true },
+            animations: { enabled: true, easing: 'easeinout', speed: 800 }
         },
-        stroke: {
-            curve: 'smooth',
-            width: 3,
-            colors: [colorCode]
-        },
+        stroke: { curve: 'smooth', width: 3, colors: [colorCode] },
         fill: {
             type: 'gradient',
             gradient: {
@@ -65,37 +45,29 @@ function renderSparkline(elementSelector, dataPoints, colorCode) {
                 opacityFrom: 0.45,
                 opacityTo: 0.05,
                 stops: [20, 100]
-            },
+            }
         },
         tooltip: {
             enabled: true,
             theme: 'light',
-            followCursor: true, // This keeps the box near your mouse instead of at the top
+            followCursor: true,
             offsetY: -10,
-            fixed: {
-                enabled: false
-            },
-            x: {
-                show: true
-            },
-            marker: {
-                show: true // Keeps the blue dot
-            }
+            fixed: { enabled: false },
+            x: { show: true },
+            marker: { show: true }
         },
-
         xaxis: {
-            categories: ['2022', '2023', '2024', '2025'], // Labels for the dots
-            tooltip: {
-                enabled: false // This will show "2022" inside the popup
-            }
+            categories: ['2022', '2023', '2024', '2025'],
+            tooltip: { enabled: false }
         },
-        yaxis: {
-            min: 0,
-            max: 100 // Keeps the scale consistent so the "drop" is clear
-        }
+        yaxis: { min: 0, max: 100 }
     };
 
-    var chart = new ApexCharts(element, options);
-    chart.render();
+    new ApexCharts(element, options).render();
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    const yearCanvas = document.getElementById("kpiYearChart");
+    
+    // Dashboard/script.js
+});
