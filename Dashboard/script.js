@@ -1,119 +1,68 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const yearCanvas = document.getElementById("kpiYearChart");
+// Dashboard/script.js
 
-    if (yearCanvas) {
-        const ctx = yearCanvas.getContext("2d");
+function renderSparkline(elementSelector, dataPoints, colorCode) {
+    const element = document.querySelector(elementSelector);
+    if (!element) return; // Exit if the div doesn't exist
 
-        const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-        gradient.addColorStop(0, "rgba(75, 21, 53, 0.18)");
-        gradient.addColorStop(1, "rgba(75, 21, 53, 0.02)");
-
-        new Chart(ctx, {
-            type: "line",
-            data: {
-                labels: kpiYears,
-                datasets: [{
-                    label: "Average KPI",
-                    data: kpiYearPercentages,
-                    borderColor: "#4B1535",
-                    backgroundColor: gradient,
-                    tension: 0.42,
-                    fill: true,
-                    borderWidth: 4,
-
-                    pointRadius: 0,
-                    pointHoverRadius: 7,
-                    pointHitRadius: 18,
-                    pointBackgroundColor: "#4B1535",
-                    pointHoverBackgroundColor: "#4B1535",
-                    pointBorderColor: "#FFFFFF",
-                    pointHoverBorderColor: "#FFFFFF",
-                    pointBorderWidth: 0,
-                    pointHoverBorderWidth: 3
-                }]
+    var options = {
+        series: [{
+            name: 'Avg Score',
+            data: dataPoints
+        }],
+        chart: {
+            type: 'area', // Changed to area for the nice gradient fill
+            height: 60,
+            sparkline: {
+                enabled: true
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: "nearest",
-                    intersect: false
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        enabled: true,
-                        backgroundColor: "#4B1535",
-                        titleColor: "#FFFFFF",
-                        bodyColor: "#FFFFFF",
-                        displayColors: false,
-                        padding: 10,
-                        cornerRadius: 10,
-                        caretSize: 6,
-                        callbacks: {
-                            title: function (context) {
-                                return "Year " + context[0].label;
-                            },
-                            label: function (context) {
-                                return context.raw + "%";
-                            }
-                        }
-                    }
-                },
-                layout: {
-                    padding: {
-                        top: 6,
-                        right: 10,
-                        bottom: 0,
-                        left: 4
-                    }
-                },
-                scales: {
-                    y: {
-                        min: 60,
-                        max: 80,
-                        ticks: {
-                            stepSize: 2,
-                            callback: function (value) {
-                                return value + "%";
-                            },
-                            font: {
-                                size: 10
-                            },
-                            color: "#6f6a6d"
-                        },
-                        title: {
-                            display: false
-                        },
-                        grid: {
-                            color: "rgba(0,0,0,0.06)",
-                            drawBorder: false
-                        },
-                        border: {
-                            display: false
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            font: {
-                                size: 10
-                            },
-                            color: "#6f6a6d"
-                        },
-                        title: {
-                            display: false
-                        },
-                        grid: {
-                            display: false
-                        },
-                        border: {
-                            display: false
-                        }
-                    }
-                }
+            animations: {
+                enabled: true,
+                easing: 'easeinout',
+                speed: 800
             }
-        });
-    }
-});
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 3,
+            colors: [colorCode]
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.45,
+                opacityTo: 0.05,
+                stops: [20, 100]
+            },
+        },
+        tooltip: {
+            enabled: true,
+            theme: 'light',
+            followCursor: true, // This keeps the box near your mouse instead of at the top
+            offsetY: -10,
+            fixed: {
+                enabled: false
+            },
+            x: {
+                show: true
+            },
+            marker: {
+                show: true // Keeps the blue dot
+            }
+        },
+
+        xaxis: {
+            categories: ['2022', '2023', '2024', '2025'], // Labels for the dots
+            tooltip: {
+                enabled: false // This will show "2022" inside the popup
+            }
+        },
+        yaxis: {
+            min: 0,
+            max: 100 // Keeps the scale consistent so the "drop" is clear
+        }
+    };
+
+    var chart = new ApexCharts(element, options);
+    chart.render();
+}
