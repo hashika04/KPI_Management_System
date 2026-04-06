@@ -2,6 +2,7 @@
 $activePage = 'analytics';
 require_once __DIR__ . '/../includes/auth.php';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -61,7 +62,7 @@ require_once __DIR__ . '/../includes/auth.php';
             <h3>Workforce Overview</h3>
             <ul class="workforce-list">
                 <li><span id="departmentsCount">0</span> Departments Monitored</li>
-                <li><span id="topPerformersCount">0</span> Top Performers ≥ 85%</li>
+                <li><span id="topPerformersCount">0</span> Top Performers ≥ 90%</li>
                 <li><span id="atRiskCount">0</span> Critical / At-Risk Staff</li>
             </ul>
         </article>
@@ -221,58 +222,109 @@ async function fetchJson(params) {
 }
 
 function setDepartmentOptions(departments) {
-    const selects = [document.getElementById('departmentFilter'), document.getElementById('compareDepartmentFilter')];
+    const safeDepartments = Array.isArray(departments) ? departments : [];
+    const selects = [
+        document.getElementById('departmentFilter'),
+        document.getElementById('compareDepartmentFilter')
+    ];
+
     selects.forEach(select => {
+        if (!select) return;
+
         const currentValue = select.value || 'All Departments';
-        select.innerHTML = '<option value="All Departments">All Departments</option>' +
-            departments.map(dept => `<option value="${escapeHtml(dept)}">${escapeHtml(dept)}</option>`).join('');
-        if ([...select.options].some(option => option.value === currentValue)) {
-            select.value = currentValue;
+        select.innerHTML = '<option value="All Departments">All Departments</option>';
+
+        safeDepartments.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            if (dept === currentValue) option.selected = true;
+            select.appendChild(option);
+        });
+
+        if (![...select.options].some(opt => opt.value === currentValue)) {
+            select.value = 'All Departments';
         }
     });
 }
 
 
 function setCategoryOptions(categories) {
+    const safeCategories = Array.isArray(categories) ? categories : [];
     const select = document.getElementById('kpiCategoryFilter');
+    if (!select) return;
+
     const currentValue = select.value || 'All Categories';
-    select.innerHTML = '<option value="All Categories">All Categories</option>' +
-        categories.map(cat => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join('');
-    if ([...select.options].some(option => option.value === currentValue)) {
-        select.value = currentValue;
-    } else {
+    select.innerHTML = '<option value="All Categories">All Categories</option>';
+
+    safeCategories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        if (cat === currentValue) option.selected = true;
+        select.appendChild(option);
+    });
+
+    if (![...select.options].some(opt => opt.value === currentValue)) {
         select.value = 'All Categories';
         state.kpi_category = 'All Categories';
     }
 }
 
 function setYearOptions(trendRows) {
-    const years = [...new Set(trendRows.map(row => String(row.period).slice(0, 4)).filter(Boolean))].sort();
+    const safeRows = Array.isArray(trendRows) ? trendRows : [];
+    const years = [...new Set(
+        safeRows
+            .map(row => String(row.period || '').slice(0, 4))
+            .filter(Boolean)
+    )].sort();
+
     const yearFilter = document.getElementById('yearFilter');
-    const current = yearFilter.value;
-    yearFilter.innerHTML = '<option value="">All Years</option>' + years.map(year => `<option value="${year}">${year}</option>`).join('');
-    if ([...yearFilter.options].some(option => option.value === current)) {
-        yearFilter.value = current;
-    }
+    if (!yearFilter) return;
+
+    const current = yearFilter.value || '';
+    yearFilter.innerHTML = '<option value="">All Years</option>';
+
+    years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        if (year === current) option.selected = true;
+        yearFilter.appendChild(option);
+    });
 }
 
 function renderSummary(data) {
-    document.getElementById('totalStaff').textContent = data.summary.total_staff;
-    document.getElementById('avgKpi').textContent = data.summary.avg_kpi.toFixed(2) + '%';
-    document.getElementById('improvingCount').textContent = data.summary.improving;
-    document.getElementById('departmentsCount').textContent = data.summary.departments;
-    document.getElementById('topPerformersCount').textContent = data.summary.top_performers;
-    document.getElementById('atRiskCount').textContent = data.summary.at_risk;
+    document.getElementById('totalStaff').textContent = Number(data.summary?.total_staff || 0);
+    document.getElementById('avgKpi').textContent = Number(data.summary?.avg_kpi || 0).toFixed(2) + '%';
+    document.getElementById('improvingCount').textContent = Number(data.summary?.improving || 0);
+    document.getElementById('departmentsCount').textContent = Number(data.summary?.departments || 0);
+    document.getElementById('topPerformersCount').textContent = Number(data.summary?.top_performers || 0);
+    document.getElementById('atRiskCount').textContent = Number(data.summary?.at_risk || 0);
 
-    const high = data.high_risk_departments[0];
+    const high = data.high_risk_departments?.[0];
     document.getElementById('highRiskAlert').innerHTML = high
-        ? `<strong>${escapeHtml(high.department)}</strong><p>${high.at_risk} staff need attention</p><p>Average score: ${high.score}%</p>`
-        : '<p>No high-risk department under the current filters.</p>';
+        ? `
+            <div class="inner-card">
+                <strong>${escapeHtml(high.department)}</strong>
+                <p><strong>${high.at_risk}</strong> staff in this department need attention</p>
+                <p>Average score: ${Number(high.score).toFixed(2)}%</p>
+                <p>Organization total: ${Number(data.summary?.at_risk || 0)} critical / at-risk staff</p>
+            </div>
+        `
+        : '<div class="inner-card"><p>No high-risk department under the current filters.</p></div>';
 
-    const moderate = data.moderate_risk_departments[0];
+    const moderate = data.moderate_risk_departments?.[0];
     document.getElementById('moderateRiskAlert').innerHTML = moderate
-        ? `<strong>${escapeHtml(moderate.department)}</strong><p>Average score: ${moderate.score}%</p><p>Below target but still recoverable.</p>`
-        : '<p>No moderate-risk department under the current filters.</p>';
+        ? `
+            <div class="inner-card">
+                <strong>${escapeHtml(moderate.department)}</strong>
+                <p>Average score: ${Number(moderate.score).toFixed(2)}%</p>
+                <p>${moderate.at_risk} staff currently in critical / at-risk band</p>
+                <p>Below target but still recoverable.</p>
+            </div>
+        `
+        : '<div class="inner-card"><p>No moderate-risk department under the current filters.</p></div>';
 }
 
 function renderCharts(data) {
@@ -294,6 +346,7 @@ function renderCharts(data) {
             line: { color: '#14b8a6', width: 3 },
             hovertemplate: '%{x}<br>Target: %{y:.2f}%<extra></extra>'
         }
+
     ], {
         margin: { t: 10, r: 10, b: 40, l: 50 },
         paper_bgcolor: 'transparent',
@@ -304,7 +357,7 @@ function renderCharts(data) {
     document.getElementById('performanceTrendInsight').textContent = data.insight;
 
     Plotly.react('performanceDistributionChart', [{
-        labels: ['Top', 'Good', 'Average', 'Critical', 'At-Risk'],
+        labels: ['Excellence', 'Good', 'Moderate', 'Critical', 'At Risk'],
         values: [
             data.performance_distribution.top,
             data.performance_distribution.good,
@@ -323,37 +376,79 @@ function renderCharts(data) {
     }, { responsive: true, displayModeBar: false });
 
     Plotly.react('trendDistributionChart', [{
-        labels: ['Improving', 'Stable', 'Declining'],
-        values: [data.trend_distribution.up, data.trend_distribution.stable, data.trend_distribution.down],
-        type: 'pie',
-        hole: 0.58,
-        marker: { colors: ['#10b981', '#3b82f6', '#ef4444'] },
-        textinfo: 'label+percent',
-        hovertemplate: '%{label}: %{value}<extra></extra>'
+    labels: ['Improving', 'Stable', 'Declining'],
+    values: [
+        data.trend_distribution.up,
+        data.trend_distribution.stable,
+        data.trend_distribution.down
+    ],
+    type: 'pie',
+    hole: 0.58,
+    marker: { colors: ['#10b981', '#3b82f6', '#ef4444'] },
+    textinfo: 'label+percent',
+    hovertemplate: '%{label}: %{value}<extra></extra>'
     }], {
-        margin: { t: 10, r: 10, b: 10, l: 10 },
-        paper_bgcolor: 'transparent'
-    }, { responsive: true, displayModeBar: false });
+    margin: { t: 10, r: 10, b: 10, l: 10 },
+    paper_bgcolor: 'transparent'
+        }, {
+    responsive: true,
+    displayModeBar: false
+    });
 
-    Plotly.react('departmentComparisonChart', [{
-        x: data.department_comparison.map(item => item.score),
-        y: data.department_comparison.map(item => item.department),
-        type: 'bar',
-        orientation: 'h',
-        marker: { color: data.department_comparison.map(item => item.score < 60 ? '#ef4444' : '#6366f1') },
-        hovertemplate: '%{y}<br>%{x:.2f}%<extra></extra>'
-    }], {
-        margin: { t: 10, r: 10, b: 30, l: 140 },
+    document.getElementById('distributionInsight').textContent =
+    `${data.performance_distribution.top + data.performance_distribution.good} staff are in the stronger performance bands, while ${data.performance_distribution.critical + data.performance_distribution['at-risk']} staff are below the desired level and need closer support.`;
+
+    Plotly.react('departmentComparisonChart', [
+        {
+            x: data.department_comparison.map(item => item.score),
+            y: data.department_comparison.map(item => item.department),
+            type: 'bar',
+            orientation: 'h',
+            text: data.department_comparison.map(item => item.score.toFixed(2) + '%'),
+            textposition: 'outside',
+            marker: {
+                color: data.department_comparison.map(item => {
+                    if (item.at_risk > 0) return '#ef4444';
+                    if (item.score < 80) return '#f59e0b';
+                    return '#6366f1';
+                })
+            },
+            hovertemplate: '%{y}<br>Average KPI: %{x:.2f}%<extra></extra>'
+        },
+        {
+            x: Array(data.department_comparison.length).fill(80),
+            y: data.department_comparison.map(item => item.department),
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Target 80%',
+            line: {
+                color: '#14b8a6',
+                width: 2,
+                dash: 'dash'
+            },
+            hovertemplate: 'Target: 80%<extra></extra>'
+        }
+    ], {
+        margin: { t: 10, r: 30, b: 30, l: 140 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
         xaxis: { range: [0, 100], title: 'Average KPI %' },
-        yaxis: { automargin: true }
+        yaxis: { automargin: true },
+        legend: { orientation: 'h' }
     }, { responsive: true, displayModeBar: true });
 
     if (data.department_comparison.length > 0) {
-        const best = data.department_comparison[0];
-        const worst = data.department_comparison[data.department_comparison.length - 1];
-        document.getElementById('departmentInsight').textContent = `${best.department} is leading at ${best.score}%, while ${worst.department} needs the most attention at ${worst.score}%.`;
+        const sortedByScore = [...data.department_comparison].sort((a, b) => b.score - a.score);
+        const sortedByRisk = [...data.department_comparison].sort((a, b) => {
+            if (a.at_risk === b.at_risk) return a.score - b.score;
+            return b.at_risk - a.at_risk;
+        });
+
+        const best = sortedByScore[0];
+        const mostCritical = sortedByRisk[0];
+
+        document.getElementById('departmentInsight').textContent =
+            `${best.department} has the strongest average KPI at ${best.score.toFixed(2)}%, while ${mostCritical.department} is the most urgent coaching priority with ${mostCritical.at_risk} at-risk staff and an average KPI of ${mostCritical.score.toFixed(2)}%.`;
     } else {
         document.getElementById('departmentInsight').textContent = 'No department data matched the current filters.';
     }
@@ -474,10 +569,10 @@ function buildSuggestionCard(left, right) {
             data-staff2-name="${escapeHtml(right.staff.name)}">
 
             <div class="suggestion-person">
-                <img class="suggestion-avatar" src="${escapeHtml(left.staff.avatar || '../asset/images/supervisor_profile.jpg')}" alt="${escapeHtml(left.staff.name)}">
+                <img class="suggestion-avatar" src="${escapeHtml(left.staff.profile_photo || '../asset/images/supervisor_profile.jpg')}" alt="${escapeHtml(left.staff.name)}">
                 <div>
                     <strong>${escapeHtml(left.staff.name)}</strong>
-                    <small>${escapeHtml(left.staff.department)} • Score: ${left.currentScore}%</small>
+                    <small>${escapeHtml(left.staff.department)} • Score: ${left.current_percentage}%</small>
                 </div>
             </div>
 
@@ -486,9 +581,9 @@ function buildSuggestionCard(left, right) {
             <div class="suggestion-person" style="justify-content:flex-end;">
                 <div style="text-align:right;">
                     <strong>${escapeHtml(right.staff.name)}</strong>
-                    <small>${escapeHtml(right.staff.department)} • Score: ${right.currentScore}%</small>
+                    <small>${escapeHtml(right.staff.department)} • Score: ${right.current_percentage}%</small>
                 </div>
-                <img class="suggestion-avatar" src="${escapeHtml(right.staff.avatar || '../asset/images/supervisor_profile.jpg')}" alt="${escapeHtml(right.staff.name)}">
+                <img class="suggestion-avatar" src="${escapeHtml(right.staff.profile_photo || '../asset/images/supervisor_profile.jpg')}" alt="${escapeHtml(right.staff.name)}">
             </div>
         </button>
         <div style="display:flex; justify-content:space-between; margin-top:8px;">
@@ -566,21 +661,70 @@ async function populateSearch(inputId, suggestionsId, key, excludeKey) {
 }
 
 async function loadDashboard() {
-    const data = await fetchJson({
-        action: 'dashboard',
-        year: state.year,
-        department: state.department,
-        kpi_category: state.kpi_category,
-        period: state.period
-    });
+    try {
+        const data = await fetchJson({
+            action: 'dashboard',
+            year: state.year,
+            department: state.department,
+            kpi_category: state.kpi_category,
+            period: state.period
+        });
 
-    setDepartmentOptions(data.filters.available_departments || []);
-    setCategoryOptions(data.filters.available_categories || []);
-    setYearOptions(data.performance_trend || []);
-    renderSummary(data);
-    renderCharts(data);
-    renderTables(data);
-    renderSuggestionPills(data);
+        console.log('Analytics JSON loaded:', data);
+
+        try {
+            setDepartmentOptions(data.filters?.available_departments || []);
+        } catch (e) {
+            console.error('setDepartmentOptions failed:', e);
+        }
+
+        try {
+            setCategoryOptions(data.filters?.available_categories || []);
+        } catch (e) {
+            console.error('setCategoryOptions failed:', e);
+        }
+
+        try {
+            setYearOptions(data.performance_trend || []);
+        } catch (e) {
+            console.error('setYearOptions failed:', e);
+        }
+
+        try {
+            renderSummary(data);
+        } catch (e) {
+            console.error('renderSummary failed:', e);
+        }
+
+        try {
+            renderCharts(data);
+        } catch (e) {
+            console.error('renderCharts failed:', e);
+        }
+
+        try {
+            renderTables(data);
+        } catch (e) {
+            console.error('renderTables failed:', e);
+        }
+
+        try {
+            renderSuggestionPills(data);
+        } catch (e) {
+            console.error('renderSuggestionPills failed:', e);
+        }
+
+        try {
+            updateSelectedChips();
+        } catch (e) {
+            console.error('updateSelectedChips failed:', e);
+        }
+
+    } catch (error) {
+        console.error('loadDashboard failed completely:', error);
+        document.getElementById('highRiskAlert').innerHTML = '<p>Failed to load analytics data.</p>';
+        document.getElementById('moderateRiskAlert').innerHTML = '<p>Failed to load analytics data.</p>';
+    }
 }
 
 function escapeHtml(value) {
@@ -641,13 +785,16 @@ function attachEvents() {
         state.staff2 = '';
         state.staff1Name = '';
         state.staff2Name = '';
+
         document.getElementById('compareDepartmentFilter').value = 'All Departments';
         document.getElementById('performanceFilter').value = 'All Performance';
         document.getElementById('staff1Search').value = '';
         document.getElementById('staff2Search').value = '';
         document.getElementById('staff1Suggestions').innerHTML = '';
         document.getElementById('staff2Suggestions').innerHTML = '';
+
         updateSelectedChips();
+        loadDashboard();
     });
 
     document.getElementById('staff1Search').addEventListener('input', () => populateSearch('staff1Search', 'staff1Suggestions', 'staff1', 'staff2'));
@@ -656,18 +803,15 @@ function attachEvents() {
     document.getElementById('compareBtn').addEventListener('click', () => {
         if (!state.staff1 || !state.staff2) return;
         const params = new URLSearchParams({ staff1: state.staff1, staff2: state.staff2 });
-        window.location.href = './staff_comparison.php?' + params.toString();
+        window.location.href = './staff_comparison_patched.php?' + params.toString();
     });
 }
 
 attachEvents();
 loadDashboard().catch(error => {
     console.error(error);
-    document.getElementById('performanceTrendInsight').textContent = 'Unable to load analytics data. Check analytics_data.php and your database connection.';
+    document.getElementById('performanceTrendInsight').textContent = 'Unable to load analytics data. Check analytics_data_patched.php and your database connection.';
 });
-
-document.getElementById('distributionInsight').textContent =
-    `${data.performance_distribution.top + data.performance_distribution.good}% of staff are performing well, while ${data.performance_distribution.critical + data.performance_distribution['at-risk']}% require attention.`;
     
 </script>
 </body>
