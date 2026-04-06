@@ -65,13 +65,6 @@ if ($fullName !== 'Guest') {
 <!-- SIDEBAR — floating rounded card, sits below topbar -->
 <nav class="sidebar-menu">
     <div class="sidebar-top">
-        <!-- Logo -->
-        <div class="sidebar-logo">
-            <div class="logo">
-                <i class="ph ph-chart-bar"></i>
-            </div>
-            <span>Monitor</span>
-        </div>
 
         <!-- Nav items -->
         <?php foreach ($navItems as $item): ?>

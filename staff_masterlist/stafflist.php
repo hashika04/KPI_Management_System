@@ -24,6 +24,7 @@ $result = $conn->query($sql);
     <title>Staff Profiles</title>
     <link rel="stylesheet" href="../asset/universal.css">
     <link rel="stylesheet" href="../asset/stafflist.css">
+    <link rel="stylesheet" href="../asset/dashboard.css">
     <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
 </head>
 
