@@ -8,6 +8,14 @@ include("../includes/auth.php");
 include("../Dashboard/data.php");
 include("../config/db.php");
 
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+$lanIp = gethostbyname(gethostname());
+$currentHost = (filter_var($lanIp, FILTER_VALIDATE_IP) && $lanIp !== '127.0.0.1')
+    ? $lanIp
+    : '192.168.0.233';  // fallback to your known IP
+// This creates the base link that the phone will follow
+$dynamicBaseUrl = $protocol . $currentHost . "/KPI_Management_System/staff_masterlist/staffprofile.php?id=";
+
 $chartSql = "SELECT 
                 SUBSTRING_INDEX(Date, '/', -1) as kpi_year, 
                 ROUND((AVG(Score)/5)*100, 1) as yearly_avg 
@@ -65,6 +73,7 @@ $activePage = 'dashboard';
       <div class="stat-icon blue"><i class="ph ph-users-three"></i></div>
       <div class="stat-value"><?= $totalStaff ?></div>
       <div class="stat-label">Total Staff</div>
+      <div id="dept-donut" style="width: 100%; height: 120px; margin-top: auto; margin-bottom: -15px;"></div>
     </div>
 
     <div class="stat-card">
@@ -78,6 +87,7 @@ $activePage = 'dashboard';
       <div class="stat-icon green"><i class="ph ph-medal"></i></div>
       <div class="stat-value"><?= $topCount ?></div>
       <div class="stat-label">Top Performers</div>
+      <div id="sparkline-tops" style="min-height: 30px;"></div>
     </div>
 
     <div class="stat-card">
@@ -166,11 +176,11 @@ $activePage = 'dashboard';
           </div>
         </div>
         <div class="qr-wrap">
-          <img
-            src="qr.php?id=<?= $p['id'] ?>"
-            alt="Scan to view <?= htmlspecialchars($p['name']) ?>'s profile"
-            class="qr-image"
-            width="120"
+          <img 
+            src="qr.php?url=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+            alt="Scan to view profile" 
+            class="qr-image" 
+            width="120" 
             height="120"
           >
         </div>
@@ -201,11 +211,11 @@ $activePage = 'dashboard';
           </div>
         </div>
         <div class="qr-wrap">
-          <img
-            src="qr.php?id=<?= $p['id'] ?>"
-            alt="Scan to view <?= htmlspecialchars($p['name']) ?>'s profile"
-            class="qr-image"
-            width="120"
+          <img 
+            src="qr.php?url=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+            alt="Scan to view profile" 
+            class="qr-image" 
+            width="120" 
             height="120"
           >
         </div>
@@ -236,11 +246,11 @@ $activePage = 'dashboard';
           </div>
         </div>
         <div class="qr-wrap">
-          <img
-            src="qr.php?id=<?= $p['id'] ?>"
-            alt="Scan to view <?= htmlspecialchars($p['name']) ?>'s profile"
-            class="qr-image"
-            width="120"
+          <img 
+            src="qr.php?url=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+            alt="Scan to view profile" 
+            class="qr-image" 
+            width="120" 
             height="120"
           >
         </div>
@@ -329,10 +339,92 @@ function filterTable() {
 <script src="../Dashboard/script.js"></script>
 
 <script>
-    // The data now represents [2022_avg, 2023_avg, 2024_avg, 2025_avg]
-    const multiYearData = [<?php echo $jsDataString; ?>];
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. DATA PREPARATION
+    const rawLabels = <?= json_encode($deptLabels) ?>;
     
-    renderSparkline('#sparkline-kpi', multiYearData, '#e8308c');
+    // FORCE LINE BREAKS: This turns "Home & Living" into ["Home", "&", "Living"]
+    const deptLabels = rawLabels.map(label => {
+        if (typeof label === 'string' && label.includes(' ')) {
+            return label.split(' ').join('\n'); 
+        }
+        return label;
+    });
+
+    const deptCounts = <?= json_encode($deptCounts) ?>;
+    const kpiData = [<?php echo $jsDataString; ?>];
+    const topTrendData = [5, 8, 4, 10, <?= $topCount ?>];
+    // 2. RENDER DEPT DONUT
+    new ApexCharts(document.querySelector('#dept-donut'), {
+        series: deptCounts,
+        labels: deptLabels,
+        chart: {
+            type: 'donut',
+            sparkline: { enabled: true },
+            padding: { top: 0, right: 0, bottom: 0, left: 0 }
+        },
+        stroke: { width: 0 },
+        colors: ['#66021F', '#8B1E3F', '#B13C5F', '#D75A7F', '#FD789F'],
+        dataLabels: { enabled: false }, 
+        tooltip: {
+            enabled: true,
+            theme: 'dark',
+            style: { fontSize: '10px', fontFamily: 'Sora' },
+            y: {
+                title: { formatter: () => '' }, 
+                formatter: (val) => val + " Staff"
+            },
+            marker: { show: false }
+        },
+        states: {
+            hover: { filter: { type: 'none' } },
+            active: { filter: { type: 'none' } }
+        },
+        plotOptions: {
+            pie: {
+                expandOnClick: false,
+                donut: {
+                    size: '65%',
+                    labels: {
+                        show: true,
+                        name: { 
+                            show: true, 
+                            fontSize: '10px', 
+                            fontWeight: 600, 
+                            offsetY: 7,
+                            color: '#66021F' // Fixed: Added comma here
+                        },
+                        value: { show: false },
+                        total: {
+                            show: true,
+                            label: 'Depts',
+                            formatter: () => "" 
+                        }
+                    }
+                }
+            }
+        }
+    }).render();
+
+    // 3. RENDER AVERAGE KPI SPARKLINE
+    if (typeof renderSparkline === "function") {
+        renderSparkline('#sparkline-kpi', kpiData, '#0d9488');
+    }
+
+    // 4. RENDER TOP PERFORMERS BAR SPARKLINE
+    new ApexCharts(document.querySelector("#sparkline-tops"), {
+        series: [{ name: 'Tops', data: topTrendData }],
+        chart: { type: 'bar', height: 40, sparkline: { enabled: true } },
+        colors: ['#16a34a'],
+        plotOptions: { 
+            bar: { 
+                columnWidth: '60%', 
+                borderRadius: 2 
+            } 
+        },
+        tooltip: { theme: 'dark', style: { fontSize: '10px' } }
+    }).render();
+});
 </script>
 
 </body>

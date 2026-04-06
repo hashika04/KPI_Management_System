@@ -21,11 +21,7 @@ use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Color\Color;
 
 /* ── Validate incoming ID ── */
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($id <= 0) {
-    http_response_code(400);
-    exit('Invalid staff ID');
-}
+
 
 /* ══════════════════════════════════════════
    BASE URL DETECTION
@@ -34,7 +30,8 @@ if ($id <= 0) {
    If auto-detection fails, hardcode your IP:
      $host = '192.168.1.10';
 ══════════════════════════════════════════ */
-$profileUrl = 'http://192.168.0.233/KPI_Management_System/staff_masterlist/staffprofile.php?id=' . $id;
+// This grabs the dynamic URL sent from overview.php
+$profileUrl = isset($_GET['url']) ? $_GET['url'] : 'http://localhost';
 /* ── Build & output QR code using v5 Builder API ── */
 $result = Builder::create()
     ->writer(new PngWriter())

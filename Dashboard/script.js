@@ -66,3 +66,4 @@ function renderSparkline(elementSelector, dataPoints, colorCode) {
     var chart = new ApexCharts(element, options);
     chart.render();
 }
+

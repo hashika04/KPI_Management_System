@@ -33,6 +33,7 @@
   margin-bottom: 20px;
 }
 .stat-card {
+  height: 220px;  
   background: var(--bg-card);
   border-radius: 18px;
   border: 1.5px solid var(--border-soft);
@@ -44,6 +45,7 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative; /* Allows absolute positioning of trend if needed */
   overflow: hidden;
+  justify-content: flex-start;
 }
 .stat-card:hover {
   transform: translateY(-2px);
@@ -63,15 +65,26 @@
     width: 100%;
     height: 50px; /* Specific height for the trend line */
     margin-top: auto; /* Pushes the chart to the bottom of the card */
-    margin-bottom: -10px; /* Pulls it slightly lower for a "bleed" effect */
+    margin-bottom: 5px; /* Pulls it slightly lower for a "bleed" effect */
     filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.05));
     display: block
+}
+
+#dept-donut {
+    position: absolute !important;
+    bottom: 10px; /* Pull it halfway out of the card for a clean look */
+    right: 10px;  /* Tuck it into the corner */
+    width: 145px !important;
+    height: 145px !important;
+    z-index: 1; /* Keeps it behind the icon if they overlap */
+    pointer-events: all;
 }
 
 /* Ensure the value and label stay above the chart */
 .stat-value, .stat-label {
     position: relative;
     z-index: 2;
+    pointer-events: none;
 }
 
 .stat-icon.blue   { background: #e8f0fe; color: #2563eb; }

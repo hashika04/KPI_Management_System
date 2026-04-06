@@ -1,5 +1,6 @@
 <?php
 // staff_masterlist/staff_profile.php
+session_start();
 require_once __DIR__ . '/../config/db.php';
 $activePage = 'staff';
 
@@ -127,6 +128,7 @@ if ($scorePercentage >= 90) {
 <body>
 
 <div class="dashboard">
+        
     <?php include("../includes/sidebar.php"); ?>
 
     <div class="staff-profile-content">

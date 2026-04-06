@@ -1,5 +1,5 @@
 <?php
-/* ── Dashboard Data Endpoint ──*/
+/* ── data.php ──*/
 $sql = "
     SELECT
         s.id,
@@ -101,4 +101,19 @@ usort($atRisk, fn($a, $b) => $a['score'] <=> $b['score']);
 /* ── Departments for filter dropdown ── */
 $departments = array_unique(array_column($staffData, 'dept'));
 sort($departments);
+
+$deptSql = "SELECT department, COUNT(*) as count FROM staff GROUP BY department ORDER BY count DESC";
+$deptResult = $conn->query($deptSql);
+$deptLabels = [];
+$deptCounts = [];
+
+while ($row = $deptResult->fetch_assoc()) {
+    $deptLabels[] = $row['department']; // Just the normal name
+    $deptCounts[] = (int)$row['count']; 
+}
+
+$topFive = array_slice($staffData, 0, 5);
+$topFiveNames = array_column($topFive, 'name');
+$topFiveScores = array_column($topFive, 'score');
+
 ?>
