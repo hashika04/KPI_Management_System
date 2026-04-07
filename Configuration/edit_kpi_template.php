@@ -1,8 +1,7 @@
 <?php
-// staff_masterlist/create_kpi_template.php
+// staff_masterlist/edit_kpi_template.php
 include("../includes/auth.php");
 include("../config/db.php");
-$activePage = 'config';
 
 // Check if user is supervisor
 if ($_SESSION['position'] !== 'Supervisor') {
@@ -11,59 +10,108 @@ if ($_SESSION['position'] !== 'Supervisor') {
 }
 
 $template_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$is_edit = $template_id > 0;
 $error_message = '';
 $success_message = '';
 
-// Get previous year template for new template creation
-$previous_year_template = null;
-$previous_year_items = [];
-
-if (!$is_edit) {
-    // Get the latest template (usually previous year)
-    $prev_sql = "SELECT * FROM kpi_templates WHERE year = (SELECT MAX(year) FROM kpi_templates WHERE status != 'archived')";
-    $prev_result = $conn->query($prev_sql);
-    $previous_year_template = $prev_result->fetch_assoc();
-    
-    if ($previous_year_template) {
-        // Fetch items from previous template
-        $prev_items_sql = "SELECT * FROM kpi_template_items WHERE template_id = ? ORDER BY section, display_order";
-        $prev_items_stmt = $conn->prepare($prev_items_sql);
-        $prev_items_stmt->bind_param("i", $previous_year_template['id']);
-        $prev_items_stmt->execute();
-        $prev_items_result = $prev_items_stmt->get_result();
-        while($item = $prev_items_result->fetch_assoc()) {
-            $previous_year_items[] = $item;
-        }
-    }
+if (!$template_id) {
+    header("Location: kpi_template_management.php");
+    exit();
 }
 
-// Fetch existing template data if editing
-$template_data = null;
+// Fetch template data
+$sql = "SELECT * FROM kpi_templates WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $template_id);
+$stmt->execute();
+$template = $stmt->get_result()->fetch_assoc();
+
+if (!$template) {
+    header("Location: kpi_template_management.php");
+    exit();
+}
+
+// Determine template type
+$is_active = ($template['status'] == 'active');
+$has_kpi_data = false;
+
+// Check if template has KPI data
+$check_data_sql = "SELECT COUNT(*) as count FROM kpi_data WHERE template_id = ?";
+$check_data_stmt = $conn->prepare($check_data_sql);
+$check_data_stmt->bind_param("i", $template_id);
+$check_data_stmt->execute();
+$data_result = $check_data_stmt->get_result();
+$data_count = $data_result->fetch_assoc()['count'];
+$has_kpi_data = ($data_count > 0);
+
+// Determine if draft: inactive and no KPI data
+$is_draft = ($template['status'] == 'inactive' && !$has_kpi_data);
+$is_previous = (!$is_active && $has_kpi_data);
+
+// If previous template (has data), redirect to view only
+if ($is_previous) {
+    header("Location: view_kpi_template.php?id=" . $template_id . "&error=readonly");
+    exit();
+}
+
+// Set permissions
+$can_delete_targets = $is_draft;      // Only draft can delete targets
+$can_delete_groups = $is_draft;       // Only draft can delete entire groups
+$can_add_targets = true;               // Both active and draft can add
+$can_add_groups = true;                // Both active and draft can add new groups
+$can_rename = true;                    // Both can rename
+$can_change_weights = true;            // Both can change weights
+
+// Fetch existing template items grouped
+$items_sql = "SELECT * FROM kpi_template_items WHERE template_id = ? ORDER BY section, display_order";
+$items_stmt = $conn->prepare($items_sql);
+$items_stmt->bind_param("i", $template_id);
+$items_stmt->execute();
+$items_result = $items_stmt->get_result();
+
 $template_items = [];
-if ($is_edit) {
-    $sql = "SELECT * FROM kpi_templates WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $template_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $template_data = $result->fetch_assoc();
-    
-    if (!$template_data) {
-        header("Location: kpi_template_management.php");
-        exit();
+while($item = $items_result->fetch_assoc()) {
+    $template_items[] = $item;
+}
+
+// Group items by kpi_group for display
+$groups = [];
+foreach ($template_items as $item) {
+    $group_key = $item['section'] . '|' . $item['kpi_group'];
+    if (!isset($groups[$group_key])) {
+        $groups[$group_key] = [
+            'id' => count($groups),
+            'section' => $item['section'],
+            'section_num' => $item['section'] == 'Section 1' ? 1 : 2,
+            'kpi_group' => $item['kpi_group'],
+            'weight' => 0,
+            'targets' => [],
+            'kpi_code_prefix' => $item['section'] == 'Section 1' ? 'S' : substr($item['kpi_code'], 0, -1),
+            'is_existing_group' => true  // Mark as existing group
+        ];
     }
     
-    // Fetch template items
-    $items_sql = "SELECT * FROM kpi_template_items WHERE template_id = ? ORDER BY section, display_order";
-    $items_stmt = $conn->prepare($items_sql);
-    $items_stmt->bind_param("i", $template_id);
-    $items_stmt->execute();
-    $template_items_result = $items_stmt->get_result();
-    while($item = $template_items_result->fetch_assoc()) {
-        $template_items[] = $item;
+    if ($item['section'] == 'Section 1') {
+        // For Section 1, store each target with its individual weight
+        $groups[$group_key]['targets'][] = [
+            'description' => $item['kpi_description'],
+            'weight' => $item['weight'],
+            'code' => $item['kpi_code'],
+            'id' => $item['id'],
+            'is_existing' => true
+        ];
+        $groups[$group_key]['weight'] += $item['weight']; // Sum for validation
+    } else {
+        // For Section 2, just store descriptions, weight is at group level
+        $groups[$group_key]['targets'][] = [
+            'description' => $item['kpi_description'],
+            'code' => $item['kpi_code'],
+            'id' => $item['id'],
+            'is_existing' => true
+        ];
+        $groups[$group_key]['weight'] += $item['weight'];
     }
 }
+$display_groups = array_values($groups);
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -76,187 +124,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (abs(($section1_weight + $section2_weight) - 100) > 0.01) {
         $error_message = "Total weight must equal 100% (currently " . ($section1_weight + $section2_weight) . "%)";
     } else {
-        if ($is_edit) {
-            // Update template
-            $sql = "UPDATE kpi_templates SET template_name = ?, year = ?, section1_weight = ?, section2_weight = ? WHERE id = ?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("siddi", $template_name, $year, $section1_weight, $section2_weight, $template_id);
-            
-            if ($stmt->execute()) {
-                // Delete existing items
+        // Update template
+        $sql = "UPDATE kpi_templates SET template_name = ?, year = ?, section1_weight = ?, section2_weight = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("siddi", $template_name, $year, $section1_weight, $section2_weight, $template_id);
+        
+        if ($stmt->execute()) {
+            // Delete existing items only if we're replacing them
+            if (isset($_POST['kpi_groups'])) {
                 $delete_sql = "DELETE FROM kpi_template_items WHERE template_id = ?";
                 $delete_stmt = $conn->prepare($delete_sql);
                 $delete_stmt->bind_param("i", $template_id);
                 $delete_stmt->execute();
                 
-                $success_message = "Template updated successfully!";
-            } else {
-                $error_message = "Error updating template: " . $conn->error;
-            }
-        } else {
-            // Check if year already exists
-            $check_sql = "SELECT id FROM kpi_templates WHERE year = ?";
-            $check_stmt = $conn->prepare($check_sql);
-            $check_stmt->bind_param("i", $year);
-            $check_stmt->execute();
-            $check_result = $check_stmt->get_result();
-            
-            if ($check_result->num_rows > 0) {
-                $error_message = "A template for year $year already exists!";
-            } else {
-                // Insert new template
-                $sql = "INSERT INTO kpi_templates (template_name, year, section1_weight, section2_weight, status, created_by) 
-                        VALUES (?, ?, ?, ?, 'inactive', ?)";
-                $stmt = $conn->prepare($sql);
-                $created_by = $_SESSION['full_name'];
-                $stmt->bind_param("sidds", $template_name, $year, $section1_weight, $section2_weight, $created_by);
+                // Process new items
+                $kpi_groups = json_decode($_POST['kpi_groups'], true);
+                $insert_sql = "INSERT INTO kpi_template_items (template_id, kpi_code, section, kpi_group, kpi_description, weight, display_order) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $insert_stmt = $conn->prepare($insert_sql);
                 
-                if ($stmt->execute()) {
-                    $template_id = $conn->insert_id;
-                    $success_message = "Template created successfully!";
-                } else {
-                    $error_message = "Error creating template: " . $conn->error;
-                }
-            }
-        }
-        
-        // Process KPI items
-        if (empty($error_message) && isset($_POST['kpi_groups'])) {
-            $kpi_groups = json_decode($_POST['kpi_groups'], true);
-            $insert_sql = "INSERT INTO kpi_template_items (template_id, kpi_code, section, kpi_group, kpi_description, weight, display_order) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?)";
-            $insert_stmt = $conn->prepare($insert_sql);
-            
-            $display_order = 0;
-            
-            foreach ($kpi_groups as $group) {
-                $section = $group['section'];
-                $kpi_group = $group['kpi_group'];
-                $targets = $group['targets'];
-                $kpi_code_prefix = $group['kpi_code_prefix'];
+                $display_order = 0;
                 
-                // For Section 1 (Competency): Each target has its OWN weight (not distributed)
-                // For Section 2 (KPI): Weight is distributed evenly among targets
-                if ($section == 'Section 1') {
-                    // Section 1: Each competency has its own individual weight
-                    foreach ($targets as $target_index => $target_data) {
-                        $kpi_code = $kpi_code_prefix . ($target_index + 1);
-                        $weight = floatval($target_data['weight']); // Individual weight for each competency
-                        $description = $target_data['description'];
-                        $current_order = $display_order++;
-                        
-                        $insert_stmt->bind_param("issssdi", 
-                            $template_id, 
-                            $kpi_code, 
-                            $section, 
-                            $kpi_group, 
-                            $description, 
-                            $weight, 
-                            $current_order
-                        );
-                        $insert_stmt->execute();
-                    }
-                } else {
-                    // Section 2: Distribute group weight evenly among targets
-                    $group_weight = floatval($group['weight']);
-                    $num_targets = count($targets);
-                    $weight_per_target = $num_targets > 0 ? $group_weight / $num_targets : 0;
+                foreach ($kpi_groups as $group) {
+                    $section = $group['section'];
+                    $kpi_group = $group['kpi_group'];
+                    $targets = $group['targets'];
+                    $kpi_code_prefix = $group['kpi_code_prefix'];
                     
-                    foreach ($targets as $target_index => $target_description) {
-                        $kpi_code = $kpi_code_prefix . ($target_index + 1);
-                        $current_order = $display_order++;
+                    if ($section == 'Section 1') {
+                        // Section 1: Each competency has its own individual weight
+                        foreach ($targets as $target_index => $target_data) {
+                            $kpi_code = $kpi_code_prefix . ($target_index + 1);
+                            $weight = floatval($target_data['weight']);
+                            $description = $target_data['description'];
+                            $current_order = $display_order++;
+                            
+                            $insert_stmt->bind_param("issssdi", 
+                                $template_id, 
+                                $kpi_code, 
+                                $section, 
+                                $kpi_group, 
+                                $description, 
+                                $weight, 
+                                $current_order
+                            );
+                            $insert_stmt->execute();
+                        }
+                    } else {
+                        // Section 2: Distribute group weight evenly among targets
+                        $group_weight = floatval($group['weight']);
+                        $num_targets = count($targets);
+                        $weight_per_target = $num_targets > 0 ? $group_weight / $num_targets : 0;
                         
-                        $insert_stmt->bind_param("issssdi", 
-                            $template_id, 
-                            $kpi_code, 
-                            $section, 
-                            $kpi_group, 
-                            $target_description, 
-                            $weight_per_target, 
-                            $current_order
-                        );
-                        $insert_stmt->execute();
+                        foreach ($targets as $target_index => $target_description) {
+                            $kpi_code = $kpi_code_prefix . ($target_index + 1);
+                            $current_order = $display_order++;
+                            
+                            $insert_stmt->bind_param("issssdi", 
+                                $template_id, 
+                                $kpi_code, 
+                                $section, 
+                                $kpi_group, 
+                                $target_description, 
+                                $weight_per_target, 
+                                $current_order
+                            );
+                            $insert_stmt->execute();
+                        }
                     }
                 }
             }
             
-            // Redirect after successful creation
-            if (!$is_edit) {
-                header("Location: kpi_template_management.php?created=1");
-                exit();
-            }
+            $success_message = "Template updated successfully!";
+            
+            // Refresh page to show updated data
+            header("Location: edit_kpi_template.php?id=" . $template_id . "&success=1");
+            exit();
+        } else {
+            $error_message = "Error updating template: " . $conn->error;
         }
     }
 }
-
-// Determine which items to display in the form
-$display_groups = [];
-if ($is_edit && !empty($template_items)) {
-    // Group items by kpi_group for editing
-    $groups = [];
-    foreach ($template_items as $item) {
-        $group_key = $item['section'] . '|' . $item['kpi_group'];
-        if (!isset($groups[$group_key])) {
-            $groups[$group_key] = [
-                'section' => $item['section'],
-                'section_num' => $item['section'] == 'Section 1' ? 1 : 2,
-                'kpi_group' => $item['kpi_group'],
-                'weight' => 0,
-                'targets' => [],
-                'kpi_code_prefix' => $item['section'] == 'Section 1' ? 'S' : substr($item['kpi_code'], 0, -1)
-            ];
-        }
-        
-        if ($item['section'] == 'Section 1') {
-            // For Section 1, store each target with its individual weight
-            $groups[$group_key]['targets'][] = [
-                'description' => $item['kpi_description'],
-                'weight' => $item['weight']
-            ];
-            $groups[$group_key]['weight'] += $item['weight']; // Sum for validation
-        } else {
-            // For Section 2, just store descriptions, weight is at group level
-            $groups[$group_key]['targets'][] = $item['kpi_description'];
-            $groups[$group_key]['weight'] += $item['weight'];
-        }
-    }
-    $display_groups = array_values($groups);
-} elseif (!empty($previous_year_items)) {
-    // Group previous year items by kpi_group
-    $groups = [];
-    foreach ($previous_year_items as $item) {
-        $group_key = $item['section'] . '|' . $item['kpi_group'];
-        if (!isset($groups[$group_key])) {
-            $groups[$group_key] = [
-                'section' => $item['section'],
-                'section_num' => $item['section'] == 'Section 1' ? 1 : 2,
-                'kpi_group' => $item['kpi_group'],
-                'weight' => 0,
-                'targets' => [],
-                'kpi_code_prefix' => $item['section'] == 'Section 1' ? 'S' : substr($item['kpi_code'], 0, -1)
-            ];
-        }
-        
-        if ($item['section'] == 'Section 1') {
-            $groups[$group_key]['targets'][] = [
-                'description' => $item['kpi_description'],
-                'weight' => $item['weight']
-            ];
-            $groups[$group_key]['weight'] += $item['weight'];
-        } else {
-            $groups[$group_key]['targets'][] = $item['kpi_description'];
-            $groups[$group_key]['weight'] += $item['weight'];
-        }
-    }
-    $display_groups = array_values($groups);
-}
-
-// Calculate next year for new template
-$next_year = date('Y') + 1;
-$suggested_year = $is_edit ? $template_data['year'] : $next_year;
-$suggested_name = $is_edit ? $template_data['template_name'] : ($next_year . " KPI Template");
-$suggested_section1 = $is_edit ? $template_data['section1_weight'] : ($previous_year_template ? $previous_year_template['section1_weight'] : 25);
-$suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_year_template ? $previous_year_template['section2_weight'] : 75);
 ?>
 
 <!DOCTYPE html>
@@ -264,7 +212,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $is_edit ? 'Edit' : 'Create'; ?> KPI Template</title>
+    <title><?php echo $is_active ? 'Edit Active Template' : 'Edit Draft Template'; ?></title>
     <link rel="stylesheet" href="../asset/universal.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -284,6 +232,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             border-left: 4px solid #007bff;
+            transition: all 0.2s;
         }
         .group-header {
             display: flex;
@@ -303,6 +252,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             margin-bottom: 8px;
             background: #f8f9fa;
             border-radius: 5px;
+            transition: all 0.2s;
         }
         .weight-summary {
             position: sticky;
@@ -314,9 +264,13 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         .individual-weight-input {
             width: 80px;
         }
-        .copy-alert {
+        .alert-info {
             background-color: #e7f3ff;
             border-left: 4px solid #007bff;
+        }
+        .alert-warning {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
         }
         .section-badge {
             font-size: 12px;
@@ -332,36 +286,92 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             background-color: #007bff;
             color: white;
         }
+        
+        /* ACTIVE TEMPLATE STYLES - Highlight Existing (Orange/Warning) */
+        .active-mode .group-card.existing-group {
+            border-left-color: #ff9800;
+            background-color: #fff8f0;
+        }
+        .active-mode .target-item.existing-target {
+            background-color: #fff3e0;
+            border-left: 3px solid #ff9800;
+        }
+        .active-mode .existing-badge {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        /* DRAFT TEMPLATE STYLES - Highlight New (Blue/Info) */
+        .draft-mode .group-card:not(.existing-group) {
+            border-left-color: #2196f3;
+            background-color: #f0f8ff;
+        }
+        .draft-mode .target-item:not(.existing-target) {
+            background-color: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+        .draft-mode .new-badge {
+            background-color: #2196f3;
+            color: white;
+        }
+        
+        .existing-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+        .new-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+            background-color: #6c757d;
+            color: white;
+        }
+        .badge-secondary {
+            background-color: #6c757d;
+        }
     </style>
 </head>
-<body>
+<body class="<?php echo $is_active ? 'active-mode' : 'draft-mode'; ?>">
     <div class="dashboard">
     <?php include("../includes/sidebar.php"); ?>
-    
+
     <div class="reports-content">
         <div class="container mt-4">
             <div class="row">
                 <div class="col-md-8">
                     <h2>
-                        <?php echo $is_edit ? 'Edit' : 'Create'; ?> KPI Template
-                        <?php if (!$is_edit && $previous_year_template): ?>
-                            <small class="text-muted">Based on <?php echo $previous_year_template['year']; ?> template</small>
-                        <?php endif; ?>
+                        <i class="fas fa-edit"></i> 
+                        <?php echo $is_active ? 'Edit Active Template' : 'Edit Draft Template'; ?>
+                        <small class="text-muted"><?php echo htmlspecialchars($template['template_name']); ?></small>
                     </h2>
                     
-                    <?php if (!$is_edit && $previous_year_template): ?>
-                        <div class="alert alert-info copy-alert">
-                            <i class="fas fa-info-circle"></i> 
-                            This template is pre-loaded with all KPI groups from <?php echo $previous_year_template['year']; ?>.
+                    <?php if($is_active): ?>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-shield-alt"></i> 
+                            <strong>⚠️ Active Template Mode - Protected Items:</strong> 
+                            Existing groups and targets (<span class="badge" style="background-color:#ff9800; color:white;">Orange highlighted</span>) cannot be deleted to preserve historical KPI data.
+                            You can add new groups/targets (<span class="badge bg-secondary">Gray badges</span>), rename items, and adjust weights.
                         </div>
+                    <?php endif; ?>
+                    
+                    <?php if($is_draft): ?>
+                        <div class="alert alert-info">
+                            <i class="fas fa-edit"></i> 
+                            <strong>📝 Draft Mode - Full Control:</strong> 
+                            Newly added items (<span class="badge" style="background-color:#2196f3; color:white;">Blue highlighted</span>) are clearly visible.
+                            You have full control - add, delete groups/targets, rename, and adjust weights freely.
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($_GET['success'])): ?>
+                        <div class="alert alert-success">Template updated successfully!</div>
                     <?php endif; ?>
                     
                     <?php if ($error_message): ?>
                         <div class="alert alert-danger"><?php echo $error_message; ?></div>
-                    <?php endif; ?>
-                    
-                    <?php if ($success_message): ?>
-                        <div class="alert alert-success"><?php echo $success_message; ?></div>
                     <?php endif; ?>
                     
                     <form method="POST" id="templateForm" onsubmit="return validateGroups()">
@@ -371,12 +381,12 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                                     <div class="col-md-6">
                                         <label class="form-label">Template Name <span class="text-danger">*</span></label>
                                         <input type="text" name="template_name" class="form-control" required
-                                               value="<?php echo htmlspecialchars($suggested_name); ?>">
+                                               value="<?php echo htmlspecialchars($template['template_name']); ?>">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Year <span class="text-danger">*</span></label>
                                         <input type="number" name="year" class="form-control" required min="2020" max="2030"
-                                               value="<?php echo $suggested_year; ?>">
+                                               value="<?php echo $template['year']; ?>">
                                     </div>
                                 </div>
                                 <div class="row mt-3">
@@ -384,7 +394,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                                         <label class="form-label">Section 1 Total Weight (Competency) %</label>
                                         <input type="number" name="section1_weight" id="section1_weight" 
                                                class="form-control" required step="0.01" min="0" max="100"
-                                               value="<?php echo $suggested_section1; ?>"
+                                               value="<?php echo $template['section1_weight']; ?>"
                                                onchange="updateTotalWeight()">
                                         <small class="text-muted">Sum of all competency weights</small>
                                     </div>
@@ -392,7 +402,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                                         <label class="form-label">Section 2 Total Weight (KPIs) %</label>
                                         <input type="number" name="section2_weight" id="section2_weight" 
                                                class="form-control" required step="0.01" min="0" max="100"
-                                               value="<?php echo $suggested_section2; ?>"
+                                               value="<?php echo $template['section2_weight']; ?>"
                                                onchange="updateTotalWeight()">
                                         <small class="text-muted">Sum of all KPI group weights</small>
                                     </div>
@@ -411,7 +421,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                                         <i class="fas fa-star"></i> Section 1: Core Competencies
                                         <span class="section-badge badge-section1">Individual weights</span>
                                     </h4>
-                                    <small>Total Weight: <span class="section1-total">0</span>% (Target: <span id="targetSection1"><?php echo $suggested_section1; ?></span>%)</small>
+                                    <small>Total Weight: <span class="section1-total">0</span>% (Target: <span id="targetSection1"><?php echo $template['section1_weight']; ?></span>%)</small>
                                 </div>
                                 <div id="section1-groups"></div>
                                 <button type="button" class="btn btn-sm btn-success mt-2" onclick="addGroup(1)">
@@ -426,7 +436,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                                         <i class="fas fa-chart-line"></i> Section 2: Key Performance Indicators
                                         <span class="section-badge badge-section2">Auto-distributed weights</span>
                                     </h4>
-                                    <small>Total Weight: <span class="section2-total">0</span>% (Target: <span id="targetSection2"><?php echo $suggested_section2; ?></span>%)</small>
+                                    <small>Total Weight: <span class="section2-total">0</span>% (Target: <span id="targetSection2"><?php echo $template['section2_weight']; ?></span>%)</small>
                                 </div>
                                 <div id="section2-groups"></div>
                                 <button type="button" class="btn btn-sm btn-success mt-2" onclick="addGroup(2)">
@@ -439,7 +449,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                         
                         <div class="mt-4 mb-5">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-save"></i> <?php echo $is_edit ? 'Update' : 'Create'; ?> Template
+                                <i class="fas fa-save"></i> Save Changes
                             </button>
                             <a href="kpi_template_management.php" class="btn btn-secondary btn-lg">Cancel</a>
                         </div>
@@ -484,30 +494,53 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             </div>
         </div>
     </div>
+    </div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         let kpiGroups = [];
         let groupCounter = 0;
-        let previousYearGroups = <?php echo json_encode($display_groups); ?>;
+        let existingGroups = <?php echo json_encode($display_groups); ?>;
+        let canDeleteTargets = <?php echo $can_delete_targets ? 'true' : 'false'; ?>;
+        let canDeleteGroups = <?php echo $can_delete_groups ? 'true' : 'false'; ?>;
+        let isActiveMode = <?php echo $is_active ? 'true' : 'false'; ?>;
         
-        <?php if (!empty($display_groups)): ?>
-            // Load existing groups
-            kpiGroups = previousYearGroups.map((group, index) => ({
-                id: index,
-                section_num: group.section_num,
-                kpi_group: group.kpi_group,
-                weight: group.weight,
-                targets: group.targets,
-                kpi_code_prefix: group.kpi_code_prefix || (group.section_num == 1 ? 'S' : 'K')
-            }));
-            groupCounter = kpiGroups.length;
-            renderAllGroups();
-        <?php else: ?>
-            // Add default groups
-            addGroup(1);
-            addGroup(2);
-        <?php endif; ?>
+        // Load existing groups
+        kpiGroups = existingGroups.map((group, index) => {
+            if (group.section_num == 1) {
+                // Section 1: Targets have individual weights
+                return {
+                    id: index,
+                    section_num: group.section_num,
+                    kpi_group: group.kpi_group,
+                    weight: 0, // Not used for section 1, total calculated from targets
+                    targets: group.targets.map(t => ({
+                        description: t.description,
+                        weight: t.weight,
+                        id: t.id,
+                        is_existing: t.is_existing || true
+                    })),
+                    target_ids: group.targets.map(t => t.id),
+                    kpi_code_prefix: group.kpi_code_prefix,
+                    is_existing_group: group.is_existing_group || true
+                };
+            } else {
+                // Section 2: Targets are just descriptions
+                return {
+                    id: index,
+                    section_num: group.section_num,
+                    kpi_group: group.kpi_group,
+                    weight: group.weight,
+                    targets: group.targets.map(t => t.description),
+                    target_ids: group.targets.map(t => t.id),
+                    target_existing: group.targets.map(t => t.is_existing || true),
+                    kpi_code_prefix: group.kpi_code_prefix,
+                    is_existing_group: group.is_existing_group || true
+                };
+            }
+        });
+        groupCounter = kpiGroups.length;
+        renderAllGroups();
         
         function addGroup(section) {
             const newGroup = {
@@ -516,12 +549,16 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                 kpi_group: '',
                 weight: 0,
                 targets: section == 1 ? [] : [''],
-                kpi_code_prefix: section == 1 ? 'S' : 'K'
+                target_ids: [],
+                target_existing: [],
+                kpi_code_prefix: section == 1 ? 'S' : 'K',
+                is_existing_group: false  // Mark as new group
             };
             
             // For Section 1, add a default competency with weight
             if (section == 1) {
-                newGroup.targets = [{ description: '', weight: 0 }];
+                newGroup.targets = [{ description: '', weight: 0, id: null, is_existing: false }];
+                newGroup.target_ids = [null];
             }
             
             kpiGroups.push(newGroup);
@@ -529,6 +566,12 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         }
         
         function removeGroup(groupId) {
+            const group = kpiGroups.find(g => g.id === groupId);
+            if (group && group.is_existing_group && !canDeleteGroups) {
+                alert('⚠️ Cannot delete existing groups from an active template. You can only add new groups.');
+                return;
+            }
+            
             if (confirm('Remove this KPI group and all its targets?')) {
                 kpiGroups = kpiGroups.filter(group => group.id !== groupId);
                 renderAllGroups();
@@ -540,10 +583,12 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             if (group) {
                 if (group.section_num == 1) {
                     // Section 1: Add competency with individual weight
-                    group.targets.push({ description: '', weight: 0 });
+                    group.targets.push({ description: '', weight: 0, id: null, is_existing: false });
+                    group.target_ids.push(null);
                 } else {
                     // Section 2: Add target description
                     group.targets.push('');
+                    group.target_ids.push(null);
                 }
                 renderAllGroups();
             }
@@ -551,11 +596,25 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         
         function removeTarget(groupId, targetIndex) {
             const group = kpiGroups.find(g => g.id === groupId);
-            if (group && group.targets.length > 1) {
-                group.targets.splice(targetIndex, 1);
-                renderAllGroups();
-            } else {
-                alert('Each group must have at least one target');
+            if (group) {
+                // Check if this is an existing target (has ID) and if deletion is allowed
+                const isExisting = group.section_num == 1 ? 
+                    group.targets[targetIndex].is_existing : 
+                    (group.target_ids[targetIndex] !== null && group.target_ids[targetIndex] !== undefined);
+                
+                if (isExisting && !canDeleteTargets) {
+                    alert('⚠️ Cannot delete existing targets from an active template. You can only add new ones or rename existing ones.');
+                    return;
+                }
+                
+                if (group.targets.length > 1) {
+                    group.targets.splice(targetIndex, 1);
+                    group.target_ids.splice(targetIndex, 1);
+                    if (group.target_existing) group.target_existing.splice(targetIndex, 1);
+                    renderAllGroups();
+                } else {
+                    alert('Each group must have at least one target');
+                }
             }
         }
         
@@ -606,20 +665,37 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         
         function createGroupHtml(group) {
             let targetsHtml = '';
+            const groupDeleteDisabled = group.is_existing_group && !canDeleteGroups;
+            const groupDeleteTitle = groupDeleteDisabled ? 'Cannot delete existing groups from active template' : '';
+            const groupCardClass = group.is_existing_group ? 'existing-group' : '';
             
             if (group.section_num == 1) {
                 // Section 1: Each competency has its own weight field
                 group.targets.forEach((target, index) => {
+                    const isExisting = target.is_existing;
+                    const deleteDisabled = isExisting && !canDeleteTargets;
+                    const deleteTitle = deleteDisabled ? 'Cannot delete existing competencies from active template' : '';
+                    const targetClass = isExisting ? 'existing-target' : '';
+                    
+                    // Determine badge styling based on mode
+                    let badgeHtml = '';
+                    if (isExisting) {
+                        badgeHtml = '<span class="existing-badge"><i class="fas fa-history"></i> Existing</span>';
+                    } else {
+                        badgeHtml = '<span class="new-badge"><i class="fas fa-plus"></i> New</span>';
+                    }
+                    
                     targetsHtml += `
-                        <div class="target-item">
+                        <div class="target-item ${targetClass}">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-5">
                                     <input type="text" class="form-control form-control-sm" 
                                            value="${escapeHtml(target.description)}"
                                            placeholder="Competency name (e.g., Initiative)"
                                            onchange="updateTarget(${group.id}, ${index}, 'description', this.value)">
+                                    ${badgeHtml}
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="input-group">
                                         <input type="number" class="form-control form-control-sm individual-weight-input" 
                                                step="0.01" min="0" max="100"
@@ -630,7 +706,10 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeTarget(${group.id}, ${index})">
+                                    <button type="button" class="btn btn-sm ${deleteDisabled ? 'btn-secondary' : 'btn-danger'}" 
+                                            onclick="removeTarget(${group.id}, ${index})"
+                                            ${deleteDisabled ? 'disabled' : ''}
+                                            title="${deleteTitle}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -641,17 +720,40 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             } else {
                 // Section 2: Targets with auto-distributed weights
                 group.targets.forEach((target, index) => {
+                    const isExisting = group.target_ids[index] !== null && group.target_ids[index] !== undefined;
+                    const deleteDisabled = isExisting && !canDeleteTargets;
+                    const deleteTitle = deleteDisabled ? 'Cannot delete existing targets from active template' : '';
+                    const targetClass = isExisting ? 'existing-target' : '';
+                    
+                    // Calculate what weight this target would get (for display only)
+                    const displayWeight = group.weight > 0 && group.targets.length > 0 ? (group.weight / group.targets.length).toFixed(2) : 0;
+                    
+                    // Determine badge styling based on mode
+                    let badgeHtml = '';
+                    if (isExisting) {
+                        badgeHtml = '<span class="existing-badge"><i class="fas fa-history"></i> Existing</span>';
+                    } else {
+                        badgeHtml = '<span class="new-badge"><i class="fas fa-plus"></i> New</span>';
+                    }
+                    
                     targetsHtml += `
-                        <div class="target-item">
+                        <div class="target-item ${targetClass}">
                             <div class="row">
-                                <div class="col-md-10">
+                                <div class="col-md-8">
                                     <input type="text" class="form-control form-control-sm" 
                                            value="${escapeHtml(target)}"
                                            placeholder="Enter target description or measurable goal"
                                            onchange="updateTarget(${group.id}, ${index}, null, this.value)">
+                                    ${badgeHtml}
                                 </div>
                                 <div class="col-md-2">
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeTarget(${group.id}, ${index})">
+                                    <small class="text-muted">Weight: ${displayWeight}%</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm ${deleteDisabled ? 'btn-secondary' : 'btn-danger'}" 
+                                            onclick="removeTarget(${group.id}, ${index})"
+                                            ${deleteDisabled ? 'disabled' : ''}
+                                            title="${deleteTitle}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -661,8 +763,16 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                 });
             }
             
+            // Determine group badge styling based on mode
+            let groupBadgeHtml = '';
+            if (group.is_existing_group) {
+                groupBadgeHtml = '<span class="existing-badge"><i class="fas fa-history"></i> Existing Group</span>';
+            } else {
+                groupBadgeHtml = '<span class="new-badge"><i class="fas fa-plus"></i> New Group</span>';
+            }
+            
             return `
-                <div class="group-card" data-group-id="${group.id}">
+                <div class="group-card ${groupCardClass}" data-group-id="${group.id}">
                     <div class="group-header">
                         <div class="row w-100">
                             <div class="col-md-5">
@@ -670,10 +780,11 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                                        value="${escapeHtml(group.kpi_group)}"
                                        placeholder="Group Name"
                                        onchange="updateGroupField(${group.id}, 'kpi_group', this.value)">
+                                ${groupBadgeHtml}
                             </div>
                             <div class="col-md-3">
                                 ${group.section_num == 1 ? 
-                                    `<small class="text-muted">Group total will be calculated</small>` :
+                                    `<small class="text-muted">Group total: <span id="group-total-${group.id}">0</span>%</small>` :
                                     `<div class="input-group">
                                         <input type="number" class="form-control group-weight-input" 
                                                step="0.01" min="0" max="100"
@@ -691,7 +802,10 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                                        onchange="updateGroupField(${group.id}, 'kpi_code_prefix', this.value)">
                             </div>
                             <div class="col-md-2 text-end">
-                                <button type="button" class="btn btn-sm btn-danger" onclick="removeGroup(${group.id})">
+                                <button type="button" class="btn btn-sm ${groupDeleteDisabled ? 'btn-secondary' : 'btn-danger'}" 
+                                        onclick="removeGroup(${group.id})"
+                                        ${groupDeleteDisabled ? 'disabled' : ''}
+                                        title="${groupDeleteTitle}">
                                     <i class="fas fa-trash"></i> Remove
                                 </button>
                             </div>
@@ -723,6 +837,9 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                         groupTotal += weight;
                     });
                     section1Total += groupTotal;
+                    
+                    // Update group total display
+                    $(`#group-total-${group.id}`).text(groupTotal.toFixed(2));
                 } else {
                     // Section 2: Sum group weights
                     const weight = parseFloat(group.weight) || 0;
