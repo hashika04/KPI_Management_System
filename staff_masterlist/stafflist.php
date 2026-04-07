@@ -187,7 +187,7 @@ $result = $conn->query($sql);
                 <select name="kpi_code" required>
                     <option value="">Select KPI Category</option>
                     <?php
-                    $kpiSql = "SELECT kpi_code, kpi_group, kpi_description FROM kpi_master_list ORDER BY kpi_group";
+                    $kpiSql = "SELECT ti.kpi_code, ti.kpi_group, ti.kpi_description FROM kpi_template_items ti INNER JOIN kpi_templates t ON ti.template_id = t.id WHERE t.status = 'active' ORDER BY ti.kpi_group";
                     $kpiResult = $conn->query($kpiSql);
                     $currentGroup = '';
                     while ($kpi = $kpiResult->fetch_assoc()) {

@@ -13,7 +13,7 @@ $navItems = [
     ['href' => '../staff_masterlist/stafflist.php',     'page' => 'staff',     'icon' => 'ph ph-users-three',     'label' => 'Staff List'],
     ['href' => '../Dashboard/analytics_patched.php', 'page' => 'analytics', 'icon' => 'ph ph-chart-bar',       'label' => 'Analytics'],
     ['href' => '../Dashboard/reports.php',   'page' => 'reports',   'icon' => 'ph ph-file-text',       'label' => 'Reports'],
-    ['href' => 'config.php',    'page' => 'config',    'icon' => 'ph ph-sliders-horizontal','label' => 'Configuration'],
+    ['href' => '../Configuration/kpi_template_management.php',    'page' => 'config',    'icon' => 'ph ph-sliders-horizontal','label' => 'Configuration'],
 ];
 $fullName  = $_SESSION['full_name']  ?? 'Guest';
 $userEmail = $_SESSION['email'] ?? 'supervisor@company.com';
