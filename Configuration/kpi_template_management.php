@@ -2,6 +2,7 @@
 // staff_masterlist/kpi_template_management.php
 include("../includes/auth.php");
 include("../config/db.php");
+$activePage = 'config';
 
 // Check if user is supervisor
 if ($_SESSION['position'] !== 'Supervisor') {
@@ -66,6 +67,8 @@ $templates_result = $conn->query($templates_query);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KPI Template Management</title>
+    <link rel="stylesheet" href="../asset/universal.css">
+    <link rel="stylesheet" href="../asset/dashboard.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -94,9 +97,12 @@ $templates_result = $conn->query($templates_query);
     </style>
 </head>
 <body>
+    <div class="dashboard">
     <?php include("../includes/sidebar.php"); ?>
-    
-    <div class="container mt-4">
+
+    <div class="reports-content">
+
+        <div class="container mt-4">
         <div class="row mb-4">
             <div class="col-md-8">
                 <h2><i class="fas fa-cog"></i> KPI Template Management</h2>
@@ -201,7 +207,10 @@ $templates_result = $conn->query($templates_query);
             <?php endwhile; ?>
         </div>
     </div>
-    
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</div> 
+ 
+    
 </body>
 </html>

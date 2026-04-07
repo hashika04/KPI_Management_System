@@ -2,6 +2,7 @@
 // staff_masterlist/view_kpi_template.php
 include("../includes/auth.php");
 include("../config/db.php");
+$activePage = 'config';
 
 $template_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
@@ -51,6 +52,8 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View KPI Template</title>
+    <link rel="stylesheet" href="../asset/universal.css">
+    <link rel="stylesheet" href="../asset/dashboard.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -79,9 +82,10 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
     </style>
 </head>
 <body>
+    <div class="dashboard">
     <?php include("../includes/sidebar.php"); ?>
     
-    <div class="container mt-4">
+    <div class="reports-content">
         <div class="row mb-4">
             <div class="col-md-8">
                 <h2>
@@ -246,5 +250,6 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             </div>
         </div>
     </div>
+ </div>   
 </body>
 </html>
