@@ -122,70 +122,13 @@ require_once __DIR__ . '/../includes/auth.php';
 </article>
     </section>
 
-   <section class="comparison-tool">
-    <div class="comparison-title-wrap">
-        <h2>Staff Comparison</h2>
-        <p>Select any two staff members to compare performance trends, stability, and risk level.</p>
-    </div>
-
-    <div class="comparison-toolbar">
-        <select id="compareDepartmentFilter">
-            <option value="All Departments">Select Department</option>
-        </select>
-
-        <select id="performanceFilter">
-            <option value="All Performance">Select Performance</option>
-            <option value="top">Top</option>
-            <option value="good">Good</option>
-            <option value="average">Average</option>
-            <option value="critical">Critical</option>
-            <option value="at-risk">At-Risk</option>
-        </select>
-
-        <button class="ghost-btn" id="resetCompareFilters" type="button">✕ Reset Filters</button>
-    </div>
-
-    <div class="comparison-search-row">
-        <div class="search-block">
-            <input type="text" id="staff1Search" placeholder="Search by name...">
-            <div class="suggestions" id="staff1Suggestions"></div>
-        </div>
-
-        <div class="search-block">
-            <input type="text" id="staff2Search" placeholder="Search by name...">
-            <div class="suggestions" id="staff2Suggestions"></div>
-        </div>
-    </div>
-
-    <div class="comparison-selected-row">
-        <div id="selectedStaff1" class="selected-chip empty">No staff selected</div>
-        <div class="vs-pill">vs</div>
-        <div id="selectedStaff2" class="selected-chip empty">No staff selected</div>
-    </div>
-
-    <div class="suggested-wrap">
-        <div class="suggestion-group">
-            <h4>Suggestions:</h4>
-            <div id="topPairSuggestions"></div>
-        </div>
-        <div class="suggestion-group">
-            <h4>&nbsp;</h4>
-            <div id="averagePairSuggestions"></div>
-        </div>
-    </div>
-
-    <div class="compare-actions">
-        <button class="compare-main-btn" id="compareBtn" type="button" disabled>Compare Staff</button>
-    </div>
-    </section>
-
     <section class="chart-grid">
         <article class="card chart-card chart-span-2">
             <div class="chart-head"><h2>Performance Trends & Risk Prediction</h2></div>
             <div id="performanceTrendChart" class="chart"></div>
             <p class="interpretation" id="performanceTrendInsight"></p>
         </article>
-
+        
         <article class="card chart-card chart-span-2">
             <div class="chart-head">
             <h2>Performance Distribution & Trends</h2>
@@ -215,7 +158,7 @@ require_once __DIR__ . '/../includes/auth.php';
             <p class="interpretation" id="kpiGapInsight"></p>
         </article>
 
-        <article class="card chart-card chart-span-2">
+        <article class="card chart-card ">
             <div class="chart-head"><h2>Score Movement Heatmap</h2></div>
             <div id="heatmapChart" class="chart heatmap"></div>
         </article>
@@ -225,24 +168,93 @@ require_once __DIR__ . '/../includes/auth.php';
             <div id="riskHistogramChart" class="chart"></div>
         </article>
 
-        <article class="card table-card">
+        <article class="card table-card chart-span-2">
             <div class="chart-head"><h2>At-Risk Staff</h2></div>
             <div class="table-wrap">
                 <table id="atRiskTable">
                     <thead>
-                        <tr><th>Name</th><th>Department</th><th>Score</th><th>Trend</th><th>Action</th></tr>
+                        <tr>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Score</th>
+                            <th>Trend</th>
+                            <th>Action</th>
+                        </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
         </article>
 
+        <section class="comparison-tool chart-span-2">
+            <div class="comparison-title-wrap">
+                <h2>Staff Comparison</h2>
+                <p>Select any two staff members to compare performance trends, stability, and risk level.</p>
+            </div>
+
+            <div class="comparison-toolbar">
+                <select id="compareDepartmentFilter">
+                    <option value="All Departments">Select Department</option>
+                </select>
+
+                <select id="performanceFilter">
+                    <option value="All Performance">Select Performance</option>
+                    <option value="top">Top</option>
+                    <option value="good">Good</option>
+                    <option value="average">Average</option>
+                    <option value="critical">Critical</option>
+                    <option value="at-risk">At-Risk</option>
+                </select>
+
+                <button class="ghost-btn" id="resetCompareFilters" type="button">✕ Reset Filters</button>
+            </div>
+
+            <div class="comparison-search-row">
+                <div class="search-block">
+                    <input type="text" id="staff1Search" placeholder="Search by name...">
+                    <div class="suggestions" id="staff1Suggestions"></div>
+                </div>
+
+                <div class="search-block">
+                    <input type="text" id="staff2Search" placeholder="Search by name...">
+                    <div class="suggestions" id="staff2Suggestions"></div>
+                </div>
+            </div>
+
+            <div class="comparison-selected-row">
+                <div id="selectedStaff1" class="selected-chip empty">No staff selected</div>
+                <div class="vs-pill">vs</div>
+                <div id="selectedStaff2" class="selected-chip empty">No staff selected</div>
+            </div>
+
+            <div class="suggested-wrap">
+                <div class="suggestion-group">
+                    <h4>Suggestions:</h4>
+                    <div id="topPairSuggestions"></div>
+                </div>
+                <div class="suggestion-group">
+                    <h4>&nbsp;</h4>
+                    <div id="averagePairSuggestions"></div>
+                </div>
+            </div>
+
+            <div class="compare-actions">
+                <button class="compare-main-btn" id="compareBtn" type="button" disabled>Compare Staff</button>
+            </div>
+        </section>
+
         <article class="card table-card chart-span-2">
             <div class="chart-head"><h2>Department Statistics</h2></div>
             <div class="table-wrap">
                 <table id="departmentStatsTable">
                     <thead>
-                        <tr><th>Department</th><th>Average Score</th><th>Top Performers</th><th>At Risk</th><th>Trend</th></tr>
+                        <tr>
+                            <th>Department</th>
+                            <th>Average Score</th>
+                            <th>Top Performers</th>
+                            <th>At Risk</th>
+                            <th>Trend</th>
+                        </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -396,33 +408,132 @@ function renderSummary(data) {
 }
 
 function renderCharts(data) {
+    const trendRows = data.performance_trend || [];
+    const periods = trendRows.map(item => item.period);
+
+    const actualSeries = trendRows.map(item => item.actual);
+    const targetSeries = trendRows.map(item => item.target);
+    const forecastSeries = trendRows.map(item => item.forecast);
+
+    const lastActualIndex = actualSeries
+        .map((value, index) => value !== null ? index : -1)
+        .filter(index => index !== -1)
+        .pop();
+
+    const forecastStartIndex = trendRows.findIndex(item => item.is_forecast === true);
+
+    const forecastConnectorX = [];
+    const forecastConnectorY = [];
+
+    if (lastActualIndex !== undefined && forecastStartIndex > -1) {
+        forecastConnectorX.push(periods[lastActualIndex], periods[forecastStartIndex]);
+        forecastConnectorY.push(actualSeries[lastActualIndex], forecastSeries[forecastStartIndex]);
+    }
+
     Plotly.react('performanceTrendChart', [
         {
-            x: data.performance_trend.map(item => item.period),
-            y: data.performance_trend.map(item => item.score),
-            type: 'bar',
-            name: 'Actual KPI %',
-            marker: { color: data.performance_trend.map(item => item.atRisk ? '#ef4444' : '#4f46e5') },
-            hovertemplate: '%{x}<br>Actual: %{y:.2f}%<extra></extra>'
-        },
-        {
-            x: data.performance_trend.map(item => item.period),
-            y: data.performance_trend.map(item => item.target),
+            x: periods,
+            y: actualSeries,
             type: 'scatter',
             mode: 'lines+markers',
+            name: 'Actual KPI %',
+            line: {
+                color: '#5b4ce6',
+                width: 4,
+                shape: 'spline'
+            },
+            marker: {
+                size: 8,
+                color: actualSeries.map(value => value !== null && value < 80 ? '#ef4444' : '#5b4ce6')
+            },
+            hovertemplate: 'Period: %{x}<br>Actual KPI: %{y:.2f}%<extra></extra>'
+        },
+        {
+            x: periods,
+            y: targetSeries,
+            type: 'scatter',
+            mode: 'lines',
             name: 'Target %',
-            line: { color: '#14b8a6', width: 3 },
-            hovertemplate: '%{x}<br>Target: %{y:.2f}%<extra></extra>'
+            line: {
+                color: '#14b8a6',
+                width: 2
+            },
+            hovertemplate: 'Period: %{x}<br>Target KPI: %{y:.2f}%<extra></extra>'
+        },
+        {
+            x: forecastConnectorX,
+            y: forecastConnectorY,
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Forecast Transition',
+            line: {
+                color: '#ec4899',
+                width: 2,
+                dash: 'dot'
+            },
+            hoverinfo: 'skip',
+            showlegend: false
+        },
+        {
+            x: periods,
+            y: forecastSeries,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Forecast KPI %',
+            line: {
+                color: '#ec4899',
+                width: 3,
+                dash: 'dash',
+                shape: 'spline'
+            },
+            marker: {
+                size: 8,
+                color: forecastSeries.map(value => value !== null && value < 80 ? '#f97316' : '#ec4899')
+            },
+            hovertemplate: 'Period: %{x}<br>Forecast KPI: %{y:.2f}%<extra></extra>'
         }
-
     ], {
-        margin: { t: 10, r: 10, b: 40, l: 50 },
+        margin: { t: 20, r: 20, b: 55, l: 60 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        yaxis: { range: [0, 100], title: 'KPI %' },
-        legend: { orientation: 'h' }
+        xaxis: {
+            title: '',
+            tickfont: { size: 12, color: '#6b7280' },
+            showgrid: false
+        },
+        yaxis: {
+            title: 'KPI %',
+            range: [0, 100],
+            tickfont: { size: 12, color: '#6b7280' },
+            gridcolor: 'rgba(148, 163, 184, 0.18)',
+            zeroline: false
+        },
+        legend: {
+            orientation: 'h',
+            x: 0,
+            y: 1.14,
+            font: { size: 12 }
+        },
+        hoverlabel: {
+            bgcolor: '#ffffff',
+            bordercolor: '#e5e7eb',
+            font: { color: '#111827' }
+        }
     }, { responsive: true, displayModeBar: true });
-    document.getElementById('performanceTrendInsight').textContent = data.insight;
+
+    const latestActual = [...trendRows].reverse().find(item => item.actual !== null);
+    const latestForecast = trendRows.find(item => item.is_forecast === true);
+
+    if (latestActual && latestForecast) {
+        const riskText = latestForecast.forecast < 80
+            ? `The next forecasted KPI is ${latestForecast.forecast.toFixed(2)}%, which remains below the 80% target and indicates continued performance risk.`
+            : `The next forecasted KPI is ${latestForecast.forecast.toFixed(2)}%, which is expected to meet the 80% target.`;
+
+        document.getElementById('performanceTrendInsight').textContent =
+            `The latest recorded KPI is ${latestActual.actual.toFixed(2)}%. Trend across recent periods is ${data.insight.toLowerCase().includes('improving') ? 'improving' : data.insight.toLowerCase().includes('declining') ? 'declining' : 'stable'}. ${riskText}`;
+    } else {
+        document.getElementById('performanceTrendInsight').textContent = data.insight;
+    }
 
     Plotly.react('performanceDistributionChart', [{
         labels: ['Excellence', 'Good', 'Moderate', 'Critical', 'At Risk'],
@@ -915,7 +1026,8 @@ function buildAverageKpiHtml() {
             <thead>
                 <tr>
                     <th>Period</th>
-                    <th>Average KPI</th>
+                    <th>Actual KPI</th>
+                    <th>Forecast KPI</th>
                     <th>Target</th>
                 </tr>
             </thead>
@@ -923,7 +1035,8 @@ function buildAverageKpiHtml() {
                 ${trendRows.map(row => `
                     <tr>
                         <td>${escapeHtml(row.period)}</td>
-                        <td>${row.score}%</td>
+                        <td>${row.actual !== null && row.actual !== undefined ? row.actual + '%' : '-'}</td>
+                        <td>${row.forecast !== null && row.forecast !== undefined ? row.forecast + '%' : '-'}</td>
                         <td>${row.target}%</td>
                     </tr>
                 `).join('')}

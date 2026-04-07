@@ -128,7 +128,7 @@ error_reporting(0);
                     'insight' => buildTrendNarrative($timeline, $periodType, $categoryFilter),
                     'high_risk_departments' => array_values(array_slice($highRiskDepartments, 0, 3)),
                     'moderate_risk_departments' => array_values(array_slice($moderateRiskDepartments, 0, 3)),
-                    'performance_trend' => $timeline,
+                    'performance_trend' => buildForecastTimeline($timeline),
                     'performance_distribution' => distributionFromStaff($staffLatest),
                     'trend_distribution' => trendDistributionFromStaff($staffLatest),
                     'department_comparison' => array_map(function ($row) {
@@ -581,6 +581,98 @@ error_reporting(0);
                     ];
                 }
                 return $rows;
+            }
+            
+            function buildForecastTimeline(array $timeline): array
+            {
+                if (count($timeline) === 0) {
+                    return [];
+                }
+
+                $result = [];
+                $scores5 = [];
+
+                foreach ($timeline as $row) {
+                    $score5 = round(((float)$row['score'] / 100) * 5, 4);
+                    $scores5[] = $score5;
+
+                    $result[] = [
+                        'period' => $row['period'],
+                        'actual' => round((float)$row['score'], 2),
+                        'target' => round((float)$row['target'], 2),
+                        'forecast' => null,
+                        'is_forecast' => false,
+                        'risk' => ((float)$row['score'] < KPI_TARGET_PERCENT),
+                    ];
+                }
+
+                $recent5 = array_slice($scores5, -3);
+                $delta5 = calculateTrendDelta($recent5);
+
+                $lastRow = end($timeline);
+                $lastScore5 = round(((float)$lastRow['score'] / 100) * 5, 4);
+
+                $adjustedDelta5 = max(-0.25, min(0.25, $delta5));
+
+                $forecast1_5 = max(0, min(5, round($lastScore5 + ($adjustedDelta5 * 0.6), 4)));
+                $forecast2_5 = max(0, min(5, round($forecast1_5 + ($adjustedDelta5 * 0.4), 4)));
+
+                $forecast1 = round(($forecast1_5 / 5) * 100, 2);
+                $forecast2 = round(($forecast2_5 / 5) * 100, 2);
+
+                $lastPeriod = (string)$lastRow['period'];
+                $futurePeriods = buildFuturePeriods($lastPeriod, 2);
+
+                $result[] = [
+                    'period' => $futurePeriods[0],
+                    'actual' => null,
+                    'target' => KPI_TARGET_PERCENT,
+                    'forecast' => $forecast1,
+                    'is_forecast' => true,
+                    'risk' => ($forecast1 < KPI_TARGET_PERCENT),
+                ];
+
+                $result[] = [
+                    'period' => $futurePeriods[1],
+                    'actual' => null,
+                    'target' => KPI_TARGET_PERCENT,
+                    'forecast' => $forecast2,
+                    'is_forecast' => true,
+                    'risk' => ($forecast2 < KPI_TARGET_PERCENT),
+                ];
+
+                return $result;
+            }
+
+            function buildFuturePeriods(string $lastPeriod, int $count = 2): array
+            {
+                $periods = [];
+
+                if (preg_match('/^\d{4}-\d{2}$/', $lastPeriod)) {
+                    $date = DateTime::createFromFormat('Y-m', $lastPeriod);
+                    if ($date) {
+                        for ($i = 1; $i <= $count; $i++) {
+                            $next = clone $date;
+                            $next->modify("+{$i} month");
+                            $periods[] = $next->format('Y-m');
+                        }
+                        return $periods;
+                    }
+                }
+
+                if (preg_match('/^\d{4}$/', $lastPeriod)) {
+                    $year = (int)$lastPeriod;
+                    for ($i = 1; $i <= $count; $i++) {
+                        $periods[] = (string)($year + $i);
+                    }
+                    return $periods;
+                }
+
+                for ($i = 1; $i <= $count; $i++) {
+                    $periods[] = 'Forecast ' . $i;
+                }
+
+                return $periods;
             }
 
             function buildSummary(array $staffLatest): array
