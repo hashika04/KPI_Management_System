@@ -2,7 +2,7 @@
 // staff_masterlist/edit_kpi_template.php
 include("../includes/auth.php");
 include("../config/db.php");
-
+$activePage = 'config';
 // Check if user is supervisor
 if ($_SESSION['position'] !== 'Supervisor') {
     header("Location: stafflist.php");

@@ -68,111 +68,201 @@ $active_template_id = $active_template ? $active_template['id'] : null;
     <title>KPI Template Management</title>
     <link rel="stylesheet" href="../asset/universal.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Match reports.css exactly */
+        .reports-content {
+            padding: 24px 32px;
+            background: var(--bg-main);
+            min-height: 100vh;
+        }
+        
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+        }
+        
+        .reports-header h1 {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        .reports-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        .btn-create {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-soft);
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            text-decoration: none;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .btn-create:hover {
+            background: var(--surface-soft);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
         .template-card {
-            transition: transform 0.2s;
-            margin-bottom: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-radius: 20px;
+            border: 1px solid var(--border-soft);
+            position: relative;
+            font-family: 'Inter', sans-serif;
         }
+        
         .template-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(75, 21, 53, 0.08);
         }
+        
         .active-template {
             border-left: 4px solid #28a745;
             background-color: #f8fff8;
         }
+        
         .draft-template {
             border-left: 4px solid #ffc107;
             background-color: #fffbf0;
         }
+        
         .previous-template {
             border-left: 4px solid #6c757d;
             background-color: #f8f9fa;
         }
+        
+        .status-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+        }
+        
         .weight-badge {
             font-size: 0.9em;
             padding: 5px 10px;
             border-radius: 20px;
+            display: inline-block;
         }
-        .status-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+        
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
         }
+        
         .btn-sm {
-            margin: 2px;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 20px;
+        }
+        
+        .info-message {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-soft);
+            font-size: 12px;
+        }
+        
+        .alert {
+            border-radius: 12px;
+            margin-bottom: 20px;
+            padding: 12px 20px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            font-size: 18px;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+        
+        .card-subtitle {
+            font-size: 13px;
+        }
+        
+        .text-muted {
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
     <div class="dashboard">
-    <?php include("../includes/sidebar.php"); ?>
+        <?php include("../includes/sidebar.php"); ?>
 
-    <div class="reports-content">
-
-        <div class="container mt-4">
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <h2><i class="fas fa-cog"></i> KPI Template Management</h2>
-                <p class="text-muted">Create and manage KPI templates for different years</p>
-            </div>
-            <div class="col-md-4 text-end">
-                <a href="create_kpi_template.php" class="btn btn-primary">
+        <div class="reports-content">
+            <!-- Header - exactly matching reports page structure -->
+            <div class="reports-header">
+                <div>
+                    <h1>KPI Template Management</h1>
+                    <p class="reports-subtitle">Create and manage KPI templates for different years</p>
+                </div>
+                <a href="create_kpi_template.php" class="btn-create">
                     <i class="fas fa-plus"></i> Create New Template
                 </a>
             </div>
-        </div>
-        
-        <?php if ($success_message): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <?php echo $success_message; ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-        
-        <?php if ($error_message): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?php echo $error_message; ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
-        
-        <div class="row">
-            <?php while($template = $templates_result->fetch_assoc()): 
-                // Determine template type:
-                // 1. ACTIVE - currently being used (Edit + View)
-                // 2. DRAFT - inactive, no KPI data, newer than active year (Edit + Delete + Activate + View)
-                // 3. PREVIOUSLY ACTIVATED - was active before or has KPI data (View only)
-                
-                $is_active = ($template['status'] == 'active');
-                $has_kpi_data = false;
-                
-                // Check if template has KPI data
-                $check_data_sql = "SELECT COUNT(*) as count FROM kpi_data WHERE template_id = ?";
-                $check_data_stmt = $conn->prepare($check_data_sql);
-                $check_data_stmt->bind_param("i", $template['id']);
-                $check_data_stmt->execute();
-                $data_result = $check_data_stmt->get_result();
-                $data_count = $data_result->fetch_assoc()['count'];
-                $has_kpi_data = ($data_count > 0);
-                
-                // Determine if draft: inactive, no KPI data, and not previously activated
-                $is_draft = ($template['status'] == 'inactive' && !$has_kpi_data);
-                
-                // Previously activated: has KPI data OR was active before (inactive but has data or older year)
-                $is_previous = (!$is_active && $has_kpi_data) || ($template['status'] == 'inactive' && $has_kpi_data);
-                
-                // If it's inactive and has no data, it's a draft
-                // If it's inactive and has data, it's previous
-                // If it's active, it's current
-            ?>
-                <div class="col-md-6 col-lg-4">
+            
+            <!-- Success/Error Messages -->
+            <?php if ($success_message): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> <?php echo $success_message; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($error_message): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> <?php echo $error_message; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
+            <!-- Templates Grid -->
+            <div class="templates-grid">
+                <?php while($template = $templates_result->fetch_assoc()): 
+                    $is_active = ($template['status'] == 'active');
+                    $has_kpi_data = false;
+                    
+                    $check_data_sql = "SELECT COUNT(*) as count FROM kpi_data WHERE template_id = ?";
+                    $check_data_stmt = $conn->prepare($check_data_sql);
+                    $check_data_stmt->bind_param("i", $template['id']);
+                    $check_data_stmt->execute();
+                    $data_result = $check_data_stmt->get_result();
+                    $data_count = $data_result->fetch_assoc()['count'];
+                    $has_kpi_data = ($data_count > 0);
+                    
+                    $is_draft = ($template['status'] == 'inactive' && !$has_kpi_data);
+                    $is_previous = (!$is_active && $has_kpi_data);
+                ?>
                     <div class="card template-card 
                         <?php echo $is_active ? 'active-template' : ($is_draft ? 'draft-template' : 'previous-template'); ?>">
                         <div class="card-body">
-                            <span class="status-badge">
+                            <div class="status-badge">
                                 <?php if($is_active): ?>
                                     <span class="badge bg-success">Active</span>
                                 <?php elseif($is_draft): ?>
@@ -180,7 +270,7 @@ $active_template_id = $active_template ? $active_template['id'] : null;
                                 <?php else: ?>
                                     <span class="badge bg-secondary">Inactive</span>
                                 <?php endif; ?>
-                            </span>
+                            </div>
                             
                             <h5 class="card-title">
                                 <?php echo htmlspecialchars($template['template_name']); ?>
@@ -213,20 +303,17 @@ $active_template_id = $active_template ? $active_template['id'] : null;
                                 <?php endif; ?>
                             </div>
                             
-                            <div class="mt-3">
-                                <!-- View button - ALWAYS visible for ALL templates -->
+                            <div class="action-buttons">
                                 <a href="view_kpi_template.php?id=<?php echo $template['id']; ?>" class="btn btn-sm btn-outline-info">
                                     <i class="fas fa-eye"></i> View
                                 </a>
                                 
-                                <!-- Edit button - ONLY for ACTIVE and DRAFT templates -->
                                 <?php if($is_active || $is_draft): ?>
                                     <a href="edit_kpi_template.php?id=<?php echo $template['id']; ?>" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
                                 <?php endif; ?>
                                 
-                                <!-- Activate button - ONLY for DRAFT templates -->
                                 <?php if($is_draft): ?>
                                     <a href="?action=activate&id=<?php echo $template['id']; ?>" 
                                        class="btn btn-sm btn-outline-success"
@@ -235,7 +322,6 @@ $active_template_id = $active_template ? $active_template['id'] : null;
                                     </a>
                                 <?php endif; ?>
                                 
-                                <!-- Delete button - ONLY for DRAFT templates with no data -->
                                 <?php if($is_draft): ?>
                                     <a href="?action=delete&id=<?php echo $template['id']; ?>" 
                                        class="btn btn-sm btn-outline-danger"
@@ -245,31 +331,26 @@ $active_template_id = $active_template ? $active_template['id'] : null;
                                 <?php endif; ?>
                             </div>
                             
-                            <!-- Info message for previously activated templates -->
-                            <?php if($is_previous): ?>
-                                <div class="mt-2">
+                            <div class="info-message">
+                                <?php if($is_previous): ?>
                                     <small class="text-muted">
                                         <i class="fas fa-lock"></i> This template has been used and is read-only
                                     </small>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <!-- Info message for active templates -->
-                            <?php if($is_active): ?>
-                                <div class="mt-2">
+                                <?php endif; ?>
+                                
+                                <?php if($is_active): ?>
                                     <small class="text-success">
                                         <i class="fas fa-check-circle"></i> Currently active template
                                     </small>
-                                </div>
-                            <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
-                </div>
-            <?php endwhile; ?>
+                <?php endwhile; ?>
+            </div>
         </div>
     </div>
-    </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</div> 
 </body>
 </html>
