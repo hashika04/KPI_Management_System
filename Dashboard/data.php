@@ -13,6 +13,21 @@ $sql = "
     GROUP BY s.id, s.full_name, s.staff_code, s.department, s.profile_photo
     ORDER BY score DESC
 ";
+
+$chartSql = "SELECT 
+    CASE 
+        WHEN Date LIKE '%/%' THEN SUBSTRING_INDEX(Date, '/', -1)
+        WHEN Date LIKE '____-%' THEN SUBSTRING(Date, 1, 4)
+    END as kpi_year,
+    ROUND((AVG(Score)/5)*100, 1) as yearly_avg 
+FROM kpi_data 
+WHERE (
+    (Date LIKE '%/%' AND SUBSTRING_INDEX(Date, '/', -1) BETWEEN '2022' AND '2025')
+    OR
+    (Date LIKE '20__-%' AND SUBSTRING(Date, 1, 4) BETWEEN '2022' AND '2025')
+)
+GROUP BY kpi_year 
+ORDER BY kpi_year ASC";
  
 $result    = $conn->query($sql);
 $staffData = [];

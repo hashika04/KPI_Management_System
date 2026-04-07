@@ -2,18 +2,21 @@
 include("../includes/auth.php");
 $activePage = 'staff';
 
-$sql = "SELECT 
+$sql = "
+    SELECT 
         s.id,
         s.full_name,
         s.staff_code,
         s.department,
         s.profile_photo,
-        ROUND(AVG(k.Score),2) AS avg_score,
-        ROUND((AVG(k.Score)/5)*100,1) AS avg_percentage
+        ROUND((AVG(k.Score)/5)*100, 1) AS avg_percentage,
+        ROUND(AVG(CASE WHEN YEAR(k.Date) = 2025 THEN k.Score END), 2) AS score_2025,
+        ROUND(AVG(CASE WHEN YEAR(k.Date) = 2024 THEN k.Score END), 2) AS score_2024
     FROM staff s
     LEFT JOIN kpi_data k ON s.full_name = k.Name
     GROUP BY s.id
-    ORDER BY avg_percentage DESC";
+    ORDER BY avg_percentage DESC
+";  
 
 $result = $conn->query($sql);
 ?>
@@ -71,24 +74,28 @@ $result = $conn->query($sql);
     <div class="staff-list-scroll">
         <div class="staff-grid" id="staffGrid">
             <?php while($row = $result->fetch_assoc()): 
-                $score = $row['avg_score'] ?? 0;
                 $percent = $row['avg_percentage'] ?? 0;
+                $score = $percent / 20;
 
-                // TREND (simple demo logic)
-                $prev = $score - rand(0, 1); // Your existing logic
-                $diff = round($score - $prev, 1);
+                // REAL TREND LOGIC: Compare 2025 vs 2024
+                $currentYear = (float)($row['score_2025'] ?? 0);
+                $previousYear = (float)($row['score_2024'] ?? 0);
 
+                // 2. Calculate raw difference (DO NOT ROUND YET)
+                $diff = ($previousYear > 0) ? ($currentYear - $previousYear) : 0;
+
+                // 3. Determine status based on raw math
                 if ($diff > 0) {
                     $trendClass = "trend-up";
                     $trendIcon  = '<i class="ph-bold ph-trend-up"></i>';
-                    $trendText  = "Improving";
+                    $trendText  = "Improved";
                 } elseif ($diff < 0) {
                     $trendClass = "trend-down";
                     $trendIcon  = '<i class="ph-bold ph-trend-down"></i>';
-                    $trendText  = "Declining";
+                    $trendText  = "Declined";
                 } else {
                     $trendClass = "trend-stable";
-                    $trendIcon  = '<i class="ph-bold ph-minus"></i>'; // Straight line icon
+                    $trendIcon  = '<i class="ph-bold ph-minus"></i>';
                     $trendText  = "Stable";
                 }
             ?>
@@ -131,15 +138,25 @@ $result = $conn->query($sql);
                             <small>Overall KPI</small>
                             <div class="stars">
                                 <?= str_repeat("★", round($score)) ?>
-                                <?= number_format($score,1) ?>
+                                <span class="score-num"><?= number_format($score,1) ?></span>
                             </div>
                         </div>
 
-                        <div class="trend">
-                            Prev: <?= round($prev, 1) ?> 
-                            <span><?= $trendIcon ?> <?= $trendText ?></span>
-                        </div>
+                        <div class="trend" style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                            <small style="color: #666; font-size: 0.75rem;">
+                                2025 Avg: <strong><?= number_format($currentYear, 1) ?></strong>
+                            </small>
 
+                            <?php if ($previousYear > 0): ?>
+                                <small style="color: #999; font-size: 0.75rem; margin-bottom: 4px;">
+                                    2024 Avg: <?= number_format($previousYear, 1) ?>
+                                </small>
+                            <?php endif; ?>
+
+                            <span class="<?= $trendClass ?>" style="font-size: 0.85rem; font-weight: 600;">
+                                <?= $trendIcon ?> <?= $trendText ?>
+                            </span>
+                        </div>
                     </div>
 
                 </div>
