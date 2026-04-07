@@ -111,7 +111,6 @@ $active_template_id = $active_template ? $active_template['id'] : null;
             color: var(--text-main);
             text-decoration: none;
             transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
         }
         
         .btn-create:hover {
@@ -132,7 +131,6 @@ $active_template_id = $active_template ? $active_template['id'] : null;
             border-radius: 20px;
             border: 1px solid var(--border-soft);
             position: relative;
-            font-family: 'Inter', sans-serif;
         }
         
         .template-card:hover {
@@ -177,7 +175,7 @@ $active_template_id = $active_template ? $active_template['id'] : null;
         
         .btn-sm {
             padding: 6px 12px;
-            font-size: 12px;
+            font-size: 14px;
             border-radius: 20px;
         }
         
@@ -185,14 +183,13 @@ $active_template_id = $active_template ? $active_template['id'] : null;
             margin-top: 12px;
             padding-top: 8px;
             border-top: 1px solid var(--border-soft);
-            font-size: 12px;
+            font-size: 14px;
         }
         
         .alert {
             border-radius: 12px;
             margin-bottom: 20px;
             padding: 12px 20px;
-            font-family: 'Inter', sans-serif;
         }
         
         .card-title {
@@ -203,11 +200,11 @@ $active_template_id = $active_template ? $active_template['id'] : null;
         }
         
         .card-subtitle {
-            font-size: 13px;
+            font-size: 14px;
         }
         
         .text-muted {
-            font-size: 12px;
+            font-size: 14px;
         }
     </style>
 </head>
