@@ -11,10 +11,22 @@ require_once __DIR__ . '/../includes/auth.php';
     <title>Analytics Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <link rel="stylesheet" href="../asset/universal.css?v=2">
-    <link rel="stylesheet" href="../asset/analytics.css?v=2">
+    <link rel="stylesheet" href="../asset/analytics.css?v=7">
 </head>
 <body>
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+
+<div class="risk-modal" id="detailsModal">
+    <div class="risk-modal-box">
+        <div class="risk-modal-head">
+            <h3 id="detailsModalTitle">Details</h3>
+            <button type="button" class="risk-modal-close" id="detailsModalClose">&times;</button>
+        </div>
+        <div class="risk-modal-body" id="detailsModalBody">
+            Loading...
+        </div>
+    </div>
+</div>
 
 <main class="analytics-layout">
     <section class="page-header">
@@ -42,30 +54,72 @@ require_once __DIR__ . '/../includes/auth.php';
     </section>
 
     <section class="cards-grid">
-        <article class="alert-card high-risk">
-            <h3>High Risk Alert</h3>
+        <article class="alert-card high-risk-card" id="highRiskCard">
+             <div class="alert-card-head">
+             <h3><span class="alert-icon">⚠</span> High Risk Alert</h3>
+             <button type="button" class="details-link" id="highRiskDetailsBtn">View Details</button>
+            </div>
             <div id="highRiskAlert">Loading...</div>
         </article>
-        <article class="alert-card moderate-risk">
-            <h3>Moderate Risk Alert</h3>
+
+        <article class="alert-card moderate-risk-card" id="moderateRiskCard">
+            <div class="alert-card-head">
+            <h3><span class="alert-icon">⚠</span> Moderate Risk Alert</h3>
+            <button type="button" class="details-link" id="moderateRiskDetailsBtn">View Details</button>
+            </div>
             <div id="moderateRiskAlert">Loading...</div>
         </article>
-        <article class="stat-card current-overview">
-            <h3>Current Overview</h3>
-            <div class="three-stats">
-                <div><strong id="totalStaff">0</strong><span>Total Staff</span></div>
-                <div><strong id="avgKpi">0</strong><span>Average KPI %</span></div>
-                <div><strong id="improvingCount">0</strong><span>Improving</span></div>
+
+        <article class="stat-card summary-overview">
+            <h3>Overall KPI Summary</h3>
+
+            <div class="summary-kpi-layout">
+                <button type="button" class="summary-kpi-main" id="avgKpiBtn">
+                    <span class="stat-icon-circle kpi-icon">📈</span>
+                    <strong id="avgKpi">0</strong>
+                    <span class="stat-label-text">Average KPI %</span>
+                </button>
+
+                <div class="summary-kpi-bottom">
+                    <button type="button" class="summary-kpi-small" id="totalStaffBtn">
+                        <span class="stat-icon-circle staff-icon">👥</span>
+                        <strong id="totalStaff">0</strong>
+                        <span class="stat-label-text">Total Staff</span>
+                    </button>
+
+                    <button type="button" class="summary-kpi-small" id="improvingBtn">
+                        <span class="stat-icon-circle improving-icon">↗</span>
+                        <strong id="improvingCount">0</strong>
+                        <span class="stat-label-text">Improving</span>
+                    </button>
+                </div>
             </div>
         </article>
+
         <article class="stat-card workforce-overview">
-            <h3>Workforce Overview</h3>
-            <ul class="workforce-list">
-                <li><span id="departmentsCount">0</span> Departments Monitored</li>
-                <li><span id="topPerformersCount">0</span> Top Performers ≥ 90%</li>
-                <li><span id="atRiskCount">0</span> Critical / At-Risk Staff</li>
+            <h3>   Workforce Overview</h3>
+            
+
+            <ul class="workforce-list clickable-workforce-list">
+                <li id="departmentsCountBtn" tabindex="0">
+                    <span class="workforce-icon">🏢</span>
+                    <strong id="departmentsCount">0</strong>
+                    <span class="workforce-text">Departments Monitored</span>
+                </li>
+
+                <li id="topPerformersCountBtn" tabindex="0">
+                    <span class="workforce-icon">🏆</span>
+                    <strong id="topPerformersCount">0</strong>
+                    <span class="workforce-text">Top Performers ≥ 85%</span>
+                </li>
+
+                <li id="atRiskCountBtn" tabindex="0">
+                    <span class="workforce-icon">⚠</span>
+                    <strong id="atRiskCount">0</strong>
+                    <span class="workforce-text">At-Risk Staff</span>
+                </li>
             </ul>
-        </article>
+</article>
     </section>
 
    <section class="comparison-tool">
@@ -211,6 +265,8 @@ const state = {
     staff2Name: ''
 };
 
+let latestDashboardData = null;
+
 async function fetchJson(params) {
     const url = './analytics_data_patched.php?' + new URLSearchParams(params).toString();
     const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -302,29 +358,41 @@ function renderSummary(data) {
     document.getElementById('topPerformersCount').textContent = Number(data.summary?.top_performers || 0);
     document.getElementById('atRiskCount').textContent = Number(data.summary?.at_risk || 0);
 
-    const high = data.high_risk_departments?.[0];
+    const high = data.high_risk_departments[0];
     document.getElementById('highRiskAlert').innerHTML = high
-        ? `
-            <div class="inner-card">
-                <strong>${escapeHtml(high.department)}</strong>
-                <p><strong>${high.at_risk}</strong> staff in this department need attention</p>
-                <p>Average score: ${Number(high.score).toFixed(2)}%</p>
-                <p>Organization total: ${Number(data.summary?.at_risk || 0)} critical / at-risk staff</p>
-            </div>
-        `
-        : '<div class="inner-card"><p>No high-risk department under the current filters.</p></div>';
+    ? `
+        <div class="alert-summary-box">
+            <strong>Department:</strong> ${escapeHtml(high.department)}<br>
+            <strong>At-Risk Staff:</strong> ${high.at_risk} staff<br>
+            <strong>Average KPI:</strong> ${Number(high.score).toFixed(2)}%<br>
+            <strong>Organisation Total:</strong> ${data.summary.at_risk} at-risk staff
+            <span class="alert-note">Immediate supervisory attention is recommended.</span>
+        </div>
+      `
+    : `
+        <div class="alert-summary-box">
+            <strong>Status:</strong> No high-risk department under the current filters.
+            <span class="alert-note">No urgent departmental intervention is currently required.</span>
+        </div>
+      `;
 
-    const moderate = data.moderate_risk_departments?.[0];
+    const moderate = data.moderate_risk_departments[0];
     document.getElementById('moderateRiskAlert').innerHTML = moderate
-        ? `
-            <div class="inner-card">
-                <strong>${escapeHtml(moderate.department)}</strong>
-                <p>Average score: ${Number(moderate.score).toFixed(2)}%</p>
-                <p>${moderate.at_risk} staff currently in critical / at-risk band</p>
-                <p>Below target but still recoverable.</p>
-            </div>
-        `
-        : '<div class="inner-card"><p>No moderate-risk department under the current filters.</p></div>';
+    ? `
+        <div class="alert-summary-box">
+            <strong>Department:</strong> ${escapeHtml(moderate.department)}<br>
+            <strong>At-Risk Staff:</strong> ${moderate.at_risk} staff<br>
+            <strong>Average KPI:</strong> ${Number(moderate.score).toFixed(2)}%<br>
+            <strong>Status:</strong> Below target but still manageable
+            <span class="alert-note">Preventive monitoring and coaching are recommended.</span>
+        </div>
+      `
+    : `
+        <div class="alert-summary-box">
+            <strong>Status:</strong> No moderate-risk department under the current filters.
+            <span class="alert-note">Departments are either performing steadily or already classified as high risk.</span>
+        </div>
+      `;
 }
 
 function renderCharts(data) {
@@ -670,6 +738,16 @@ async function loadDashboard() {
             period: state.period
         });
 
+        latestDashboardData = data;
+
+        setDepartmentOptions(data.filters.available_departments || []);
+        setCategoryOptions(data.filters.available_categories || []);
+        setYearOptions(data.performance_trend || []);
+        renderSummary(data);
+        renderCharts(data);
+        renderTables(data);
+        renderSuggestionPills(data);
+
         console.log('Analytics JSON loaded:', data);
 
         try {
@@ -734,6 +812,240 @@ function escapeHtml(value) {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+}
+function openDetailsModal(title, html) {
+    document.getElementById('detailsModalTitle').textContent = title;
+    document.getElementById('detailsModalBody').innerHTML = html;
+    document.getElementById('detailsModal').classList.add('show');
+}
+
+function closeDetailsModal() {
+    document.getElementById('detailsModal').classList.remove('show');
+}
+
+function buildDepartmentDetailsHtml(departmentName) {
+    if (!latestDashboardData) return '<p>No data available.</p>';
+
+    const rows = (latestDashboardData.department_stats || []).filter(
+        item => item.department === departmentName
+    );
+
+    const staffRows = (latestDashboardData.at_risk_staff || []).filter(
+        item => item.department === departmentName
+    );
+
+    let html = '';
+
+    if (rows.length > 0) {
+        const dept = rows[0];
+        html += `
+            <p><strong>Department:</strong> ${dept.department}</p>
+            <p><strong>Average KPI:</strong> ${dept.score}%</p>
+            <p><strong>At-Risk Staff:</strong> ${dept.at_risk}</p>
+            <p><strong>Trend:</strong> ${dept.trend}</p>
+        `;
+    }
+
+    if (staffRows.length > 0) {
+        html += `
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Score</th>
+                        <th>Trend</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${staffRows.map(staff => `
+                        <tr>
+                            <td>${escapeHtml(staff.name)}</td>
+                            <td>${staff.score}%</td>
+                            <td>${escapeHtml(staff.trend)}</td>
+                            <td>${escapeHtml(staff.action)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } else {
+        html += `<p class="modal-note">No staff in this department are currently in the at-risk list.</p>`;
+    }
+
+    return html;
+}
+
+function buildTotalStaffHtml() {
+    if (!latestDashboardData) return '<p>No data available.</p>';
+
+    const deptStats = latestDashboardData.department_stats || [];
+
+    return `
+        <p><strong>Total Staff:</strong> ${latestDashboardData.summary.total_staff}</p>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Staff Count</th>
+                    <th>Average KPI</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${deptStats.map(item => `
+                    <tr>
+                        <td>${escapeHtml(item.department)}</td>
+                        <td>${item.staff_count ?? '-'}</td>
+                        <td>${item.score}%</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function buildAverageKpiHtml() {
+    if (!latestDashboardData) return '<p>No data available.</p>';
+
+    const trendRows = latestDashboardData.performance_trend || [];
+
+    return `
+        <p><strong>Average KPI:</strong> ${latestDashboardData.summary.avg_kpi}%</p>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Period</th>
+                    <th>Average KPI</th>
+                    <th>Target</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${trendRows.map(row => `
+                    <tr>
+                        <td>${escapeHtml(row.period)}</td>
+                        <td>${row.score}%</td>
+                        <td>${row.target}%</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        <p class="modal-note">This summary shows the KPI movement across available years and periods based on the current filters.</p>
+    `;
+}
+
+function buildImprovingStaffHtml() {
+    if (!latestDashboardData) return '<p>No data available.</p>';
+
+    const deptStats = latestDashboardData.department_stats || [];
+    const improvingDepartments = deptStats.filter(item => item.trend === 'Improving');
+
+    if (improvingDepartments.length === 0) {
+        return '<p>No improving departments or staff under current filters.</p>';
+    }
+
+    return `
+        <p><strong>Improving Count:</strong> ${latestDashboardData.summary.improving}</p>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Average KPI</th>
+                    <th>Trend</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${improvingDepartments.map(item => `
+                    <tr>
+                        <td>${escapeHtml(item.department)}</td>
+                        <td>${item.score}%</td>
+                        <td>${escapeHtml(item.trend)}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+        <p class="modal-note">If you want, next we can upgrade this popup to include a mini line chart.</p>
+    `;
+}
+
+function buildDepartmentsMonitoredHtml() {
+    if (!latestDashboardData) return '<p>No data available.</p>';
+
+    const departments = latestDashboardData.department_stats || [];
+
+    return `
+        <p><strong>Departments Monitored:</strong> ${latestDashboardData.summary.departments}</p>
+        <ul class="modal-list">
+            ${departments.map(item => `
+                <li><strong>${escapeHtml(item.department)}</strong> — ${item.score}% average KPI</li>
+            `).join('')}
+        </ul>
+    `;
+}
+
+function buildTopPerformersHtml() {
+    if (!latestDashboardData) return '<p>No data available.</p>';
+
+    const deptStats = latestDashboardData.department_stats || [];
+    const topCount = latestDashboardData.summary.top_performers || 0;
+
+    return `
+        <p><strong>Top Performers ≥ 85%:</strong> ${topCount}</p>
+        <p class="modal-note">Current dashboard summary shows how many staff meet the top-performer threshold under the selected filters.</p>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Average KPI</th>
+                    <th>Top Performers</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${deptStats.map(item => `
+                    <tr>
+                        <td>${escapeHtml(item.department)}</td>
+                        <td>${item.score}%</td>
+                        <td>${item.top_performers}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function buildAtRiskStaffHtml() {
+    if (!latestDashboardData) return '<p>No data available.</p>';
+
+    const rows = latestDashboardData.at_risk_staff || [];
+
+    if (rows.length === 0) {
+        return '<p>No at-risk staff under current filters.</p>';
+    }
+
+    return `
+        <p><strong>At-Risk Staff:</strong> ${latestDashboardData.summary.at_risk}</p>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Score</th>
+                    <th>Trend</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows.map(item => `
+                    <tr>
+                        <td>${escapeHtml(item.name)}</td>
+                        <td>${escapeHtml(item.department)}</td>
+                        <td>${item.score}%</td>
+                        <td>${escapeHtml(item.trend)}</td>
+                        <td>${escapeHtml(item.action)}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
 }
 
 function attachEvents() {
@@ -804,6 +1116,58 @@ function attachEvents() {
         if (!state.staff1 || !state.staff2) return;
         const params = new URLSearchParams({ staff1: state.staff1, staff2: state.staff2 });
         window.location.href = './staff_comparison_patched.php?' + params.toString();
+    });
+
+    document.getElementById('detailsModalClose').addEventListener('click', closeDetailsModal);
+
+    document.getElementById('detailsModal').addEventListener('click', (event) => {
+        if (event.target.id === 'detailsModal') {
+            closeDetailsModal();
+        }
+    });
+
+    document.getElementById('highRiskDetailsBtn').addEventListener('click', () => {
+        if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
+            openDetailsModal('High Risk Alert Details', '<p>No high-risk department under the current filters.</p>');
+            return;
+        }
+
+        const dept = latestDashboardData.high_risk_departments[0];
+        openDetailsModal('High Risk Alert Details', buildDepartmentDetailsHtml(dept.department));
+    });
+
+    document.getElementById('moderateRiskDetailsBtn').addEventListener('click', () => {
+        if (!latestDashboardData || !latestDashboardData.moderate_risk_departments || latestDashboardData.moderate_risk_departments.length === 0) {
+            openDetailsModal('Moderate Risk Alert Details', '<p>No moderate-risk department under the current filters.</p>');
+            return;
+        }
+
+        const dept = latestDashboardData.moderate_risk_departments[0];
+        openDetailsModal('Moderate Risk Alert Details', buildDepartmentDetailsHtml(dept.department));
+    });
+
+    document.getElementById('totalStaffBtn').addEventListener('click', () => {
+        openDetailsModal('Total Staff Details', buildTotalStaffHtml());
+    });
+
+    document.getElementById('avgKpiBtn').addEventListener('click', () => {
+        openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml());
+    });
+
+    document.getElementById('improvingBtn').addEventListener('click', () => {
+        openDetailsModal('Improving Performance Details', buildImprovingStaffHtml());
+    });
+
+    document.getElementById('departmentsCountBtn').addEventListener('click', () => {
+        openDetailsModal('Departments Monitored', buildDepartmentsMonitoredHtml());
+    });
+
+    document.getElementById('topPerformersCountBtn').addEventListener('click', () => {
+        openDetailsModal('Top Performers Details', buildTopPerformersHtml());
+    });
+
+    document.getElementById('atRiskCountBtn').addEventListener('click', () => {
+        openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml());
     });
 }
 

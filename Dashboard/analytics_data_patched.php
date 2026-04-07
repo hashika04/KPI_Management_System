@@ -144,6 +144,7 @@ error_reporting(0);
                         return [
                             'department' => $row['department'],
                             'score' => $row['score'],
+                            'staff_count' => $row['staff_count'],
                             'top_performers' => $row['top_performers'],
                             'at_risk' => $row['at_risk'],
                             'trend' => $row['trend'],
@@ -629,11 +630,12 @@ error_reporting(0);
                     arsort($trendCounts);
                     $dominantTrend = array_key_first($trendCounts);
 
-                    $riskBand = 'Low';
-                    if ($atRisk > 0) {
-                        $riskBand = 'High';
-                    } elseif ($avg < KPI_TARGET_PERCENT) {
+                    if ($avg >= 85) {
+                        $riskBand = 'Low';
+                    } elseif ($avg >= 70) {
                         $riskBand = 'Moderate';
+                    } else {
+                        $riskBand = 'High';
                     }
 
                     $stats[] = [
@@ -971,8 +973,8 @@ error_reporting(0);
             function classifyPerformance(float $percentage): string
             {
                 // aligned with staff list 1–5 scale thresholds:
-                // 4.5 = 90%, 3.5 = 70%, 2.5 = 50%
-                if ($percentage >= 90) return 'top';
+                // 4.5 = 85%, 3.5 = 70%, 2.5 = 50%
+                if ($percentage >= 85) return 'top';
                 if ($percentage >= 70) return 'good';
                 if ($percentage >= 50) return 'average';
                 if ($percentage >= 40) return 'critical';
