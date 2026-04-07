@@ -156,6 +156,16 @@ error_reporting(0);
                     'risk_histogram' => buildRiskHistogram($staffLatest),
                     'at_risk_staff' => buildAtRiskStaff($staffLatest),
                     'suggestions' => buildSuggestions($staffLatest),
+                    'staff_snapshot_list' => array_map(function ($row) {
+                        return [
+                            'name' => $row['staff']['name'],
+                            'department' => $row['staff']['department'],
+                            'position' => $row['staff']['position'] ?? '',
+                            'score' => $row['current_percentage'],
+                            'performance_level' => $row['performance_level'],
+                            'trend' => $row['trend'],
+                        ];
+                    }, $staffLatest),
                 ];
             }
 
