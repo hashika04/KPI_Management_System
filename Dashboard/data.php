@@ -13,21 +13,6 @@ $sql = "
     GROUP BY s.id, s.full_name, s.staff_code, s.department, s.profile_photo
     ORDER BY score DESC
 ";
-
-$chartSql = "SELECT 
-    CASE 
-        WHEN Date LIKE '%/%' THEN SUBSTRING_INDEX(Date, '/', -1)
-        WHEN Date LIKE '____-%' THEN SUBSTRING(Date, 1, 4)
-    END as kpi_year,
-    ROUND((AVG(Score)/5)*100, 1) as yearly_avg 
-FROM kpi_data 
-WHERE (
-    (Date LIKE '%/%' AND SUBSTRING_INDEX(Date, '/', -1) BETWEEN '2022' AND '2025')
-    OR
-    (Date LIKE '20__-%' AND SUBSTRING(Date, 1, 4) BETWEEN '2022' AND '2025')
-)
-GROUP BY kpi_year 
-ORDER BY kpi_year ASC";
  
 $result    = $conn->query($sql);
 $staffData = [];
@@ -77,9 +62,6 @@ while ($row = $result->fetch_assoc()) {
  
 /* ── Computed summary stats ── */
 $totalStaff  = count($staffData);
-$avgKPI      = $totalStaff
-    ? round(array_sum(array_column($staffData, 'score')) / $totalStaff, 1)
-    : 0;
 $topCount    = count(array_filter($staffData, fn($s) => $s['level'] === 'top'));
 $atRiskCount = count(array_filter($staffData, fn($s) => in_array($s['level'], ['at-risk', 'critical'])));
  
@@ -127,8 +109,32 @@ while ($row = $deptResult->fetch_assoc()) {
     $deptCounts[] = (int)$row['count']; 
 }
 
-$topFive = array_slice($staffData, 0, 5);
-$topFiveNames = array_column($topFive, 'name');
-$topFiveScores = array_column($topFive, 'score');
+ 
+$groupSql = "
+    SELECT
+        m.kpi_group                              AS grp,
+        ROUND((AVG(k.Score) / 5) * 100, 1)      AS avg_pct
+    FROM kpi_data k
+    INNER JOIN kpi_master_list m ON k.KPI_Code = m.kpi_code
+    WHERE m.kpi_group != 'KPI_Group'            -- exclude header row
+      AND m.kpi_group IS NOT NULL
+    GROUP BY m.kpi_group
+    ORDER BY avg_pct ASC                         -- lowest first → critical at top
+";
+ 
+$groupResult = $conn->query($groupSql);
+$groupLabels = [];
+$groupScores = [];
+ 
+if ($groupResult) {
+    while ($row = $groupResult->fetch_assoc()) {
+        $groupLabels[] = $row['grp'];
+        $groupScores[] = (float)$row['avg_pct'];
+    }
+}
 
+$topPerformers = array_filter($staffData, fn($s) => $s['score'] >= 85);
+$topCount = count($topPerformers);
+$displayTops = array_slice($topPerformers, 0, 3);
+?>
 ?>

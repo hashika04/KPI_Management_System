@@ -29,6 +29,8 @@ $result = $conn->query($sql);
     <link rel="stylesheet" href="../asset/stafflist.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
     <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+    <script src="stafflist.js"></script>
+    <script src="staffprofile.js"></script>
 </head>
 
 <body>
@@ -125,7 +127,7 @@ $result = $conn->query($sql);
 
                         <div class="staff-kpi">
                             <h2><?= round($percent,1) ?>%</h2>
-                            <button class="edit-btn" onclick="openAddKPIModal(<?= $row['id'] ?>, '<?= htmlspecialchars($row['full_name']) ?>')">
+                            <button class="edit-btn" onclick="event.stopPropagation(); event.preventDefault(); openAddKPIModal(<?= $row['id'] ?>, '<?= htmlspecialchars($row['full_name']) ?>')">
                                 Edit KPI
                             </button>
                         </div>
@@ -221,7 +223,6 @@ $result = $conn->query($sql);
     </div>
 </div>
 
-<script src="stafflist.js"></script>
-<script src="staffprofile.js"></script>
+
 </body>
 </html>

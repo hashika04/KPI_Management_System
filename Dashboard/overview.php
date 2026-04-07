@@ -16,22 +16,29 @@ $currentHost = (filter_var($lanIp, FILTER_VALIDATE_IP) && $lanIp !== '127.0.0.1'
 // This creates the base link that the phone will follow
 $dynamicBaseUrl = $protocol . $currentHost . "/KPI_Management_System/staff_masterlist/staffprofile.php?id=";
 
-$chartSql = "SELECT 
-                SUBSTRING_INDEX(Date, '/', -1) as kpi_year, 
-                ROUND((AVG(Score)/5)*100, 1) as yearly_avg 
-             FROM kpi_data 
-             WHERE SUBSTRING_INDEX(Date, '/', -1) BETWEEN '2022' AND '2025'
-             GROUP BY kpi_year 
-             ORDER BY kpi_year ASC";
+$chartSql = "
+    SELECT 
+        YEAR(Date) as kpi_year,
+        ROUND((AVG(Score)/5)*100, 1) as yearly_avg 
+    FROM kpi_data 
+    WHERE YEAR(Date) BETWEEN 2022 AND 2025
+    GROUP BY kpi_year 
+    ORDER BY kpi_year ASC
+";
 
 $chartRes = $conn->query($chartSql);
 $yearlyScores = [];
 
+// Initialize with zeros to ensure exactly 4 points even if data is missing for a year
+$yearlyData = ['2022' => 0, '2023' => 0, '2024' => 0, '2025' => 0];
+
 while($row = $chartRes->fetch_assoc()) {
-    $yearlyScores[] = $row['yearly_avg'];
+    $yearlyData[$row['kpi_year']] = $row['yearly_avg'];
 }
 
-$jsDataString = implode(', ', $yearlyScores);
+// This creates a string like "75.5, 80.2, 65.0, 61.2"
+$jsDataString = implode(', ', array_values($yearlyData));
+$avgKPI = $yearlyData['2025'];
 
 $activePage = 'dashboard';
 
@@ -69,38 +76,64 @@ $activePage = 'dashboard';
   ══════════════════════ -->
   <div class="stat-cards">
 
-    <div class="stat-card">
+    <div class="stat-card stat-card--dept">
       <div class="stat-icon blue"><i class="ph ph-users-three"></i></div>
       <div class="stat-value"><?= $totalStaff ?></div>
       <div class="stat-label">Total Staff</div>
       <div id="dept-donut" style="width: 100%; height: 120px; margin-top: auto; margin-bottom: -15px;"></div>
     </div>
 
-    <div class="stat-card">
+    <div class="stat-card stat-card--top">
+      <div class="stat-icon green"><i class="ph ph-medal"></i></div>
+      <div class="stat-value"><?= $topCount ?></div>
+        <div class="stat-label">Top Performers</div>
+
+        <div class="top-perf-bars">
+          <?php if ($topCount === 0): ?>
+              <div class="perf-bar-row">
+                  <div class="perf-bar-header">
+                      <span class="perf-bar-label">No top performers</span>
+                      <span class="perf-bar-pct">0%</span>
+                  </div>
+                  <div class="perf-bar-track">
+                      <div class="perf-bar-fill" style="width:0%"></div>
+                  </div>
+              </div>
+          <?php else: ?>
+              <?php 
+              foreach (array_slice($topPerformers, 0, 3) as $p): 
+                  $pct = $p['score']; 
+                  $firstName = explode(' ', $p['name'])[0];
+              ?>
+              <div class="perf-bar-row">
+                  <div class="perf-bar-header">
+                      <span class="perf-bar-label"><?= htmlspecialchars($firstName) ?></span>
+                      <span class="perf-bar-pct"><?= $pct ?>%</span>
+                  </div>
+                  <div class="perf-bar-track">
+                      <div class="perf-bar-fill" style="width:<?= $pct ?>%"></div>
+                  </div>
+              </div>
+              <?php endforeach; ?>
+          <?php endif; ?>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--kpi">
       <div class="stat-icon teal"><i class="ph ph-trend-up"></i></div>
-      <div class="stat-value"><?= $avgKPI ?></div>
+      <div class="stat-value"><?= $avgKPI ?>%</div>
       <div class="stat-label">Average KPI 2025</div>
       <div id="sparkline-kpi" class="sparkline-container"></div>
     </div>
 
-    <div class="stat-card">
-      <div class="stat-icon green"><i class="ph ph-medal"></i></div>
-      <div class="stat-value"><?= $topCount ?></div>
-      <div class="stat-label">Top Performers</div>
-      <div id="sparkline-tops" style="min-height: 30px;"></div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-icon orange"><i class="ph ph-warning"></i></div>
-      <div class="stat-value"><?= $atRiskCount ?></div>
-      <div class="stat-label">At Risk</div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-icon rose"><i class="ph ph-warning-circle"></i></div>
-      <div class="stat-value truncate"><?= htmlspecialchars($criticalCat) ?></div>
-      <div class="stat-label">Critical Category</div>
-    </div>
+    <div class="stat-card stat-card--critical" style="overflow: visible;">
+      <div class="stat-icon red-icon"><i class="ph-bold ph-warning-circle"></i></div>
+      <div class="stat-value truncate" title="<?= htmlspecialchars($groupLabels[0]) ?>">
+          <?= htmlspecialchars($groupLabels[0]) ?>
+      </div>
+      <div class="stat-label">Critical KPI Group</div>
+      <div id="group-bar-chart" class="group-bar-container"></div>
+  </div>
 
   </div><!-- /.stat-cards -->
 
@@ -340,42 +373,56 @@ function filterTable() {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const kpiData    = [<?= $jsDataString ?>];
+    const kpiLabels  = ['2022', '2023', '2024', '2025'];
+
+    renderSparkline('#sparkline-kpi', kpiData, '#097067');
+});
+
+document.addEventListener('DOMContentLoaded', function () {
     // 1. DATA PREPARATION
     const rawLabels = <?= json_encode($deptLabels) ?>;
     
-    // FORCE LINE BREAKS: This turns "Home & Living" into ["Home", "&", "Living"]
+    // Logic to force line breaks for long names
     const deptLabels = rawLabels.map(label => {
         if (typeof label === 'string' && label.includes(' ')) {
-            return label.split(' ').join('\n'); 
+            return label.split(' '); // Returns array for multiline support
         }
         return label;
     });
 
     const deptCounts = <?= json_encode($deptCounts) ?>;
-    const kpiData = [<?php echo $jsDataString; ?>];
-    const topTrendData = [5, 8, 4, 10, <?= $topCount ?>];
+
     // 2. RENDER DEPT DONUT
     new ApexCharts(document.querySelector('#dept-donut'), {
         series: deptCounts,
-        labels: deptLabels,
+        labels: deptLabels, 
         chart: {
             type: 'donut',
             sparkline: { enabled: true },
             padding: { top: 0, right: 0, bottom: 0, left: 0 }
         },
         stroke: { width: 0 },
-        colors: ['#66021F', '#8B1E3F', '#B13C5F', '#D75A7F', '#FD789F'],
+        colors: ['#03045e', '#0077b6', '#00b4d8', '#90e0ef', '#9ceafc'], // Burgundy palette
         dataLabels: { enabled: false }, 
         tooltip: {
-            enabled: true,
-            theme: 'dark',
-            style: { fontSize: '10px', fontFamily: 'Sora' },
-            y: {
-                title: { formatter: () => '' }, 
-                formatter: (val) => val + " Staff"
-            },
-            marker: { show: false }
-        },
+          enabled: true,
+          theme: 'dark',
+          style: { fontSize: '10px', fontFamily: 'Sora' },
+          y: {
+              title: { 
+                  formatter: (seriesName, opts) => {
+                      // Get the label (which might be an array like ['Home', '&', 'Living'])
+                      const rawLabel = opts.w.globals.labels[opts.seriesIndex];
+                      
+                      // If it's an array, join it with a space. If not, just return it.
+                      return (Array.isArray(rawLabel) ? rawLabel.join(' ') : rawLabel) + ":";
+                  }
+              },
+              formatter: (val) => val + " Staff"
+          },
+          marker: { show: true }
+      },
         states: {
             hover: { filter: { type: 'none' } },
             active: { filter: { type: 'none' } }
@@ -384,46 +431,95 @@ document.addEventListener('DOMContentLoaded', function () {
             pie: {
                 expandOnClick: false,
                 donut: {
-                    size: '65%',
+                    size: '70%', // Inner radius
                     labels: {
                         show: true,
                         name: { 
                             show: true, 
-                            fontSize: '10px', 
+                            fontSize: '9px', 
                             fontWeight: 600, 
-                            offsetY: 7,
-                            color: '#66021F' // Fixed: Added comma here
+                            offsetY: 5, // Adjusted up to center stacked lines
+                            color: '#66021F',
+                            formatter: () => "Depts"
                         },
-                        value: { show: false },
+                        value: { show: false }, // Hides the large number in center
                         total: {
                             show: true,
                             label: 'Depts',
-                            formatter: () => "" 
+                            formatter: () => "Depts" 
                         }
                     }
                 }
             }
         }
     }).render();
+});
 
-    // 3. RENDER AVERAGE KPI SPARKLINE
-    if (typeof renderSparkline === "function") {
-        renderSparkline('#sparkline-kpi', kpiData, '#0d9488');
-    }
-
-    // 4. RENDER TOP PERFORMERS BAR SPARKLINE
-    new ApexCharts(document.querySelector("#sparkline-tops"), {
-        series: [{ name: 'Tops', data: topTrendData }],
-        chart: { type: 'bar', height: 40, sparkline: { enabled: true } },
-        colors: ['#16a34a'],
-        plotOptions: { 
-            bar: { 
-                columnWidth: '60%', 
-                borderRadius: 2 
-            } 
+document.addEventListener('DOMContentLoaded', function () {
+ 
+    const groupLabels = <?= json_encode($groupLabels) ?>;
+    const groupScores = <?= json_encode($groupScores) ?>;
+ 
+    const barColors = groupScores.map((score, index) => {
+        if (index === 0) return '#dc2626'; 
+        if (score < 50)  return '#ef4444'; 
+        if (score < 75)  return '#f59e0b'; 
+        return '#fcd34d';                  
+    });
+ 
+    new ApexCharts(document.querySelector('#group-bar-chart'), {
+        series: [{ name: 'Performance', data: groupScores }],
+        chart: {
+            type: 'bar',
+            height: 110,
+            toolbar: { show: false },
+            sparkline: { enabled: true },
+            animations: { enabled: true, speed: 600},
+            padding: {
+                top: 0,
+                bottom: 2
+            }
         },
-        tooltip: { theme: 'dark', style: { fontSize: '10px' } }
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                borderRadius: 5,
+                borderRadiusApplication: 'end',
+                distributed: true,
+                columnWidth: '60%'
+            }
+        },
+        colors: barColors,
+        dataLabels: { enabled: false },
+        xaxis: {
+            categories: groupLabels,
+            labels: { show: false },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            min: 0, max: 100,
+            labels: { show: false },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        legend: { show: false },
+        grid:   { show: false },
+        tooltip: {
+            theme: 'light',
+            style: { fontSize: '12px', fontFamily: 'Sora, sans-serif' },
+            x: {
+                formatter: function(val, { dataPointIndex }) {
+                    return groupLabels[dataPointIndex];
+                }
+            },
+            y: {
+                formatter: function(val) { return val + '%'; },
+                title: { formatter: function() { return 'Performance: '; } }
+            }
+        }
     }).render();
+ 
 });
 </script>
 

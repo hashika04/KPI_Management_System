@@ -1,4 +1,4 @@
-// staff_masterlist/staff_profile.js
+// staff_masterlist/staffprofile.js
 
 function openAddKPIModal(staffId, staffName) {
     const modal = document.getElementById('addKPIModal');
