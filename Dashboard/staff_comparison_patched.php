@@ -3,16 +3,15 @@ $activePage = 'analytics';
 require_once __DIR__ . '/../includes/auth.php';
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Comparison</title>
+    <title>Individual Staff Comparison</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <link rel="stylesheet" href="../asset/universal.css?v=2">
-    <link rel="stylesheet" href="../asset/analytics.css?v=2">
+    <link rel="stylesheet" href="../asset/analytics.css?v=20">
 </head>
 <body>
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -20,10 +19,11 @@ require_once __DIR__ . '/../includes/auth.php';
 <main class="analytics-layout comparison-page">
     <section class="page-header">
         <div>
-            <a href="./analytics.php" class="back-link">← Back to Analytics</a>
+            <a href="./analytics_patched.php" class="back-link">← Back to Analytics</a>
             <h1>Individual Staff Comparison</h1>
-            <p>Weighted KPI comparison using the latest records from the database.</p>
+            <p>Compare two staff members using the latest KPI records, category performance, and trend behaviour.</p>
         </div>
+
         <div class="filter-toolbar">
             <select id="comparePeriodFilter">
                 <option value="Yearly">Yearly</option>
@@ -33,47 +33,60 @@ require_once __DIR__ . '/../includes/auth.php';
         </div>
     </section>
 
-    <section class="comparison-cards-grid">
-        <article class="card compare-card compare-card-a">
+    <section class="comparison-cards-grid compact-comparison-grid">
+        <article class="card compare-summary-card compare-summary-strong" id="compareCard1">
             <div id="staffCard1">Loading first staff...</div>
         </article>
-        <article class="card compare-card compare-card-b">
+
+        <article class="card compare-summary-card compare-summary-weak" id="compareCard2">
             <div id="staffCard2">Loading second staff...</div>
         </article>
     </section>
 
-    <section class="chart-grid comparison-grid-extended">
+    <section class="chart-grid comparison-clean-grid">
         <article class="card chart-card chart-span-2">
             <div class="chart-head"><h2>KPI Trend Comparison</h2></div>
             <div id="compareTrendChart" class="chart"></div>
         </article>
 
         <article class="card chart-card">
-            <div class="chart-head"><h2>Category Radar Comparison</h2></div>
+            <div class="chart-head"><h2>Category Performance Comparison</h2></div>
             <div id="compareRadarChart" class="chart"></div>
         </article>
 
         <article class="card chart-card">
-            <div class="chart-head"><h2>Category Gap</h2></div>
+            <div class="chart-head"><h2>Category Performance Gap</h2></div>
             <div id="categoryGapChart" class="chart"></div>
-        </article>
-
-        <article class="card chart-card chart-span-2">
-            <div class="chart-head"><h2>Stability Gauge</h2></div>
-            <div id="stabilityGaugeChart" class="chart"></div>
         </article>
 
         <article class="card insight-card chart-span-2">
             <div class="chart-head"><h2>Supervisor Insight</h2></div>
-            <p id="supervisorInsight" class="interpretation">Loading narrative insight...</p>
+            <div id="supervisorInsightBox" class="comparison-insight-box">
+                <p id="supervisorInsight" class="interpretation">Loading narrative insight...</p>
+            </div>
+        </article>
+
+        <article class="card chart-span-2 comparison-notes-card">
+            <div class="comparison-notes-grid">
+                <div class="comparison-note-block">
+                    <h3 id="leftNoteTitle">Supervisor Comment</h3>
+                    <p id="leftCommentText">Loading...</p>
+                </div>
+
+                <div class="comparison-note-block">
+                    <h3 id="rightNoteTitle">Training Recommendation</h3>
+                    <p id="rightTrainingText">Loading...</p>
+                </div>
+            </div>
         </article>
     </section>
 </main>
 
 <script>
 const params = new URLSearchParams(window.location.search);
-const selectedStaff1 = params.get('staff1') || '<?php echo $staff1; ?>';
-const selectedStaff2 = params.get('staff2') || '<?php echo $staff2; ?>';
+const selectedStaff1 = params.get('staff1') || '';
+const selectedStaff2 = params.get('staff2') || '';
+
 const compareState = {
     period: 'Yearly'
 };
@@ -86,7 +99,7 @@ async function fetchComparison() {
         period: compareState.period
     });
 
-    const response = await fetch('./analytics_data.php?' + query.toString(), {
+    const response = await fetch('./analytics_data_patched.php?' + query.toString(), {
         headers: { 'Accept': 'application/json' }
     });
 
@@ -97,8 +110,17 @@ async function fetchComparison() {
     return await response.json();
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
 function badgeClass(level) {
-    switch (level) {
+    switch (String(level || '').toLowerCase()) {
         case 'top': return 'badge-top';
         case 'good': return 'badge-good';
         case 'average': return 'badge-average';
@@ -111,59 +133,73 @@ function trendLabel(trend) {
     return trend === 'up' ? 'Improving' : trend === 'down' ? 'Declining' : 'Stable';
 }
 
-function renderStaffCard(targetId, data, accentClass) {
+function safePhoto(path) {
+    return path && String(path).trim() !== ''
+        ? path
+        : '../asset/images/staff/default-profile.jpg';
+}
+
+function buildComparisonInsight(leftStaff, rightStaff, payload) {
+    const gap = Math.abs(Number(leftStaff.current_percentage) - Number(rightStaff.current_percentage)).toFixed(2);
+
+    let strongerStability = '';
+    if (Number(leftStaff.stability_score) > Number(rightStaff.stability_score)) {
+        strongerStability = `${leftStaff.staff.name} also shows stronger stability over time.`;
+    } else if (Number(leftStaff.stability_score) < Number(rightStaff.stability_score)) {
+        strongerStability = `${rightStaff.staff.name} is more stable across recent periods despite the lower KPI.`;
+    } else {
+        strongerStability = `Both staff members show a similar level of stability.`;
+    }
+
+    return `${leftStaff.staff.name} currently leads with ${Number(leftStaff.current_percentage).toFixed(2)}%, while ${rightStaff.staff.name} records ${Number(rightStaff.current_percentage).toFixed(2)}%. The KPI gap between them is ${gap} percentage points. ${strongerStability} ${payload.insight || ''}`;
+}
+
+function renderStaffCard(targetId, data, theme) {
     const card = document.getElementById(targetId);
-    const photo = data.staff.profile_photo || './asset/images/staff/default-profile.jpg';
+    const photo = safePhoto(data.staff.profile_photo);
+    const trendText = trendLabel(data.trend);
+    const performanceLabel = String(data.performance_level || '').replace('-', ' ');
+    const scoreText = Number(data.current_percentage).toFixed(2) + '%';
+
     card.innerHTML = `
-        <div class="compare-head ${accentClass}">
-            <div class="compare-profile">
-                <img src="${photo}" alt="${escapeHtml(data.staff.name)}" class="compare-avatar">
+        <div class="compare-mini-head ${theme}">
+            <div class="compare-mini-profile">
+                <img src="${escapeHtml(photo)}" alt="${escapeHtml(data.staff.name)}" class="compare-mini-avatar">
                 <div>
                     <h2>${escapeHtml(data.staff.name)}</h2>
-                    <p>${escapeHtml(data.staff.staff_code || 'No Code')} • ${escapeHtml(data.staff.department)}</p>
-                    <p>${escapeHtml(data.staff.position || 'Staff')}</p>
+                    <p>${escapeHtml(data.staff.department)}</p>
+                    <small>${escapeHtml(data.staff.position || 'Staff')}</small>
                 </div>
             </div>
-            <div class="compare-score-pill">${Number(data.current_percentage).toFixed(2)}%</div>
+
+            <div class="compare-mini-score">${scoreText}</div>
         </div>
 
-        <div class="mini-metrics-grid">
-            <div class="mini-metric">
-                <span>Current KPI</span>
-                <strong>${Number(data.current_score_5).toFixed(2)} / 5</strong>
-            </div>
-            <div class="mini-metric">
+        <div class="compare-mini-metrics">
+            <div class="compare-metric-pill">
                 <span>Trend</span>
-                <strong>${trendLabel(data.trend)} (${Number(data.trend_delta).toFixed(2)})</strong>
+                <strong>${escapeHtml(trendText)}</strong>
             </div>
-            <div class="mini-metric">
+            <div class="compare-metric-pill">
+                <span>Stability</span>
+                <strong>${Number(data.stability_score)}/100</strong>
+            </div>
+            <div class="compare-metric-pill">
                 <span>Risk</span>
                 <strong>${escapeHtml(data.risk_level)}</strong>
             </div>
-            <div class="mini-metric">
-                <span>Stability</span>
-                <strong>${data.stability_score}/100</strong>
-            </div>
         </div>
 
-        <div class="status-row">
-            <span class="level-badge ${badgeClass(data.performance_level)}">${escapeHtml(data.performance_level)}</span>
-            <span class="level-note">Thresholds: Top ≥ 85, Good 80–84, Average 70–79, Critical 60–69, At-Risk &lt; 60</span>
-        </div>
-
-        <div class="comment-box">
-            <h4>Supervisor Comment</h4>
-            <p>${escapeHtml(data.comments)}</p>
-        </div>
-        <div class="comment-box">
-            <h4>Training Recommendation</h4>
-            <p>${escapeHtml(data.training)}</p>
+        <div class="compare-mini-footer">
+            <span class="level-badge ${badgeClass(data.performance_level)}">${escapeHtml(performanceLabel)}</span>
+            <span class="compare-note-inline">Latest KPI performance from database</span>
         </div>
     `;
 }
 
 function renderCharts(payload) {
     const trendRows = payload.trend_series || [];
+
     Plotly.react('compareTrendChart', [
         {
             x: trendRows.map(row => row.period),
@@ -171,7 +207,8 @@ function renderCharts(payload) {
             type: 'scatter',
             mode: 'lines+markers',
             name: payload.staff1.staff.name,
-            line: { color: '#ec4899', width: 3 },
+            line: { color: '#16a34a', width: 3, shape: 'spline' },
+            marker: { size: 8, color: '#16a34a' },
             hovertemplate: '%{x}<br>' + escapeHtml(payload.staff1.staff.name) + ': %{y:.2f}%<extra></extra>'
         },
         {
@@ -180,7 +217,8 @@ function renderCharts(payload) {
             type: 'scatter',
             mode: 'lines+markers',
             name: payload.staff2.staff.name,
-            line: { color: '#10b981', width: 3 },
+            line: { color: '#ec4899', width: 3, shape: 'spline' },
+            marker: { size: 8, color: '#ec4899' },
             hovertemplate: '%{x}<br>' + escapeHtml(payload.staff2.staff.name) + ': %{y:.2f}%<extra></extra>'
         },
         {
@@ -189,17 +227,30 @@ function renderCharts(payload) {
             type: 'scatter',
             mode: 'lines',
             name: 'Target %',
-            line: { color: '#14b8a6', dash: 'dash' },
+            line: { color: '#14b8a6', dash: 'dash', width: 2 },
             hovertemplate: '%{x}<br>Target: %{y:.2f}%<extra></extra>'
         }
     ], {
-        margin: { t: 10, r: 10, b: 40, l: 50 },
+        margin: { t: 20, r: 20, b: 50, l: 55 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        yaxis: { range: [0, 100], title: 'KPI %' }
+        yaxis: {
+            range: [0, 100],
+            title: 'KPI %',
+            gridcolor: 'rgba(148, 163, 184, 0.18)'
+        },
+        xaxis: {
+            showgrid: false
+        },
+        legend: {
+            orientation: 'h',
+            x: 0,
+            y: 1.12
+        }
     }, { responsive: true, displayModeBar: true });
 
     const radar = payload.radar_categories || [];
+
     Plotly.react('compareRadarChart', [
         {
             type: 'scatterpolar',
@@ -207,7 +258,8 @@ function renderCharts(payload) {
             theta: radar.map(row => row.category),
             fill: 'toself',
             name: payload.staff1.staff.name,
-            line: { color: '#ec4899' }
+            line: { color: '#16a34a', width: 2 },
+            fillcolor: 'rgba(22, 163, 74, 0.28)'
         },
         {
             type: 'scatterpolar',
@@ -215,7 +267,8 @@ function renderCharts(payload) {
             theta: radar.map(row => row.category),
             fill: 'toself',
             name: payload.staff2.staff.name,
-            line: { color: '#10b981' }
+            line: { color: '#ec4899', width: 2 },
+            fillcolor: 'rgba(236, 72, 153, 0.22)'
         },
         {
             type: 'scatterpolar',
@@ -223,76 +276,47 @@ function renderCharts(payload) {
             theta: radar.map(row => row.category),
             fill: 'none',
             name: 'Target %',
-            line: { color: '#14b8a6', dash: 'dash' }
+            line: { color: '#94a3b8', dash: 'dot', width: 2 }
         }
     ], {
-        margin: { t: 10, r: 20, b: 20, l: 20 },
+        margin: { t: 20, r: 30, b: 20, l: 30 },
         paper_bgcolor: 'transparent',
         polar: {
-            radialaxis: { visible: true, range: [0, 100] }
+            radialaxis: {
+                visible: true,
+                range: [0, 100]
+            }
+        },
+        legend: {
+            orientation: 'h',
+            x: 0,
+            y: 1.12
         }
     }, { responsive: true, displayModeBar: true });
 
     const gapRows = payload.category_gap || [];
+
     Plotly.react('categoryGapChart', [{
         x: gapRows.map(row => row.category),
         y: gapRows.map(row => row.gap),
         type: 'bar',
-        marker: { color: gapRows.map(row => row.gap >= 0 ? '#ec4899' : '#10b981') },
-        hovertemplate: '%{x}<br>Gap: %{y:.2f} points<extra></extra>'
+        marker: {
+            color: gapRows.map(row => row.gap >= 0 ? '#16a34a' : '#ec4899')
+        },
+        hovertemplate: '%{x}<br>Difference: %{y:.2f} points<extra></extra>'
     }], {
-        margin: { t: 10, r: 10, b: 90, l: 50 },
+        margin: { t: 20, r: 20, b: 100, l: 55 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        yaxis: { title: payload.staff1.staff.name + ' - ' + payload.staff2.staff.name }
-    }, { responsive: true, displayModeBar: true });
-
-    Plotly.react('stabilityGaugeChart', [
-        {
-            type: 'indicator',
-            mode: 'gauge+number',
-            value: payload.staff1.stability_score,
-            title: { text: payload.staff1.staff.name },
-            domain: { x: [0, 0.45], y: [0, 1] },
-            gauge: {
-                axis: { range: [0, 100] },
-                bar: { color: '#ec4899' },
-                steps: [
-                    { range: [0, 50], color: '#fee2e2' },
-                    { range: [50, 75], color: '#fef3c7' },
-                    { range: [75, 100], color: '#dcfce7' }
-                ]
-            }
+        yaxis: {
+            title: 'Gap',
+            zeroline: true,
+            gridcolor: 'rgba(148, 163, 184, 0.18)'
         },
-        {
-            type: 'indicator',
-            mode: 'gauge+number',
-            value: payload.staff2.stability_score,
-            title: { text: payload.staff2.staff.name },
-            domain: { x: [0.55, 1], y: [0, 1] },
-            gauge: {
-                axis: { range: [0, 100] },
-                bar: { color: '#10b981' },
-                steps: [
-                    { range: [0, 50], color: '#fee2e2' },
-                    { range: [50, 75], color: '#fef3c7' },
-                    { range: [75, 100], color: '#dcfce7' }
-                ]
-            }
+        xaxis: {
+            tickangle: -90
         }
-    ], {
-        margin: { t: 20, r: 20, b: 20, l: 20 },
-        paper_bgcolor: 'transparent'
-    }, { responsive: true, displayModeBar: false });
-}
-
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+    }, { responsive: true, displayModeBar: true });
 }
 
 async function loadComparison() {
@@ -302,15 +326,38 @@ async function loadComparison() {
     }
 
     const payload = await fetchComparison();
+
     if (payload.error) {
         document.getElementById('supervisorInsight').textContent = payload.error;
         return;
     }
 
-    renderStaffCard('staffCard1', payload.staff1, 'accent-a');
-    renderStaffCard('staffCard2', payload.staff2, 'accent-b');
-    renderCharts(payload);
-    document.getElementById('supervisorInsight').textContent = payload.insight;
+    const orderedStaff = [payload.staff1, payload.staff2].sort(
+        (a, b) => Number(b.current_percentage) - Number(a.current_percentage)
+    );
+
+    const leftStaff = orderedStaff[0];
+    const rightStaff = orderedStaff[1];
+
+    renderStaffCard('staffCard1', leftStaff, 'theme-green');
+    renderStaffCard('staffCard2', rightStaff, 'theme-pink');
+
+    renderCharts({
+        ...payload,
+        staff1: leftStaff,
+        staff2: rightStaff
+    });
+
+    document.getElementById('supervisorInsight').textContent =
+        buildComparisonInsight(leftStaff, rightStaff, payload);
+
+    document.getElementById('leftNoteTitle').textContent = `${leftStaff.staff.name} — Supervisor Comment`;
+    document.getElementById('leftCommentText').textContent =
+        leftStaff.comments || 'No supervisor comment available.';
+
+    document.getElementById('rightNoteTitle').textContent = `${rightStaff.staff.name} — Training Recommendation`;
+    document.getElementById('rightTrainingText').textContent =
+        rightStaff.training || 'No training recommendation available.';
 }
 
 document.getElementById('comparePeriodFilter').addEventListener('change', event => {
@@ -319,12 +366,13 @@ document.getElementById('comparePeriodFilter').addEventListener('change', event 
 });
 
 document.getElementById('backToAnalytics').addEventListener('click', () => {
-    window.location.href = './analytics.php';
+    window.location.href = './analytics_patched.php';
 });
 
 loadComparison().catch(error => {
     console.error(error);
-    document.getElementById('supervisorInsight').textContent = 'Unable to load comparison data. Check analytics_data.php and your selected staff IDs.';
+    document.getElementById('supervisorInsight').textContent =
+        'Unable to load comparison data. Check analytics_data_patched.php and the selected staff IDs.';
 });
 </script>
 </body>
