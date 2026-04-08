@@ -3,7 +3,6 @@
  * overview.php  — KPI Monitor
  * Styles: ../asset/universal.css (shared) + ../asset/overview.css (page-specific)
  */
-require_once __DIR__ . '/../vendor/autoload.php';
 include("../includes/auth.php");
 include("../Dashboard/data.php");
 include("../config/db.php");
@@ -16,7 +15,7 @@ $currentHost = (filter_var($lanIp, FILTER_VALIDATE_IP) && $lanIp !== '127.0.0.1'
     : '192.168.0.233';
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST']; // THIS is the key
-$dynamicBaseUrl = 'https://clawless-dorinda-victoryless.ngrok-free.dev/KPI_Management_System/staff_masterlist/staffprofile.php?id=';
+$dynamicBaseUrl = 'https://kpimonitor.infinityfreeapp.com/KPI_Management_System/staff_masterlist/staffprofile.php?id=';
 
 $chartSql = "
     SELECT 
@@ -212,7 +211,7 @@ $activePage = 'dashboard';
         </div>
         <div class="qr-wrap">
           <img 
-            src="qr.php?url=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
             alt="Scan to view profile" 
             class="qr-image" 
             width="120" 
@@ -247,7 +246,7 @@ $activePage = 'dashboard';
         </div>
         <div class="qr-wrap">
           <img 
-            src="qr.php?url=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>"
             alt="Scan to view profile" 
             class="qr-image" 
             width="120" 
@@ -282,7 +281,7 @@ $activePage = 'dashboard';
         </div>
         <div class="qr-wrap">
           <img 
-            src="qr.php?url=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
             alt="Scan to view profile" 
             class="qr-image" 
             width="120" 
