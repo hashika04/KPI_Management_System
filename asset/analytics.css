@@ -1654,3 +1654,30 @@ td {
     grid-template-columns: 1fr;
   }
 }
+
+.page-header {
+    display: flex;
+    flex-direction: column; /* ✅ force vertical layout */
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.header-top {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-toolbar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap; /* ✅ prevents overflow */
+    align-items: center;
+}
+
+.filter-toolbar select,
+.filter-toolbar button {
+    height: 38px;
+    padding: 6px 12px;
+    border-radius: 8px;
+}

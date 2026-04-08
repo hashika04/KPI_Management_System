@@ -30,26 +30,34 @@ require_once __DIR__ . '/../includes/auth.php';
 
 <main class="analytics-layout">
     <section class="page-header">
-        <div>
+        <div class="header-top">
             <a href="./dashboard.php" class="back-link">← Back to Dashboard</a>
             <h1>Analytics</h1>
             <p>Interactive KPI analytics with database-driven filtering, drill-down, and staff comparison.</p>
         </div>
+
+        
         <div class="filter-toolbar">
             <select id="yearFilter">
                 <option value="">All Years</option>
             </select>
+
             <select id="departmentFilter">
                 <option value="All Departments">All Departments</option>
             </select>
+
             <select id="kpiCategoryFilter">
                 <option value="All Categories">All Categories</option>
             </select>
+
             <select id="periodFilter">
                 <option value="Monthly">Monthly</option>
                 <option value="Yearly">Yearly</option>
             </select>
-            <button class="ghost-btn" id="resetTopFilters" type="button">Reset Filters</button>
+
+            <button class="ghost-btn" id="resetTopFilters" type="button">
+                Reset Filters
+            </button>
         </div>
     </section>
 
