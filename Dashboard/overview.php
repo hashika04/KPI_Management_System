@@ -8,13 +8,15 @@ include("../includes/auth.php");
 include("../Dashboard/data.php");
 include("../config/db.php");
 
+
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
 $lanIp = gethostbyname(gethostname());
 $currentHost = (filter_var($lanIp, FILTER_VALIDATE_IP) && $lanIp !== '127.0.0.1')
     ? $lanIp
-    : '192.168.0.233';  // fallback to your known IP
-// This creates the base link that the phone will follow
-$dynamicBaseUrl = $protocol . $currentHost . "/KPI_Management_System/staff_masterlist/staffprofile.php?id=";
+    : '192.168.0.233';
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host   = $_SERVER['HTTP_HOST']; // THIS is the key
+$dynamicBaseUrl = $scheme . '://' . $host . '/KPI_Management_System/staff_masterlist/staffprofile.php?id=';
 
 $chartSql = "
     SELECT 
