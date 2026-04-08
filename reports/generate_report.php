@@ -958,113 +958,479 @@ elseif ($report_type == 'top') {
 
 <?php
 }
+// ================= TRAINING NEEDS ANALYSIS (ENHANCED) =================
+//Training Needs Analysis Report
+// ================= TRAINING NEEDS ANALYSIS (FINAL ENHANCED) =================
+// ================= TRAINING NEEDS ANALYSIS (FINAL ENHANCED) =================
 //Training Needs Analysis Report
 elseif ($report_type == 'training') {
-
+    
+    // =============================================
+    // LAYER 1: Training Categories Mapping
+    // =============================================
+    $training_categories = [
+        'Communication Skills' => [
+            'keywords' => ['communication', 'presentation', 'teamwork', 'collaboration', 'customer service', 'complaints'],
+            'kpi_groups' => ['Customer Service Quality', 'Daily Sales Operations'],
+            'threshold' => 3, // Score below 3 indicates weakness (1-5 scale)
+            'priority_threshold_high' => 8,
+            'priority_threshold_medium' => 4
+        ],
+        'Technical Skills' => [
+            'keywords' => ['technical', 'system', 'debugging', 'process improvement', 'efficiency', 'accuracy'],
+            'kpi_groups' => ['Inventory & Cost Control', 'Store Operations Support', 'Daily Sales Operations'],
+            'threshold' => 3,
+            'priority_threshold_high' => 8,
+            'priority_threshold_medium' => 4
+        ],
+        'Leadership & Management' => [
+            'keywords' => ['leadership', 'management', 'mentoring', 'supervisory', 'initiative', 'decision-making'],
+            'kpi_groups' => ['Competency', 'Sales Target Contribution'],
+            'threshold' => 3,
+            'priority_threshold_high' => 6,
+            'priority_threshold_medium' => 3
+        ],
+        'Time Management' => [
+            'keywords' => ['time', 'deadline', 'punctual', 'prioritisation', 'productivity', 'workload'],
+            'kpi_groups' => ['Training, Learning & Team Contribution', 'Competency'],
+            'threshold' => 3,
+            'priority_threshold_high' => 6,
+            'priority_threshold_medium' => 3
+        ],
+        'Professional Development' => [
+            'keywords' => ['professional', 'conduct', 'reliability', 'accountability', 'attendance', 'compliance'],
+            'kpi_groups' => ['Competency', 'People, Training, Learning & Team Contribution'],
+            'threshold' => 3,
+            'priority_threshold_high' => 7,
+            'priority_threshold_medium' => 4
+        ]
+    ];
+    
     $employees = getEmployeeScores($conn, $year, $department);
-                                    
+    
+    // Initialize tracking arrays
     $training_needs = [];
     $staff_by_training = [];
-
+    $kpi_weakness_source = [];
+    $supervisor_source = [];
+    $employee_scores_detail = [];
+    $trend_data = [];
+    
+    // =============================================
+    // LAYER 2: Auto-Detect Weak Areas from KPI Scores
+    // =============================================
     foreach ($employees as $emp) {
-
-        // Get KPI details
-        $query = "SELECT kti.kpi_group, kd.Score
+        
+        // Get KPI details with scores
+        $query = "SELECT kti.kpi_group, kti.kpi_description, kd.Score, kti.weight
                   FROM kpi_data kd
                   JOIN kpi_template_items kti 
                   ON kd.KPI_Code = kti.kpi_code AND kd.template_id = kti.template_id
                   WHERE kd.Name = ? AND YEAR(kd.Date) = ? AND kti.is_active = 1";
-
+        
         $stmt = mysqli_prepare($conn, $query);
         mysqli_stmt_bind_param($stmt, "si", $emp['name'], $year);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-
+        
+        $employee_weak_areas = [];
+        $employee_scores = [];
+        
         while ($row = mysqli_fetch_assoc($result)) {
-            if ($row['Score'] < 3) { // weak area
-
-                $area = $row['kpi_group'];
-
-                // count occurrences
-                if (!isset($training_needs[$area])) {
-                    $training_needs[$area] = 0;
-                    $staff_by_training[$area] = [];
+            $kpi_group = $row['kpi_group'];
+            $score = $row['Score'];
+            
+            // Store for detailed analysis
+            if (!isset($employee_scores[$kpi_group])) {
+                $employee_scores[$kpi_group] = ['total' => 0, 'count' => 0];
+            }
+            $employee_scores[$kpi_group]['total'] += $score;
+            $employee_scores[$kpi_group]['count']++;
+            
+            // Detect weakness (score < threshold)
+            foreach ($training_categories as $category => $config) {
+                if (in_array($kpi_group, $config['kpi_groups']) && $score < $config['threshold']) {
+                    if (!isset($training_needs[$category])) {
+                        $training_needs[$category] = 0;
+                        $staff_by_training[$category] = [];
+                        $kpi_weakness_source[$category] = 0;
+                    }
+                    
+                    $training_needs[$category]++;
+                    $kpi_weakness_source[$category]++;
+                    $employee_weak_areas[] = $category;
+                    
+                    if (!in_array($emp['name'], $staff_by_training[$category])) {
+                        $staff_by_training[$category][] = $emp['name'];
+                    }
                 }
-
-                $training_needs[$area]++;
-                $staff_by_training[$area][] = $emp['name'];
+            }
+        }
+        
+        // Calculate average scores per category for this employee
+        $employee_avg_scores = [];
+        foreach ($employee_scores as $group => $data) {
+            $employee_avg_scores[$group] = round(($data['total'] / $data['count']) * 20, 1); // Convert 1-5 to percentage
+        }
+        $employee_scores_detail[$emp['name']] = $employee_avg_scores;
+    }
+    
+    // =============================================
+    // LAYER 1 (CONTINUED): Map Supervisor Comments to Categories
+    // =============================================
+    $supervisor_query = "SELECT Name, `Training/Development Recommendations` as recommendation 
+                         FROM kpi_comment 
+                         WHERE Year = ?";
+    $stmt = mysqli_prepare($conn, $supervisor_query);
+    mysqli_stmt_bind_param($stmt, "i", $year);
+    mysqli_stmt_execute($stmt);
+    $supervisor_result = mysqli_stmt_get_result($stmt);
+    
+    while ($row = mysqli_fetch_assoc($supervisor_result)) {
+        $recommendation = strtolower($row['recommendation']);
+        $employee_name = $row['Name'];
+        
+        foreach ($training_categories as $category => $config) {
+            foreach ($config['keywords'] as $keyword) {
+                if (strpos($recommendation, $keyword) !== false) {
+                    if (!isset($supervisor_source[$category])) {
+                        $supervisor_source[$category] = 0;
+                    }
+                    $supervisor_source[$category]++;
+                    
+                    // Add to training needs if not already counted from KPI
+                    if (!isset($training_needs[$category])) {
+                        $training_needs[$category] = 0;
+                        $staff_by_training[$category] = [];
+                    }
+                    
+                    if (!in_array($employee_name, $staff_by_training[$category])) {
+                        $training_needs[$category]++;
+                        $staff_by_training[$category][] = $employee_name;
+                    }
+                    break;
+                }
             }
         }
     }
-
+    
+    // Sort by highest need
     arsort($training_needs);
+    
+    // =============================================
+    // LAYER 2D: Trend Analysis (Historical Data)
+    // =============================================
+    $trend_years = [2022, 2023, 2024, 2025];
+    foreach ($trend_years as $trend_year) {
+        foreach ($training_categories as $category => $config) {
+            $trend_data[$category][$trend_year] = 0;
+            
+            $trend_query = "SELECT DISTINCT kd.Name
+                           FROM kpi_data kd
+                           JOIN kpi_template_items kti ON kd.KPI_Code = kti.kpi_code
+                           WHERE YEAR(kd.Date) = ? 
+                           AND kti.kpi_group IN ('" . implode("','", $config['kpi_groups']) . "')
+                           AND kd.Score < ?";
+            
+            $stmt = mysqli_prepare($conn, $trend_query);
+            $threshold = $config['threshold'];
+            mysqli_stmt_bind_param($stmt, "ii", $trend_year, $threshold);
+            mysqli_stmt_execute($stmt);
+            $trend_result = mysqli_stmt_get_result($stmt);
+            $trend_data[$category][$trend_year] = mysqli_num_rows($trend_result);
+        }
+    }
+    
+    // =============================================
+    // LAYER 2E: Generate Smart Recommendations
+    // =============================================
+    $smart_recommendations = [];
+    foreach ($training_needs as $category => $count) {
+        $config = $training_categories[$category];
+        $percentage = round(($count / count($employees)) * 100, 1);
+        
+        if ($count >= $config['priority_threshold_high']) {
+            $priority = "High";
+            $priority_class = "danger";
+            $urgency = "Immediate action required";
+        } elseif ($count >= $config['priority_threshold_medium']) {
+            $priority = "Medium";
+            $priority_class = "warning";
+            $urgency = "Schedule within next quarter";
+        } else {
+            $priority = "Low";
+            $priority_class = "info";
+            $urgency = "Monitor and address as needed";
+        }
+        
+        $recommendation = match($category) {
+            'Communication Skills' => "Interactive Communication Workshop with role-playing scenarios",
+            'Technical Skills' => "Hands-on Technical Training with certification path",
+            'Leadership & Management' => "Leadership Development Program with mentoring component",
+            'Time Management' => "Time Management and Productivity Bootcamp",
+            'Professional Development' => "Professional Growth and Accountability Workshop",
+            default => "Targeted coaching and development session"
+        };
+        
+        $smart_recommendations[] = [
+            'category' => $category,
+            'count' => $count,
+            'percentage' => $percentage,
+            'priority' => $priority,
+            'priority_class' => $priority_class,
+            'urgency' => $urgency,
+            'recommendation' => $recommendation
+        ];
+    }
 ?>
 
 <div class="report-card-wrapper" id="reportCard">
     <div class="card-header-custom">
-        <h3>🧠 Training Needs Summary</h3>
+        <h3>🧠 Enhanced Training Needs Summary - <?php echo $year; ?></h3>
+        <p class="text-muted mb-0">Auto-generated from KPI scores and supervisor feedback</p>
     </div>
 
     <div class="card-body-custom">
-
-        <!-- A. SUMMARY TABLE -->
-        <h5>Most Needed Training Areas</h5>
-        <table class="performance-table mb-4">
-            <thead>
-                <tr>
-                    <th>Training Area</th>
-                    <th>No. of Staff</th>
-                    <th>Priority</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($training_needs as $area => $count): ?>
-                <tr>
-                    <td><?php echo $area; ?></td>
-                    <td><?php echo $count; ?></td>
-                    <td>
-                        <?php
-                        if ($count >= 8) echo '<span class="badge bg-danger">High</span>';
-                        elseif ($count >= 4) echo '<span class="badge bg-warning text-dark">Medium</span>';
-                        else echo '<span class="badge bg-info">Low</span>';
-                        ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-
-        <!-- B. GROUPED STAFF -->
-        <h5>Staff Grouped by Training Needs</h5>
-
-        <div class="row">
-            <?php foreach ($staff_by_training as $area => $staffs): ?>
-            <div class="col-md-4 mb-4">
-                <div class="info-box">
-                    <h6><?php echo $area; ?></h6>
-                    <ul class="mb-0">
-                        <?php foreach ($staffs as $name): ?>
-                            <li><?php echo $name; ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
+        
+        <!-- SECTION A: Training Demand Overview -->
+        <div class="mb-5">
+            <h5 class="border-bottom pb-2">📊 A. Training Demand Overview</h5>
+            <table class="performance-table">
+                <thead>
+                    <tr>
+                        <th>Training Area</th>
+                        <th>No. of Staff</th>
+                        <th>% of Staff</th>
+                        <th>Priority</th>
+                        <th>Urgency</th>
+                        <th>Recommended Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($smart_recommendations as $rec): ?>
+                    <tr>
+                        <td><strong><?php echo $rec['category']; ?></strong></td>
+                        <td><?php echo $rec['count']; ?></td>
+                        <td><?php echo $rec['percentage']; ?>%</td>
+                        <td>
+                            <span class="badge bg-<?php echo $rec['priority_class']; ?>">
+                                <?php echo $rec['priority']; ?>
+                            </span>
+                        </td>
+                        <td><?php echo $rec['urgency']; ?></td>
+                        <td><?php echo $rec['recommendation']; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- SECTION B: Source Breakdown -->
+        <div class="mb-5">
+            <h5 class="border-bottom pb-2">🔄 B. Source Breakdown (KPI vs Supervisor Alignment)</h5>
+            <table class="performance-table">
+                <thead>
+                    <tr>
+                        <th>Training Area</th>
+                        <th>From KPI Weakness</th>
+                        <th>From Supervisor Comments</th>
+                        <th>Alignment Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($training_categories as $category => $config): 
+                        $kpi_count = $kpi_weakness_source[$category] ?? 0;
+                        $supervisor_count = $supervisor_source[$category] ?? 0;
+                        $alignment = ($kpi_count > 0 && $supervisor_count > 0) ? "✅ Aligned" : 
+                                    (($kpi_count > 0) ? "⚠️ Data-driven only" : 
+                                    (($supervisor_count > 0) ? "📝 Supervisor noted" : "❌ No data"));
+                        $alignment_class = ($alignment == "✅ Aligned") ? "text-success" : 
+                                          ((strpos($alignment, "⚠️") !== false) ? "text-warning" : "text-secondary");
+                    ?>
+                    <tr>
+                        <td><strong><?php echo $category; ?></strong></td>
+                        <td><?php echo $kpi_count; ?> staff</td>
+                        <td><?php echo $supervisor_count; ?> staff</td>
+                        <td class="<?php echo $alignment_class; ?>"><?php echo $alignment; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <div class="info-box mt-2 small text-muted">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Insight:</strong> High alignment indicates consistent observations. 
+                Data-driven only suggests areas where supervisors may need more visibility.
             </div>
-            <?php endforeach; ?>
         </div>
-
-        <!-- C. SMART SUGGESTIONS -->
-        <h5>Suggested Training Programs</h5>
-        <div class="info-box">
-            <?php foreach ($training_needs as $area => $count): ?>
-                <p>
-                    <strong><?php echo $area; ?>:</strong>
-                    Recommend workshop / coaching session for improvement.
-                </p>
-            <?php endforeach; ?>
+        
+        <!-- SECTION C: Staff Grouping by Training Need -->
+        <div class="mb-5">
+            <h5 class="border-bottom pb-2">👥 C. Staff Grouped by Training Requirements</h5>
+            <div class="row">
+                <?php foreach ($staff_by_training as $category => $staffs): 
+                    if (empty($staffs)) continue;
+                ?>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="info-box h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0"><?php echo $category; ?></h6>
+                            <span class="badge bg-primary"><?php echo count($staffs); ?> staff</span>
+                        </div>
+                        <ul class="mb-0">
+                            <?php foreach (array_unique($staffs) as $name): ?>
+                                <li>
+                                    <?php echo $name; ?>
+                                    <?php if (isset($employee_scores_detail[$name])): ?>
+                                        <small class="text-muted">
+                                            (Avg: 
+                                            <?php 
+                                            $scores = $employee_scores_detail[$name];
+                                            $relevant_scores = [];
+                                            foreach ($training_categories[$category]['kpi_groups'] as $group) {
+                                                if (isset($scores[$group])) {
+                                                    $relevant_scores[] = $scores[$group];
+                                                }
+                                            }
+                                            if (!empty($relevant_scores)) {
+                                                echo round(array_sum($relevant_scores) / count($relevant_scores), 1) . '%)';
+                                            } else {
+                                                echo 'Needs improvement)';
+                                            }
+                                            ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
         </div>
-
+        
+        <!-- SECTION D: Trend Analysis -->
+        <div class="mb-5">
+            <h5 class="border-bottom pb-2">📈 D. Historical Trend Analysis (2022-2025)</h5>
+            <table class="performance-table">
+                <thead>
+                    <tr>
+                        <th>Training Area</th>
+                        <?php foreach ($trend_years as $trend_year): ?>
+                            <th><?php echo $trend_year; ?></th>
+                        <?php endforeach; ?>
+                        <th>4-Year Change</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($training_categories as $category => $config): 
+                        $values = [];
+                        foreach ($trend_years as $trend_year) {
+                            $values[] = $trend_data[$category][$trend_year] ?? 0;
+                        }
+                        $change = end($values) - reset($values);
+                        $trend_icon = $change > 0 ? '📈 Increasing' : ($change < 0 ? '📉 Decreasing' : '➡️ Stable');
+                        $trend_class = $change > 0 ? 'text-danger' : ($change < 0 ? 'text-success' : 'text-secondary');
+                    ?>
+                    <tr>
+                        <td><strong><?php echo $category; ?></strong></td>
+                        <?php foreach ($values as $value): ?>
+                            <td><?php echo $value; ?></td>
+                        <?php endforeach; ?>
+                        <td class="<?php echo $change > 0 ? 'text-danger' : ($change < 0 ? 'text-success' : ''); ?>">
+                            <?php echo ($change > 0 ? '+' : '') . $change; ?>
+                        </td>
+                        <td class="<?php echo $trend_class; ?>"><?php echo $trend_icon; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            
+            <?php 
+            // Generate trend insights
+            $increasing_categories = [];
+            foreach ($training_categories as $category => $config) {
+                $values = [];
+                foreach ($trend_years as $trend_year) {
+                    $values[] = $trend_data[$category][$trend_year] ?? 0;
+                }
+                if (end($values) > reset($values)) {
+                    $increasing_categories[] = $category;
+                }
+            }
+            if (!empty($increasing_categories)):
+            ?>
+            <div class="alert alert-info mt-3">
+                <strong>💡 Trend Insight:</strong> 
+                <?php echo implode(' and ', $increasing_categories); ?> 
+                skill gaps have <?php echo count($increasing_categories) > 1 ? 'increased' : 'increased'; ?> 
+                over the past 4 years. Consider proactive intervention strategies.
+            </div>
+            <?php endif; ?>
+        </div>
+        
+        <!-- SECTION E: Smart Recommendations -->
+        <div class="mb-4">
+            <h5 class="border-bottom pb-2">🤖 E. AI-Generated Smart Recommendations</h5>
+            <div class="row">
+                <?php 
+                $top_recommendations = array_slice($smart_recommendations, 0, 3);
+                foreach ($top_recommendations as $rec): 
+                ?>
+                <div class="col-md-4 mb-3">
+                    <div class="info-box bg-<?php echo $rec['priority_class']; ?>-light">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-<?php echo $rec['priority_class']; ?> me-2">
+                                <?php echo $rec['priority']; ?> Priority
+                            </span>
+                            <strong><?php echo $rec['category']; ?></strong>
+                        </div>
+                        <p class="mb-2">
+                            <strong>Action:</strong> <?php echo $rec['recommendation']; ?>
+                        </p>
+                        <p class="mb-0 small">
+                            <strong>Target:</strong> <?php echo $rec['count']; ?> staff (<?php echo $rec['percentage']; ?>% of team)
+                        </p>
+                        <p class="mb-0 small text-muted">
+                            <strong>Timeline:</strong> <?php echo $rec['urgency']; ?>
+                        </p>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            
+            <!-- Executive Summary -->
+            <div class="alert alert-success mt-3">
+                <strong>🎯 Executive Summary:</strong>
+                <?php 
+                if (!empty($smart_recommendations)) {
+                    $top_category = $smart_recommendations[0];
+                    echo "Based on KPI analysis and supervisor feedback for {$year}, ";
+                    echo "<strong>{$top_category['category']}</strong> emerges as the highest priority with ";
+                    echo "<strong>{$top_category['count']} staff ({$top_category['percentage']}%)</strong> requiring intervention. ";
+                    
+                    if ($top_category['priority'] == 'High') {
+                        echo "Immediate training intervention is recommended to address these gaps and prevent performance deterioration.";
+                    } else {
+                        echo "Scheduled training programs should be planned for the next quarter to address identified development areas.";
+                    }
+                } else {
+                    echo "No significant training needs detected for {$year}. Continue monitoring performance metrics.";
+                }
+                ?>
+            </div>
+        </div>
+        
     </div>
 </div>
+
+<style>
+.bg-danger-light { background-color: #fff5f5; border-left: 4px solid #dc3545; }
+.bg-warning-light { background-color: #fffbf0; border-left: 4px solid #ffc107; }
+.bg-info-light { background-color: #f0f9ff; border-left: 4px solid #0dcaf0; }
+.info-box { padding: 15px; background: #f8f9fa; border-radius: 8px; }
+.performance-table th, .performance-table td { padding: 10px; }
+</style>
 
 <?php
 }
