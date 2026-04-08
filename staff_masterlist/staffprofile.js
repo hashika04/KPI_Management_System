@@ -1,17 +1,29 @@
-// staff_masterlist/staffprofile.js
-
 function openAddKPIModal(staffId, staffName) {
     const modal = document.getElementById('addKPIModal');
-    document.getElementById('modalStaffId').value = staffId;
-    document.getElementById('modalStaffName').value = staffName;
-    document.getElementById('modalStaffNameDisplay').value = staffName;
+    const target = document.getElementById('modalContentTarget');
+   
     modal.style.display = 'flex';
-}
+
+
+    fetch(`edit_kpi.php?staff_id=${staffId}`)
+        .then(response => response.text())
+        .then(html => {
+            target.innerHTML = html;
+            if (typeof recalculate === "function") {
+                recalculate();
+            }
+        })
+        .catch(() => {
+            target.innerHTML = `<div style="padding:20px;">Error loading form.</div>`;
+        });
+    }
+
 
 function closeModal() {
-    const modal = document.getElementById('addKPIModal');
-    modal.style.display = 'none';
+    document.getElementById('addKPIModal').style.display = 'none';
+   
 }
+
 
 window.onclick = function(event) {
     const modal = document.getElementById('addKPIModal');

@@ -16,7 +16,7 @@ $currentHost = (filter_var($lanIp, FILTER_VALIDATE_IP) && $lanIp !== '127.0.0.1'
     : '192.168.0.233';
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host   = $_SERVER['HTTP_HOST']; // THIS is the key
-$dynamicBaseUrl = $scheme . '://' . $host . '/KPI_Management_System/staff_masterlist/staffprofile.php?id=';
+$dynamicBaseUrl = 'https://clawless-dorinda-victoryless.ngrok-free.dev/KPI_Management_System/staff_masterlist/staffprofile.php?id=';
 
 $chartSql = "
     SELECT 

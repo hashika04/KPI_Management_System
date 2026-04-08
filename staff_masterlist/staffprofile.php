@@ -4,12 +4,15 @@ session_start();
 require_once __DIR__ . '/../config/db.php';
 $activePage = 'staff';
 
+
 $staffId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
 
 if (!$staffId) {
     header("Location: stafflist.php");
     exit();
 }
+
 
 // Fetch staff basic info
 $staffSql = "SELECT id, full_name, email, profile_photo FROM staff WHERE id = ?";
@@ -18,17 +21,19 @@ $stmt->bind_param("i", $staffId);
 $stmt->execute();
 $staff = $stmt->get_result()->fetch_assoc();
 
+
 if (!$staff) {
     header("Location: stafflist.php");
     exit();
 }
 
+
 // Fetch yearly KPI scores for trend
-$yearlySql = "SELECT 
+$yearlySql = "SELECT
         YEAR(Date) as year,
         ROUND(AVG(Score),2) as avg_score,
         ROUND((AVG(Score)/5)*100,2) as percentage
-    FROM kpi_data 
+    FROM kpi_data
     WHERE Name = ? AND Date IS NOT NULL
     GROUP BY YEAR(Date)
     ORDER BY year DESC";
@@ -37,8 +42,9 @@ $stmt->bind_param("s", $staff['full_name']);
 $stmt->execute();
 $yearlyScores = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+
 // Fetch category scores
-$categorySql = "SELECT 
+$categorySql = "SELECT
         km.kpi_group as category_name,
         ROUND(AVG(kd.Score),2) as score,
         ROUND((AVG(kd.Score)/5)*100,2) as percentage,
@@ -53,6 +59,7 @@ $stmt->bind_param("s", $staff['full_name']);
 $stmt->execute();
 $categoryScores = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+
 // Determine strengths and weaknesses
 $strengths = [];
 $weaknesses = [];
@@ -64,19 +71,22 @@ foreach ($categoryScores as $cat) {
     }
 }
 
+
 // Fetch recommendations
-$recSql = "SELECT `Training/Development Recommendations` as recommendation 
-           FROM kpi_comment 
-           WHERE Name = ? 
+$recSql = "SELECT `Training/Development Recommendations` as recommendation
+           FROM kpi_comment
+           WHERE Name = ?
            ORDER BY Year DESC LIMIT 1";
 $stmt = $conn->prepare($recSql);
 $stmt->bind_param("s", $staff['full_name']);
 $stmt->execute();
 $recommendation = $stmt->get_result()->fetch_assoc();
 
+
 // Get current and previous year scores
 $currentScore = $yearlyScores[0]['avg_score'] ?? 0;
 $previousScore = $yearlyScores[1]['avg_score'] ?? null;
+
 
 // Calculate trend
 if ($previousScore) {
@@ -95,6 +105,7 @@ if ($previousScore) {
     $trend = 'stable';
     $trendText = 'Stable';
 }
+
 
 // Determine performance level
 $scorePercentage = ($currentScore / 5) * 100;
@@ -117,6 +128,7 @@ if ($scorePercentage >= 90) {
 }
 ?>
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -127,9 +139,11 @@ if ($scorePercentage >= 90) {
 </head>
 <body>
 
+
 <div class="dashboard">
-        
+       
     <?php include("../includes/sidebar.php"); ?>
+
 
     <div class="staff-profile-content">
         <!-- Back Button -->
@@ -142,12 +156,13 @@ if ($scorePercentage >= 90) {
             </a>
         </div>
 
+
         <!-- Profile Header Card -->
         <div class="profile-header-card">
             <div class="profile-cover"></div>
             <div class="profile-info-wrapper">
                 <div class="profile-avatar-large">
-                    <img src="<?php echo htmlspecialchars($staff['profile_photo'] ? '../' . $staff['profile_photo'] : '../asset/images/staff/default-profile.jpg'); ?>" 
+                    <img src="<?php echo htmlspecialchars($staff['profile_photo'] ? '../' . $staff['profile_photo'] : '../asset/images/staff/default-profile.jpg'); ?>"
                         alt="<?php echo htmlspecialchars($staff['full_name']); ?>"
                         onerror="this.src='../asset/images/staff/default-profile.jpg'">
                 </div>
@@ -164,6 +179,7 @@ if ($scorePercentage >= 90) {
                             Update KPI Score
                         </button>
                     </div>
+
 
                     <div class="profile-contact-info">
                         <div class="contact-item">
@@ -192,6 +208,7 @@ if ($scorePercentage >= 90) {
                         </div>
                     </div>
 
+
                     <div class="profile-badges">
                         <span class="badge performance-<?php echo $levelColor; ?>">
                             <?php echo $levelText; ?>
@@ -201,6 +218,7 @@ if ($scorePercentage >= 90) {
                 </div>
             </div>
         </div>
+
 
         <!-- KPI Overview Cards -->
         <div class="kpi-overview-grid">
@@ -226,6 +244,7 @@ if ($scorePercentage >= 90) {
                 <?php endif; ?>
             </div>
 
+
             <div class="overview-card">
                 <div class="overview-header">
                     <span class="overview-label">Strengths</span>
@@ -245,6 +264,7 @@ if ($scorePercentage >= 90) {
                     <p class="no-data-text">No standout strengths yet</p>
                 <?php endif; ?>
             </div>
+
 
             <div class="overview-card">
                 <div class="overview-header">
@@ -266,6 +286,7 @@ if ($scorePercentage >= 90) {
                 <?php endif; ?>
             </div>
         </div>
+
 
         <!-- Performance Trend Chart -->
         <?php if (count($yearlyScores) > 1): ?>
@@ -292,6 +313,7 @@ if ($scorePercentage >= 90) {
         </div>
         <?php endif; ?>
 
+
         <!-- Category Breakdown -->
         <div class="chart-card">
             <h2>KPI Category Breakdown</h2>
@@ -305,7 +327,7 @@ if ($scorePercentage >= 90) {
                         </span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill <?php echo $cat['percentage'] >= 80 ? 'fill-high' : ($cat['percentage'] >= 60 ? 'fill-medium' : 'fill-low'); ?>" 
+                        <div class="progress-fill <?php echo $cat['percentage'] >= 80 ? 'fill-high' : ($cat['percentage'] >= 60 ? 'fill-medium' : 'fill-low'); ?>"
                              style="width: <?php echo $cat['percentage']; ?>%"></div>
                     </div>
                     <div class="category-percentage"><?php echo $cat['percentage']; ?>% of target</div>
@@ -313,6 +335,7 @@ if ($scorePercentage >= 90) {
                 <?php endforeach; ?>
             </div>
         </div>
+
 
         <!-- Training Recommendations -->
         <?php if ($recommendation && !empty($recommendation['recommendation'])): ?>
@@ -331,62 +354,20 @@ if ($scorePercentage >= 90) {
     </div>
 </div>
 
+
 <!-- Add KPI Modal (same as in stafflist.php) -->
 <div id="addKPIModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Add KPI Score</h3>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div class="modal-content"
+         style="max-width:900px; width:95%; max-height:92vh; padding:0; border-radius:20px;">
+        <div id="modalContentTarget">
+            Loading...
         </div>
-        <form id="addKPIForm" action="add_kpi.php" method="POST">
-            <input type="hidden" name="staff_id" id="modalStaffId">
-            <input type="hidden" name="staff_name" id="modalStaffName">
-            
-            <div class="form-group">
-                <label>Staff Member</label>
-                <input type="text" id="modalStaffNameDisplay" readonly>
-            </div>
-            
-            <div class="form-group">
-                <label>KPI Category</label>
-                <select name="kpi_code" required>
-                    <option value="">Select KPI Category</option>
-                    <?php
-                    $kpiSql = "SELECT kpi_code, kpi_group, kpi_description FROM kpi_master_list ORDER BY kpi_group";
-                    $kpiResult = $conn->query($kpiSql);
-                    $currentGroup = '';
-                    while ($kpi = $kpiResult->fetch_assoc()) {
-                        if ($currentGroup != $kpi['kpi_group']) {
-                            if ($currentGroup != '') echo '</optgroup>';
-                            echo '<optgroup label="' . htmlspecialchars($kpi['kpi_group']) . '">';
-                            $currentGroup = $kpi['kpi_group'];
-                        }
-                        echo '<option value="' . $kpi['kpi_code'] . '">' . htmlspecialchars($kpi['kpi_description']) . '</option>';
-                    }
-                    echo '</optgroup>';
-                    ?>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Score (1-5)</label>
-                <input type="number" name="score" min="1" max="5" step="0.5" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Date</label>
-                <input type="date" name="date" value="<?php echo date('Y-m-d'); ?>" required>
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn-submit">Add Score</button>
-            </div>
-        </form>
     </div>
 </div>
 
+
 <script src="staffprofile.js"></script>
+
 
 </body>
 </html>
