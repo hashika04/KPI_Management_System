@@ -215,191 +215,507 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title><?php echo $is_active ? 'Edit Active Template' : 'Edit Draft Template'; ?></title>
     <link rel="stylesheet" href="../asset/universal.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .section-card {
-            margin-bottom: 30px;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
-            background-color: #f8f9fa;
+        /* Match kpi_template_management.css styles */
+        .reports-content {
+            padding: 24px 32px;
+            background: var(--bg-main);
+            min-height: 100vh;
         }
-        .group-card {
-            background: white;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-left: 4px solid #007bff;
+        
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+        }
+        
+        .reports-header h1 {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        .reports-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-soft);
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            text-decoration: none;
             transition: all 0.2s;
         }
+        
+        .btn-back:hover {
+            background: var(--surface-soft);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .section-card {
+            margin-bottom: 30px;
+            border: 1px solid var(--border-soft);
+            border-radius: 20px;
+            padding: 20px;
+            background-color: var(--bg-card);
+            transition: box-shadow 0.2s;
+        }
+        
+        .section-card:hover {
+            box-shadow: 0 8px 20px rgba(75, 21, 53, 0.08);
+        }
+        
+        .section-header {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-soft);
+        }
+        
+        .section-header h4 {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .group-card {
+            background: var(--bg-main);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 16px;
+            border: 1px solid var(--border-soft);
+            transition: all 0.2s;
+        }
+        
         .group-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid var(--border-soft);
         }
+        
         .target-list {
             margin-left: 20px;
             padding-left: 15px;
-            border-left: 2px solid #e9ecef;
+            border-left: 2px solid var(--border-soft);
         }
+        
         .target-item {
             padding: 8px;
             margin-bottom: 8px;
-            background: #f8f9fa;
-            border-radius: 5px;
+            background: var(--bg-card);
+            border-radius: 12px;
             transition: all 0.2s;
         }
-        .weight-summary {
+        
+        .weight-summary-card {
             position: sticky;
             top: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border-soft);
+            background: var(--bg-card);
         }
-        .group-weight-input {
-            width: 100px;
+        
+        .weight-summary-card .card-header {
+            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%)
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 16px 20px;
+            font-weight: 600;
         }
-        .individual-weight-input {
-            width: 80px;
-        }
-        .alert-info {
+        
+        .alert-info-custom {
             background-color: #e7f3ff;
             border-left: 4px solid #007bff;
+            border-radius: 12px;
         }
-        .alert-warning {
+        
+        .alert-warning-custom {
             background-color: #fff3e0;
             border-left: 4px solid #ff9800;
+            border-radius: 12px;
         }
+        
         .section-badge {
             font-size: 12px;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
             margin-left: 10px;
         }
+        
         .badge-section1 {
             background-color: #17a2b8;
             color: white;
         }
+        
         .badge-section2 {
             background-color: #007bff;
             color: white;
         }
         
-        /* ACTIVE TEMPLATE STYLES - Highlight Existing (Orange/Warning) */
+        /* ACTIVE TEMPLATE STYLES */
         .active-mode .group-card.existing-group {
-            border-left-color: #ff9800;
+            border-left: 4px solid #ff9800;
             background-color: #fff8f0;
         }
+        
         .active-mode .target-item.existing-target {
             background-color: #fff3e0;
             border-left: 3px solid #ff9800;
         }
+        
         .active-mode .existing-badge {
             background-color: #ff9800;
             color: white;
         }
         
-        /* DRAFT TEMPLATE STYLES - Highlight New (Blue/Info) */
+        /* DRAFT TEMPLATE STYLES */
         .draft-mode .group-card:not(.existing-group) {
-            border-left-color: #2196f3;
+            border-left: 4px solid #2196f3;
             background-color: #f0f8ff;
         }
+        
         .draft-mode .target-item:not(.existing-target) {
             background-color: #e3f2fd;
             border-left: 3px solid #2196f3;
         }
+        
         .draft-mode .new-badge {
             background-color: #2196f3;
             color: white;
         }
         
-        .existing-badge {
+        .existing-badge, .new-badge {
             font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 5px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
         }
-        .new-badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 5px;
-            background-color: #6c757d;
-            color: white;
+        
+        .btn-sm-custom {
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 20px;
         }
-        .badge-secondary {
-            background-color: #6c757d;
+        
+        .weight-summary {
+            background: var(--bg-card);
+            border-radius: 20px;
         }
+        
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid var(--border-soft);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%)
+            border: none;
+            border-radius: 12px;
+            padding: 12px 28px;
+            font-weight: 500;
+        }
+        
+        .btn-secondary {
+            border-radius: 12px;
+            padding: 12px 28px;
+            font-weight: 500;
+        }
+        
+        .alert {
+            border-radius: 16px;
+        }
+
+        /* ===== NEW HERO HEADER ===== */
+.template-hero {
+    background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+    border-radius: 24px;
+    padding: 28px 32px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 12px 30px rgba(232, 48, 140, 0.18);
+    margin-bottom: 30px;
+}
+
+.template-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    backdrop-filter: blur(6px);
+}
+
+.template-info h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.template-meta {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
+.template-tags {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tag {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.2);
+}
+
+.tag.draft {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.tag.active {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.tag.config {
+    background: rgba(255,255,255,0.25);
+    color: white;
+}
+
+/* Back button improve */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 18px;
+    border-radius: 999px; /* fully pill */
+
+    background: rgba(255, 255, 255, 0.9);
+    color: #e8308c;
+
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+
+    backdrop-filter: blur(8px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+
+    transition: all 0.25s ease;
+}
+
+/* hover effect */
+.btn-back:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+    color: #c2185b;
+}
+
+/* icon spacing nicer */
+.btn-back i {
+    font-size: 13px;
+}
+
+.btn-back:hover {
+    background: #fdf2f8;
+    transform: translateY(-1px);
+}
+
+/* ===== UPDATE BUTTON PRIMARY ===== */
+.btn-primary {
+    background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 28px;
+    font-weight: 500;
+}
+
+/* ===== UPDATE SUMMARY HEADER ===== */
+.weight-summary-card .card-header {
+    background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+    color: white;
+    border-radius: 20px 20px 0 0;
+}
+
+/* Top bar container */
+.top-bar {
+    margin-bottom: 12px;
+}
+
+/* Back button (pill style) */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 16px;
+    border-radius: 999px;
+
+    background: white;
+    color: #e8308c;
+
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+
+    border: 1px solid #f3e5f5;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+
+    transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+    background: #fdf2f8;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
     </style>
 </head>
 <body class="<?php echo $is_active ? 'active-mode' : 'draft-mode'; ?>">
     <div class="dashboard">
-    <?php include("../includes/sidebar.php"); ?>
+        <?php include("../includes/sidebar.php"); ?>
 
-    <div class="reports-content">
-        <div class="container mt-4">
+        <div class="reports-content">
+            <div class="top-bar">
+                <a href="kpi_template_management.php" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Templates
+                </a>
+            </div>
+            <!-- Header - matching kpi_template_management -->
+            <!-- ✨ MODERN KPI HEADER -->
+            <div class="template-hero">
+                
+                <div class="template-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+
+                <div class="template-info">
+                    <h2><?php echo htmlspecialchars($template['template_name']); ?></h2>
+
+                    <div class="template-meta">
+                        KPI Template • Year <?php echo $template['year']; ?>
+                        &nbsp; | &nbsp;
+                        <i class="far fa-calendar-alt me-1"></i>
+                        Created: <?php echo date('M d, Y'); ?>
+                    </div>
+
+                    <div class="template-tags">
+                        <?php if($is_draft): ?>
+                            <span class="tag draft">
+                                <i class="fas fa-pen me-1"></i> Draft Mode
+                            </span>
+                        <?php endif; ?>
+
+                        <?php if($is_active): ?>
+                            <span class="tag active">
+                                <i class="fas fa-check-circle me-1"></i> Active Template
+                            </span>
+                        <?php endif; ?>
+
+                        <span class="tag config">
+                            <i class="fas fa-chart-line me-1"></i> KPI Configuration
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- Status Alerts -->
+            <?php if($is_active): ?>
+                <div class="alert alert-warning-custom alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    <strong>Active Template Mode - Protected Items:</strong> 
+                    Existing groups and targets (<span class="badge" style="background-color:#ff9800; color:white;">Orange highlighted</span>) cannot be deleted to preserve historical KPI data.
+                    You can add new groups/targets (<span class="badge bg-secondary">New badges</span>), rename items, and adjust weights.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
+            <?php if($is_draft): ?>
+                <div class="alert alert-info-custom alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-edit me-2"></i>
+                    <strong>Draft Mode - Full Control:</strong> 
+                    Newly added items (<span class="badge" style="background-color:#2196f3; color:white;">Blue highlighted</span>) are clearly visible.
+                    You have full control - add, delete groups/targets, rename, and adjust weights freely.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_GET['success'])): ?>
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> Template updated successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($error_message): ?>
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i> <?php echo $error_message; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
             <div class="row">
-                <div class="col-md-8">
-                    <h2>
-                        <i class="fas fa-edit"></i> 
-                        <?php echo $is_active ? 'Edit Active Template' : 'Edit Draft Template'; ?>
-                        <small class="text-muted"><?php echo htmlspecialchars($template['template_name']); ?></small>
-                    </h2>
-                    
-                    <?php if($is_active): ?>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-shield-alt"></i> 
-                            <strong>⚠️ Active Template Mode - Protected Items:</strong> 
-                            Existing groups and targets (<span class="badge" style="background-color:#ff9800; color:white;">Orange highlighted</span>) cannot be deleted to preserve historical KPI data.
-                            You can add new groups/targets (<span class="badge bg-secondary">Gray badges</span>), rename items, and adjust weights.
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if($is_draft): ?>
-                        <div class="alert alert-info">
-                            <i class="fas fa-edit"></i> 
-                            <strong>📝 Draft Mode - Full Control:</strong> 
-                            Newly added items (<span class="badge" style="background-color:#2196f3; color:white;">Blue highlighted</span>) are clearly visible.
-                            You have full control - add, delete groups/targets, rename, and adjust weights freely.
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if (isset($_GET['success'])): ?>
-                        <div class="alert alert-success">Template updated successfully!</div>
-                    <?php endif; ?>
-                    
-                    <?php if ($error_message): ?>
-                        <div class="alert alert-danger"><?php echo $error_message; ?></div>
-                    <?php endif; ?>
-                    
+                <div class="col-lg-8">
                     <form method="POST" id="templateForm" onsubmit="return validateGroups()">
-                        <div class="card mb-4">
+                        <!-- Template Info Card -->
+                        <div class="card mb-4" style="border-radius: 20px; border: 1px solid var(--border-soft);">
                             <div class="card-body">
+                                <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i> Template Information</h5>
                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Template Name <span class="text-danger">*</span></label>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Template Name <span class="text-danger">*</span></label>
                                         <input type="text" name="template_name" class="form-control" required
                                                value="<?php echo htmlspecialchars($template['template_name']); ?>">
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Year <span class="text-danger">*</span></label>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Year <span class="text-danger">*</span></label>
                                         <input type="number" name="year" class="form-control" required min="2020" max="2030"
                                                value="<?php echo $template['year']; ?>">
                                     </div>
                                 </div>
-                                <div class="row mt-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Section 1 Total Weight (Competency) %</label>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Section 1 Total Weight (Competency) %</label>
                                         <input type="number" name="section1_weight" id="section1_weight" 
                                                class="form-control" required step="0.01" min="0" max="100"
                                                value="<?php echo $template['section1_weight']; ?>"
                                                onchange="updateTotalWeight()">
                                         <small class="text-muted">Sum of all competency weights</small>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Section 2 Total Weight (KPIs) %</label>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-semibold">Section 2 Total Weight (KPIs) %</label>
                                         <input type="number" name="section2_weight" id="section2_weight" 
                                                class="form-control" required step="0.01" min="0" max="100"
                                                value="<?php echo $template['section2_weight']; ?>"
@@ -407,84 +723,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <small class="text-muted">Sum of all KPI group weights</small>
                                     </div>
                                 </div>
-                                <div class="mt-2">
-                                    <small id="weightWarning" class="text-danger"></small>
-                                </div>
+                                <div id="weightWarning" class="text-danger small mt-1"></div>
                             </div>
                         </div>
                         
+                        <!-- Groups Container -->
                         <div id="groupsContainer">
                             <!-- Section 1: Competency -->
                             <div class="section-card" data-section="1">
                                 <div class="section-header">
                                     <h4>
-                                        <i class="fas fa-star"></i> Section 1: Core Competencies
+                                        <i class="fas fa-star text-info me-2"></i> Section 1: Core Competencies
                                         <span class="section-badge badge-section1">Individual weights</span>
                                     </h4>
-                                    <small>Total Weight: <span class="section1-total">0</span>% (Target: <span id="targetSection1"><?php echo $template['section1_weight']; ?></span>%)</small>
+                                    <small class="text-muted">Total Weight: <strong class="section1-total">0</strong>% (Target: <span id="targetSection1"><?php echo $template['section1_weight']; ?></span>%)</small>
                                 </div>
                                 <div id="section1-groups"></div>
-                                <button type="button" class="btn btn-sm btn-success mt-2" onclick="addGroup(1)">
-                                    <i class="fas fa-plus"></i> Add Competency Group
+                                <button type="button" class="btn btn-sm btn-success mt-3" onclick="addGroup(1)">
+                                    <i class="fas fa-plus me-1"></i> Add Competency Group
                                 </button>
                             </div>
                             
                             <!-- Section 2: KPIs -->
-                            <div class="section-card" data-section="2">
+                            <div class="section-card mt-4" data-section="2">
                                 <div class="section-header">
                                     <h4>
-                                        <i class="fas fa-chart-line"></i> Section 2: Key Performance Indicators
+                                        <i class="fas fa-chart-line text-primary me-2"></i> Section 2: Key Performance Indicators
                                         <span class="section-badge badge-section2">Auto-distributed weights</span>
                                     </h4>
-                                    <small>Total Weight: <span class="section2-total">0</span>% (Target: <span id="targetSection2"><?php echo $template['section2_weight']; ?></span>%)</small>
+                                    <small class="text-muted">Total Weight: <strong class="section2-total">0</strong>% (Target: <span id="targetSection2"><?php echo $template['section2_weight']; ?></span>%)</small>
                                 </div>
                                 <div id="section2-groups"></div>
-                                <button type="button" class="btn btn-sm btn-success mt-2" onclick="addGroup(2)">
-                                    <i class="fas fa-plus"></i> Add KPI Group
+                                <button type="button" class="btn btn-sm btn-success mt-3" onclick="addGroup(2)">
+                                    <i class="fas fa-plus me-1"></i> Add KPI Group
                                 </button>
                             </div>
                         </div>
                         
                         <input type="hidden" name="kpi_groups" id="kpi_groups">
                         
-                        <div class="mt-4 mb-5">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-save"></i> Save Changes
+                        <div class="mt-4 mb-5 d-flex gap-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> Save Changes
                             </button>
-                            <a href="kpi_template_management.php" class="btn btn-secondary btn-lg">Cancel</a>
+                            <a href="kpi_template_management.php" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i> Cancel
+                            </a>
                         </div>
                     </form>
                 </div>
                 
-                <div class="col-md-4">
-                    <div class="card weight-summary">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0"><i class="fas fa-balance-scale"></i> Weight Summary</h5>
+                <div class="col-lg-4">
+                    <div class="card weight-summary-card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i> Weight Summary</h5>
                         </div>
                         <div class="card-body">
-                            <div class="mb-3">
-                                <label>Section 1 Total:</label>
-                                <h3 id="summarySection1" class="text-info">0%</h3>
-                                <div class="progress">
+                            <div class="mb-4">
+                                <label class="fw-semibold">Section 1 Total:</label>
+                                <h3 id="summarySection1" class="text-info mt-1">0%</h3>
+                                <div class="progress mt-2">
                                     <div id="progressSection1" class="progress-bar bg-info" style="width: 0%"></div>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label>Section 2 Total:</label>
-                                <h3 id="summarySection2" class="text-primary">0%</h3>
-                                <div class="progress">
+                            <div class="mb-4">
+                                <label class="fw-semibold">Section 2 Total:</label>
+                                <h3 id="summarySection2" class="text-primary mt-1">0%</h3>
+                                <div class="progress mt-2">
                                     <div id="progressSection2" class="progress-bar bg-primary" style="width: 0%"></div>
                                 </div>
                             </div>
                             <hr>
                             <div>
-                                <label>Overall Status:</label>
-                                <h4 id="overallStatus" class="text-success">
+                                <label class="fw-semibold">Overall Status:</label>
+                                <h4 id="overallStatus" class="text-success mt-1">
                                     <i class="fas fa-check-circle"></i> Valid
                                 </h4>
                             </div>
-                            <div class="alert alert-info mt-3 small">
-                                <i class="fas fa-info-circle"></i> 
+                            <div class="alert alert-info mt-3 small mb-0">
+                                <i class="fas fa-info-circle me-1"></i> 
                                 <strong>Section 1:</strong> Each competency has its own individual weight.<br>
                                 <strong>Section 2:</strong> Group weight is automatically distributed evenly among all targets.
                             </div>
@@ -494,9 +811,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
-    </div>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let kpiGroups = [];
         let groupCounter = 0;
@@ -508,12 +825,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Load existing groups
         kpiGroups = existingGroups.map((group, index) => {
             if (group.section_num == 1) {
-                // Section 1: Targets have individual weights
                 return {
                     id: index,
                     section_num: group.section_num,
                     kpi_group: group.kpi_group,
-                    weight: 0, // Not used for section 1, total calculated from targets
+                    weight: 0,
                     targets: group.targets.map(t => ({
                         description: t.description,
                         weight: t.weight,
@@ -525,7 +841,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     is_existing_group: group.is_existing_group || true
                 };
             } else {
-                // Section 2: Targets are just descriptions
                 return {
                     id: index,
                     section_num: group.section_num,
@@ -552,10 +867,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 target_ids: [],
                 target_existing: [],
                 kpi_code_prefix: section == 1 ? 'S' : 'K',
-                is_existing_group: false  // Mark as new group
+                is_existing_group: false
             };
             
-            // For Section 1, add a default competency with weight
             if (section == 1) {
                 newGroup.targets = [{ description: '', weight: 0, id: null, is_existing: false }];
                 newGroup.target_ids = [null];
@@ -582,11 +896,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const group = kpiGroups.find(g => g.id === groupId);
             if (group) {
                 if (group.section_num == 1) {
-                    // Section 1: Add competency with individual weight
                     group.targets.push({ description: '', weight: 0, id: null, is_existing: false });
                     group.target_ids.push(null);
                 } else {
-                    // Section 2: Add target description
                     group.targets.push('');
                     group.target_ids.push(null);
                 }
@@ -597,7 +909,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function removeTarget(groupId, targetIndex) {
             const group = kpiGroups.find(g => g.id === groupId);
             if (group) {
-                // Check if this is an existing target (has ID) and if deletion is allowed
                 const isExisting = group.section_num == 1 ? 
                     group.targets[targetIndex].is_existing : 
                     (group.target_ids[targetIndex] !== null && group.target_ids[targetIndex] !== undefined);
@@ -670,24 +981,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const groupCardClass = group.is_existing_group ? 'existing-group' : '';
             
             if (group.section_num == 1) {
-                // Section 1: Each competency has its own weight field
                 group.targets.forEach((target, index) => {
                     const isExisting = target.is_existing;
                     const deleteDisabled = isExisting && !canDeleteTargets;
                     const deleteTitle = deleteDisabled ? 'Cannot delete existing competencies from active template' : '';
                     const targetClass = isExisting ? 'existing-target' : '';
                     
-                    // Determine badge styling based on mode
                     let badgeHtml = '';
                     if (isExisting) {
-                        badgeHtml = '<span class="existing-badge"><i class="fas fa-history"></i> Existing</span>';
+                        badgeHtml = '<span class="existing-badge"><i class="fas fa-history me-1"></i>Existing</span>';
                     } else {
-                        badgeHtml = '<span class="new-badge"><i class="fas fa-plus"></i> New</span>';
+                        badgeHtml = '<span class="new-badge"><i class="fas fa-plus me-1"></i>New</span>';
                     }
                     
                     targetsHtml += `
                         <div class="target-item ${targetClass}">
-                            <div class="row">
+                            <div class="row align-items-center">
                                 <div class="col-md-5">
                                     <input type="text" class="form-control form-control-sm" 
                                            value="${escapeHtml(target.description)}"
@@ -696,8 +1005,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     ${badgeHtml}
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="input-group">
-                                        <input type="number" class="form-control form-control-sm individual-weight-input" 
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control individual-weight-input" 
                                                step="0.01" min="0" max="100"
                                                value="${target.weight}"
                                                placeholder="Weight"
@@ -706,7 +1015,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <button type="button" class="btn btn-sm ${deleteDisabled ? 'btn-secondary' : 'btn-danger'}" 
+                                    <button type="button" class="btn btn-sm ${deleteDisabled ? 'btn-secondary' : 'btn-outline-danger'}" 
                                             onclick="removeTarget(${group.id}, ${index})"
                                             ${deleteDisabled ? 'disabled' : ''}
                                             title="${deleteTitle}">
@@ -718,39 +1027,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     `;
                 });
             } else {
-                // Section 2: Targets with auto-distributed weights
                 group.targets.forEach((target, index) => {
                     const isExisting = group.target_ids[index] !== null && group.target_ids[index] !== undefined;
                     const deleteDisabled = isExisting && !canDeleteTargets;
                     const deleteTitle = deleteDisabled ? 'Cannot delete existing targets from active template' : '';
                     const targetClass = isExisting ? 'existing-target' : '';
-                    
-                    // Calculate what weight this target would get (for display only)
                     const displayWeight = group.weight > 0 && group.targets.length > 0 ? (group.weight / group.targets.length).toFixed(2) : 0;
                     
-                    // Determine badge styling based on mode
                     let badgeHtml = '';
                     if (isExisting) {
-                        badgeHtml = '<span class="existing-badge"><i class="fas fa-history"></i> Existing</span>';
+                        badgeHtml = '<span class="existing-badge"><i class="fas fa-history me-1"></i>Existing</span>';
                     } else {
-                        badgeHtml = '<span class="new-badge"><i class="fas fa-plus"></i> New</span>';
+                        badgeHtml = '<span class="new-badge"><i class="fas fa-plus me-1"></i>New</span>';
                     }
                     
                     targetsHtml += `
                         <div class="target-item ${targetClass}">
-                            <div class="row">
-                                <div class="col-md-8">
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
                                     <input type="text" class="form-control form-control-sm" 
                                            value="${escapeHtml(target)}"
                                            placeholder="Enter target description or measurable goal"
                                            onchange="updateTarget(${group.id}, ${index}, null, this.value)">
                                     ${badgeHtml}
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-3">
                                     <small class="text-muted">Weight: ${displayWeight}%</small>
                                 </div>
                                 <div class="col-md-2">
-                                    <button type="button" class="btn btn-sm ${deleteDisabled ? 'btn-secondary' : 'btn-danger'}" 
+                                    <button type="button" class="btn btn-sm ${deleteDisabled ? 'btn-secondary' : 'btn-outline-danger'}" 
                                             onclick="removeTarget(${group.id}, ${index})"
                                             ${deleteDisabled ? 'disabled' : ''}
                                             title="${deleteTitle}">
@@ -763,12 +1068,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             }
             
-            // Determine group badge styling based on mode
             let groupBadgeHtml = '';
             if (group.is_existing_group) {
-                groupBadgeHtml = '<span class="existing-badge"><i class="fas fa-history"></i> Existing Group</span>';
+                groupBadgeHtml = '<span class="existing-badge"><i class="fas fa-history me-1"></i>Existing Group</span>';
             } else {
-                groupBadgeHtml = '<span class="new-badge"><i class="fas fa-plus"></i> New Group</span>';
+                groupBadgeHtml = '<span class="new-badge"><i class="fas fa-plus me-1"></i>New Group</span>';
             }
             
             return `
@@ -784,7 +1088,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="col-md-3">
                                 ${group.section_num == 1 ? 
-                                    `<small class="text-muted">Group total: <span id="group-total-${group.id}">0</span>%</small>` :
+                                    `<small class="text-muted">Group total: <strong id="group-total-${group.id}">0</strong>%</small>` :
                                     `<div class="input-group">
                                         <input type="number" class="form-control group-weight-input" 
                                                step="0.01" min="0" max="100"
@@ -802,22 +1106,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                        onchange="updateGroupField(${group.id}, 'kpi_code_prefix', this.value)">
                             </div>
                             <div class="col-md-2 text-end">
-                                <button type="button" class="btn btn-sm ${groupDeleteDisabled ? 'btn-secondary' : 'btn-danger'}" 
+                                <button type="button" class="btn btn-sm ${groupDeleteDisabled ? 'btn-secondary' : 'btn-outline-danger'}" 
                                         onclick="removeGroup(${group.id})"
                                         ${groupDeleteDisabled ? 'disabled' : ''}
                                         title="${groupDeleteTitle}">
-                                    <i class="fas fa-trash"></i> Remove
+                                    <i class="fas fa-trash me-1"></i> Remove
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="target-list">
-                        <label class="small text-muted">
+                        <label class="small text-muted mb-2">
                             ${group.section_num == 1 ? 'Competencies / Measurable Indicators:' : 'Targets / Measurable Indicators:'}
                         </label>
                         ${targetsHtml}
                         <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addTarget(${group.id})">
-                            <i class="fas fa-plus"></i> Add ${group.section_num == 1 ? 'Competency' : 'Target'}
+                            <i class="fas fa-plus me-1"></i> Add ${group.section_num == 1 ? 'Competency' : 'Target'}
                         </button>
                     </div>
                 </div>
@@ -830,18 +1134,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             kpiGroups.forEach(group => {
                 if (group.section_num == 1) {
-                    // Section 1: Sum individual competency weights
                     let groupTotal = 0;
                     group.targets.forEach(target => {
                         const weight = parseFloat(target.weight) || 0;
                         groupTotal += weight;
                     });
                     section1Total += groupTotal;
-                    
-                    // Update group total display
                     $(`#group-total-${group.id}`).text(groupTotal.toFixed(2));
                 } else {
-                    // Section 2: Sum group weights
                     const weight = parseFloat(group.weight) || 0;
                     section2Total += weight;
                 }
@@ -863,18 +1163,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $('#progressSection2').css('width', Math.min(progress2, 100) + '%');
             
             if (progress1 > 100) {
-                $('#progressSection1').addClass('bg-danger').removeClass('bg-info');
+                $('#progressSection1').removeClass('bg-info').addClass('bg-danger');
             } else {
-                $('#progressSection1').addClass('bg-info').removeClass('bg-danger');
+                $('#progressSection1').removeClass('bg-danger').addClass('bg-info');
             }
             
             if (progress2 > 100) {
-                $('#progressSection2').addClass('bg-danger').removeClass('bg-primary');
+                $('#progressSection2').removeClass('bg-primary').addClass('bg-danger');
             } else {
-                $('#progressSection2').addClass('bg-primary').removeClass('bg-danger');
+                $('#progressSection2').removeClass('bg-danger').addClass('bg-primary');
             }
             
-            // Validate weights
             const section1Valid = Math.abs(section1Total - targetSection1) < 0.01;
             const section2Valid = Math.abs(section2Total - targetSection2) < 0.01;
             
@@ -891,10 +1190,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const total = section1 + section2;
             
             if (Math.abs(total - 100) > 0.01) {
-                $('#weightWarning').html(`<i class="fas fa-exclamation-circle"></i> Total weight is ${total}%. Must equal 100%!`);
+                $('#weightWarning').html(`<i class="fas fa-exclamation-circle me-1"></i> Total weight is ${total}%. Must equal 100%!`);
                 return false;
             } else {
-                $('#weightWarning').text('');
+                $('#weightWarning').html('');
                 updateWeights();
                 return true;
             }
@@ -912,7 +1211,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             let section1Total = 0;
             let section2Total = 0;
             
-            // Validate each group
             for (const group of kpiGroups) {
                 if (!group.kpi_group.trim()) {
                     alert('Please enter a name for all groups');
@@ -920,7 +1218,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 if (group.section_num == 1) {
-                    // Validate Section 1 competencies
                     let groupTotal = 0;
                     for (const target of group.targets) {
                         if (!target.description.trim()) {
@@ -935,7 +1232,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     section1Total += groupTotal;
                 } else {
-                    // Validate Section 2 targets
                     for (const target of group.targets) {
                         if (!target.trim()) {
                             alert(`Please enter all targets for group: ${group.kpi_group}`);
@@ -957,13 +1253,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return false;
             }
             
-            // Prepare data for submission
             const groupsToSave = kpiGroups.map(group => {
                 if (group.section_num == 1) {
                     return {
                         section: 'Section 1',
                         kpi_group: group.kpi_group,
-                        weight: 0, // Not used for section 1
+                        weight: 0,
                         targets: group.targets.map(t => ({
                             description: t.description,
                             weight: t.weight

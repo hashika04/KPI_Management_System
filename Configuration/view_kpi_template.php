@@ -23,6 +23,20 @@ if (!$template) {
     exit();
 }
 
+// Determine template type
+$is_active = ($template['status'] == 'active');
+$has_kpi_data = false;
+
+// Check if template has KPI data
+$check_data_sql = "SELECT COUNT(*) as count FROM kpi_data WHERE template_id = ?";
+$check_data_stmt = $conn->prepare($check_data_sql);
+$check_data_stmt->bind_param("i", $template_id);
+$check_data_stmt->execute();
+$data_result = $check_data_stmt->get_result();
+$data_count = $data_result->fetch_assoc()['count'];
+$has_kpi_data = ($data_count > 0);
+$is_previous = (!$is_active && $has_kpi_data);
+
 // Fetch template items
 $items_sql = "SELECT * FROM kpi_template_items WHERE template_id = ? ORDER BY section, display_order";
 $items_stmt = $conn->prepare($items_sql);
@@ -41,7 +55,19 @@ while($item = $items_result->fetch_assoc()) {
     }
 }
 
-// Calculate weighted score example (if needed)
+// Group Section 2 items by kpi_group and calculate group total weight
+$section2_groups = [];
+$group_totals = [];
+foreach ($section2_items as $item) {
+    if (!isset($section2_groups[$item['kpi_group']])) {
+        $section2_groups[$item['kpi_group']] = [];
+        $group_totals[$item['kpi_group']] = 0;
+    }
+    $section2_groups[$item['kpi_group']][] = $item;
+    $group_totals[$item['kpi_group']] += $item['weight'];
+}
+
+// Calculate totals
 $section1_total_weight = array_sum(array_column($section1_items, 'weight'));
 $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
 ?>
@@ -51,205 +77,619 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View KPI Template</title>
+    <title>View KPI Template - <?php echo htmlspecialchars($template['template_name']); ?></title>
     <link rel="stylesheet" href="../asset/universal.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .table-kpi {
+        .reports-content {
+            padding: 24px 32px;
+            background: var(--bg-main);
+            min-height: 100vh;
+        }
+        
+        /* Top bar container */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        /* Back button pill style */
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: white;
+            color: #e8308c;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid #f3e5f5;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-back:hover {
+            background: #fdf2f8;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+            color: #c2185b;
+        }
+        
+        /* Action buttons group */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn-edit {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        .btn-edit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(232, 48, 140, 0.3);
+            color: white;
+        }
+        
+        .btn-print {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: white;
+            color: #475569;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .btn-print:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        
+        /* Modern Hero Header */
+        .template-hero {
+            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+            border-radius: 24px;
+            padding: 28px 32px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 12px 30px rgba(232, 48, 140, 0.18);
             margin-bottom: 30px;
         }
-        .table-kpi thead {
-            background-color: #f8f9fa;
+        
+        .template-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            backdrop-filter: blur(6px);
         }
+        
+        .template-info h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .template-meta {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+        
+        .template-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .tag {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .tag.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .tag.inactive {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        
+        .tag.archived {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .tag.config {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+        
+        .tag.readonly {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        /* Info Card */
+        .info-card {
+            border-radius: 20px;
+            border: 1px solid var(--border-soft);
+            margin-bottom: 24px;
+            background: var(--bg-card);
+        }
+        
+        .info-card .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid var(--border-soft);
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #1e293b;
+            border-radius: 20px 20px 0 0;
+        }
+        
+        /* Section Card */
+        .section-card {
+            margin-bottom: 30px;
+            border: 1px solid var(--border-soft);
+            border-radius: 20px;
+            background-color: var(--bg-card);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 18px 24px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid var(--border-soft);
+        }
+        
+        .section-header h4 {
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+        
+        .section-header small {
+            color: #64748b;
+            font-size: 13px;
+        }
+        
+        .section-badge {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-left: 12px;
+        }
+        
+        .badge-section1 {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+        
+        .badge-section2 {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+        
+        /* Table Styles */
+        .table-kpi {
+            margin-bottom: 0;
+        }
+        
+        .table-kpi thead th {
+            background: #f1f5f9;
+            font-weight: 600;
+            font-size: 13px;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 12px 16px;
+        }
+        
+        .table-kpi tbody td {
+            padding: 12px 16px;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+        
+        .group-header-row td {
+            background: #fefce8;
+            font-weight: 600;
+            color: #854d0e;
+            padding: 10px 16px;
+        }
+        
+        .group-header-row td strong {
+            font-size: 15px;
+        }
+        
+        .group-weight-badge {
+            background: #e2e8f0;
+            color: #1e293b;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+        
         .badge-weight {
-            font-size: 0.85em;
-            padding: 3px 8px;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
         }
-        .group-header {
-            background-color: #e9ecef;
-            font-weight: bold;
+        
+        .badge-weight-section1 {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
         }
+        
+        .badge-weight-section2 {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+        
+        .total-row {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+        
+        .grand-total-row {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            font-weight: 700;
+        }
+        
+        .target-indent {
+            padding-left: 32px !important;
+            color: #475569;
+        }
+        
+        .target-code {
+            color: #64748b;
+            font-size: 12px;
+        }
+        
+        /* Readonly Alert */
+        .alert-readonly {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe8cc 100%);
+            border-left: 4px solid #ff9800;
+            border-radius: 16px;
+        }
+        
         @media print {
             .no-print {
-                display: none;
+                display: none !important;
             }
-            .container {
-                max-width: 100%;
+            .dashboard {
+                margin: 0;
+                padding: 0;
+            }
+            .reports-content {
+                padding: 20px;
+            }
+            .template-hero {
+                background: #e8308c;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .badge-weight-section1, .badge-weight-section2,
+            .section-badge, .tag, .total-row, .grand-total-row,
+            .group-header-row {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
         }
     </style>
 </head>
 <body>
     <div class="dashboard">
-    <?php include("../includes/sidebar.php"); ?>
-    
-    <div class="reports-content">
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <h2>
-                    <i class="fas fa-file-alt"></i> 
-                    <?php echo htmlspecialchars($template['template_name']); ?>
-                </h2>
-                <p class="text-muted">
-                    Year: <?php echo $template['year']; ?> | 
-                    Status: 
-                    <?php if($template['status'] == 'active'): ?>
-                        <span class="badge bg-success">Active</span>
-                    <?php elseif($template['status'] == 'inactive'): ?>
-                        <span class="badge bg-secondary">Inactive</span>
-                    <?php else: ?>
-                        <span class="badge bg-dark">Archived</span>
-                    <?php endif; ?>
-                </p>
-            </div>
-            <div class="col-md-4 text-end no-print">
-                <a href="edit_kpi_template.php?id=<?php echo $template_id; ?>" class="btn btn-primary">
-                    <i class="fas fa-edit"></i> Edit Template
+        <?php include("../includes/sidebar.php"); ?>
+
+        <div class="reports-content">
+            <!-- Top Bar with Back Button and Action Buttons -->
+            <div class="top-bar no-print">
+                <a href="kpi_template_management.php" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Templates
                 </a>
-                <a href="kpi_template_management.php" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
-                <button onclick="window.print()" class="btn btn-info">
-                    <i class="fas fa-print"></i> Print
-                </button>
+                <div class="action-buttons">
+                    <a href="edit_kpi_template.php?id=<?php echo $template_id; ?>" class="btn-edit">
+                        <i class="fas fa-edit"></i>
+                        Edit Template
+                    </a>
+                    <button onclick="window.print()" class="btn-print">
+                        <i class="fas fa-print"></i>
+                        Print
+                    </button>
+                </div>
             </div>
-        </div>
-        
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Template Configuration</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <strong>Section 1 Weight:</strong><br>
-                        <span class="badge bg-info badge-weight"><?php echo $template['section1_weight']; ?>%</span>
-                        <small class="text-muted">(Competency)</small>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Section 2 Weight:</strong><br>
-                        <span class="badge bg-primary badge-weight"><?php echo $template['section2_weight']; ?>%</span>
-                        <small class="text-muted">(KPIs)</small>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Created:</strong><br>
-                        <?php echo date('F d, Y', strtotime($template['created_at'])); ?>
+
+            <!-- Modern Hero Header -->
+            <div class="template-hero">
+                <div class="template-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="template-info">
+                    <h2><?php echo htmlspecialchars($template['template_name']); ?></h2>
+                    <div class="template-meta">
+                        KPI Template • Year <?php echo $template['year']; ?>
+                        &nbsp; | &nbsp;
+                        <i class="far fa-calendar-alt me-1"></i>
+                        Created: <?php echo date('M d, Y', strtotime($template['created_at'])); ?>
                         <?php if($template['created_by']): ?>
-                            <br><small>by <?php echo htmlspecialchars($template['created_by']); ?></small>
+                            &nbsp; | &nbsp;
+                            <i class="fas fa-user me-1"></i>
+                            by <?php echo htmlspecialchars($template['created_by']); ?>
+                        <?php endif; ?>
+                    </div>
+                    <div class="template-tags">
+                        <?php if($template['status'] == 'active'): ?>
+                            <span class="tag active">
+                                <i class="fas fa-check-circle me-1"></i> Active Template
+                            </span>
+                        <?php elseif($template['status'] == 'inactive'): ?>
+                            <span class="tag inactive">
+                                <i class="fas fa-clock me-1"></i> Inactive Template
+                            </span>
+                        <?php else: ?>
+                            <span class="tag archived">
+                                <i class="fas fa-archive me-1"></i> Archived
+                            </span>
+                        <?php endif; ?>
+                        
+                        <span class="tag config">
+                            <i class="fas fa-chart-line me-1"></i> KPI Configuration
+                        </span>
+                        
+                        <?php if($is_previous): ?>
+                            <span class="tag readonly">
+                                <i class="fas fa-lock me-1"></i> Read Only (Has KPI Data)
+                            </span>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Section 1: Competency -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>Section 1: Core Competencies</h4>
-                <small>Total Weight: <?php echo $section1_total_weight; ?>% (Target: <?php echo $template['section1_weight']; ?>%)</small>
+            
+            <!-- Readonly Alert -->
+            <?php if($is_previous): ?>
+                <div class="alert alert-readonly alert-dismissible fade show mb-4 no-print" role="alert">
+                    <i class="fas fa-lock me-2"></i>
+                    <strong>Read-Only Mode:</strong> This template has associated KPI data and cannot be edited to preserve historical records.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
+            <!-- Template Info Card -->
+            <div class="info-card">
+                <div class="card-header">
+                    <i class="fas fa-info-circle me-2" style="color: #e8308c;"></i> Template Information
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-muted small mb-1">Section 1 Weight (Competency)</div>
+                            <h4 class="mb-0">
+                                <span class="badge badge-weight-section1"><?php echo $template['section1_weight']; ?>%</span>
+                            </h4>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-muted small mb-1">Section 2 Weight (KPIs)</div>
+                            <h4 class="mb-0">
+                                <span class="badge badge-weight-section2"><?php echo $template['section2_weight']; ?>%</span>
+                            </h4>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-muted small mb-1">Total Weight</div>
+                            <h4 class="mb-0 text-success">
+                                <?php echo $template['section1_weight'] + $template['section2_weight']; ?>%
+                            </h4>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <table class="table table-bordered table-kpi">
-                    <thead>
-                        <tr>
-                            <th width="5%">#</th>
-                            <th width="15%">Code</th>
-                            <th width="25%">Competency</th>
-                            <th width="45%">Description</th>
-                            <th width="10%">Weight</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($section1_items)): ?>
+            
+            <!-- Section 1: Competency -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h4>
+                        <i class="fas fa-star text-info me-2"></i> Section 1: Core Competencies
+                        <span class="section-badge badge-section1">Individual weights</span>
+                    </h4>
+                    <small>Total Weight: <strong><?php echo $section1_total_weight; ?>%</strong> (Target: <?php echo $template['section1_weight']; ?>%)</small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-kpi">
+                        <thead>
                             <tr>
-                                <td colspan="5" class="text-center">No competency items defined</td>
+                                <th width="5%">#</th>
+                                <th width="12%">Code</th>
+                                <th width="23%">Competency Group</th>
+                                <th width="50%">Description / Measurable Indicator</th>
+                                <th width="10%">Weight</th>
                             </tr>
-                        <?php else: ?>
-                            <?php $counter = 1; foreach($section1_items as $item): ?>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($section1_items)): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">No competency items defined</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php 
+                                $counter = 1; 
+                                $current_group = '';
+                                foreach($section1_items as $item): 
+                                    if ($current_group != $item['kpi_group']):
+                                        $current_group = $item['kpi_group'];
+                                ?>
+                                    <tr class="group-header-row">
+                                        <td colspan="5">
+                                            <i class="fas fa-folder-open me-2"></i>
+                                            <strong><?php echo htmlspecialchars($current_group); ?></strong>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
                                 <tr>
                                     <td><?php echo $counter++; ?></td>
-                                    <td><?php echo htmlspecialchars($item['kpi_code']); ?></td>
+                                    <td><code><?php echo htmlspecialchars($item['kpi_code']); ?></code></td>
                                     <td><?php echo htmlspecialchars($item['kpi_group']); ?></td>
                                     <td><?php echo htmlspecialchars($item['kpi_description']); ?></td>
                                     <td class="text-center">
-                                        <span class="badge bg-info"><?php echo $item['weight']; ?>%</span>
+                                        <span class="badge badge-weight-section1"><?php echo $item['weight']; ?>%</span>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                    <tfoot>
-                        <tr class="table-info">
-                            <td colspan="4" class="text-end"><strong>Section 1 Total:</strong></td>
-                            <td class="text-center"><strong><?php echo $section1_total_weight; ?>%</strong></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Section 2: KPIs -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>Section 2: Key Performance Indicators</h4>
-                <small>Total Weight: <?php echo $section2_total_weight; ?>% (Target: <?php echo $template['section2_weight']; ?>%)</small>
-            </div>
-            <div class="card-body">
-                <table class="table table-bordered table-kpi">
-                    <thead>
-                        <tr>
-                            <th width="5%">#</th>
-                            <th width="15%">Code</th>
-                            <th width="25%">KPI Group</th>
-                            <th width="45%">Description / Target</th>
-                            <th width="10%">Weight</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($section2_items)): ?>
-                            <tr>
-                                <td colspan="5" class="text-center">No KPI items defined</td>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="4" class="text-end"><strong>Section 1 Total:</strong></td>
+                                <td class="text-center"><strong><?php echo $section1_total_weight; ?>%</strong></td>
                             </tr>
-                        <?php else: ?>
-                            <?php 
-                            $counter = 1;
-                            $current_group = '';
-                            foreach($section2_items as $item): 
-                                if ($current_group != $item['kpi_group']) {
-                                    $current_group = $item['kpi_group'];
-                                    echo '<tr class="group-header">';
-                                    echo '<td colspan="5"><strong>' . htmlspecialchars($current_group) . '</strong></td>';
-                                    echo '</tr>';
-                                }
-                            ?>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Section 2: KPIs - Showing Group Totals -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h4>
+                        <i class="fas fa-chart-line text-primary me-2"></i> Section 2: Key Performance Indicators
+                        <span class="section-badge badge-section2">Auto-distributed weights</span>
+                    </h4>
+                    <small>Total Weight: <strong><?php echo $section2_total_weight; ?>%</strong> (Target: <?php echo $template['section2_weight']; ?>%)</small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-kpi">
+                        <thead>
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="12%">Code</th>
+                                <th width="23%">KPI Group</th>
+                                <th width="45%">Description / Target</th>
+                                <th width="8%">Weight</th>
+                                <th width="7%">Group Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($section2_items)): ?>
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No KPI items defined</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php 
+                                $counter = 1; 
+                                $current_group = '';
+                                foreach($section2_items as $item): 
+                                    if ($current_group != $item['kpi_group']):
+                                        $current_group = $item['kpi_group'];
+                                        $group_total = $group_totals[$current_group];
+                                ?>
+                                    <tr class="group-header-row">
+                                        <td colspan="6">
+                                            <i class="fas fa-folder-open me-2"></i>
+                                            <strong><?php echo htmlspecialchars($current_group); ?></strong>
+                                            <span class="group-weight-badge">Group Total: <?php echo $group_total; ?>%</span>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
                                 <tr>
                                     <td><?php echo $counter++; ?></td>
-                                    <td><?php echo htmlspecialchars($item['kpi_code']); ?></td>
+                                    <td><code class="target-code"><?php echo htmlspecialchars($item['kpi_code']); ?></code></td>
                                     <td><?php echo htmlspecialchars($item['kpi_group']); ?></td>
-                                    <td><?php echo htmlspecialchars($item['kpi_description']); ?></td>
+                                    <td class="target-indent">
+                                        <i class="fas fa-angle-right me-2 text-muted"></i>
+                                        <?php echo htmlspecialchars($item['kpi_description']); ?>
+                                    </td>
                                     <td class="text-center">
-                                        <span class="badge bg-primary"><?php echo $item['weight']; ?>%</span>
+                                        <span class="badge badge-weight-section2"><?php echo $item['weight']; ?>%</span>
+                                    </td>
+                                    <td class="text-center text-muted">
+                                        <?php if ($item == $section2_groups[$current_group][0]): ?>
+                                            <strong><?php echo $group_total; ?>%</strong>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                    <tfoot>
-                        <tr class="table-info">
-                            <td colspan="4" class="text-end"><strong>Section 2 Total:</strong></td>
-                            <td class="text-center"><strong><?php echo $section2_total_weight; ?>%</strong></td>
-                        </tr>
-                        <tr class="table-success">
-                            <td colspan="4" class="text-end"><strong>GRAND TOTAL:</strong></td>
-                            <td class="text-center"><strong><?php echo $section1_total_weight + $section2_total_weight; ?>%</strong></td>
-                        </tr>
-                    </tfoot>
-                </table>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="5" class="text-end"><strong>Section 2 Total:</strong></td>
+                                <td class="text-center"><strong><?php echo $section2_total_weight; ?>%</strong></td>
+                            </tr>
+                            <tr class="grand-total-row">
+                                <td colspan="5" class="text-end"><strong>GRAND TOTAL:</strong></td>
+                                <td class="text-center"><strong><?php echo $section1_total_weight + $section2_total_weight; ?>%</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Summary Card for Group Totals -->
+            <div class="info-card no-print">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-2" style="color: #e8308c;"></i> KPI Group Summary
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <?php foreach ($group_totals as $group_name => $group_total): ?>
+                            <div class="col-md-4 mb-3">
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                                    <div>
+                                        <div class="text-muted small mb-1"><?php echo htmlspecialchars($group_name); ?></div>
+                                        <h5 class="mb-0"><?php echo $group_total; ?>%</h5>
+                                    </div>
+                                    <div class="progress" style="width: 100px; height: 6px;">
+                                        <div class="progress-bar bg-primary" style="width: <?php echo ($group_total / $section2_total_weight) * 100; ?>%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
- </div>   
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

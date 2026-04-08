@@ -122,70 +122,13 @@ require_once __DIR__ . '/../includes/auth.php';
 </article>
     </section>
 
-   <section class="comparison-tool">
-    <div class="comparison-title-wrap">
-        <h2>Staff Comparison</h2>
-        <p>Select any two staff members to compare performance trends, stability, and risk level.</p>
-    </div>
-
-    <div class="comparison-toolbar">
-        <select id="compareDepartmentFilter">
-            <option value="All Departments">Select Department</option>
-        </select>
-
-        <select id="performanceFilter">
-            <option value="All Performance">Select Performance</option>
-            <option value="top">Top</option>
-            <option value="good">Good</option>
-            <option value="average">Average</option>
-            <option value="critical">Critical</option>
-            <option value="at-risk">At-Risk</option>
-        </select>
-
-        <button class="ghost-btn" id="resetCompareFilters" type="button">✕ Reset Filters</button>
-    </div>
-
-    <div class="comparison-search-row">
-        <div class="search-block">
-            <input type="text" id="staff1Search" placeholder="Search by name...">
-            <div class="suggestions" id="staff1Suggestions"></div>
-        </div>
-
-        <div class="search-block">
-            <input type="text" id="staff2Search" placeholder="Search by name...">
-            <div class="suggestions" id="staff2Suggestions"></div>
-        </div>
-    </div>
-
-    <div class="comparison-selected-row">
-        <div id="selectedStaff1" class="selected-chip empty">No staff selected</div>
-        <div class="vs-pill">vs</div>
-        <div id="selectedStaff2" class="selected-chip empty">No staff selected</div>
-    </div>
-
-    <div class="suggested-wrap">
-        <div class="suggestion-group">
-            <h4>Suggestions:</h4>
-            <div id="topPairSuggestions"></div>
-        </div>
-        <div class="suggestion-group">
-            <h4>&nbsp;</h4>
-            <div id="averagePairSuggestions"></div>
-        </div>
-    </div>
-
-    <div class="compare-actions">
-        <button class="compare-main-btn" id="compareBtn" type="button" disabled>Compare Staff</button>
-    </div>
-    </section>
-
     <section class="chart-grid">
         <article class="card chart-card chart-span-2">
             <div class="chart-head"><h2>Performance Trends & Risk Prediction</h2></div>
             <div id="performanceTrendChart" class="chart"></div>
             <p class="interpretation" id="performanceTrendInsight"></p>
         </article>
-
+        
         <article class="card chart-card chart-span-2">
             <div class="chart-head">
             <h2>Performance Distribution & Trends</h2>
@@ -204,18 +147,18 @@ require_once __DIR__ . '/../includes/auth.php';
 </article>
 
         <article class="card chart-card">
-            <div class="chart-head"><h2>Workforce Overview</h2></div>
+            <div class="chart-head"><h2>Department KPI Performance vs Target KPI</h2></div>
             <div id="departmentComparisonChart" class="chart"></div>
             <p class="interpretation" id="departmentInsight"></p>
         </article>
 
         <article class="card chart-card">
-            <div class="chart-head"><h2>KPI vs Target by Category</h2></div>
+            <div class="chart-head"><h2>KPI Category Performance vs Target </h2></div>
             <div id="kpiVsTargetChart" class="chart"></div>
             <p class="interpretation" id="kpiGapInsight"></p>
         </article>
 
-        <article class="card chart-card chart-span-2">
+        <article class="card chart-card ">
             <div class="chart-head"><h2>Score Movement Heatmap</h2></div>
             <div id="heatmapChart" class="chart heatmap"></div>
         </article>
@@ -225,24 +168,93 @@ require_once __DIR__ . '/../includes/auth.php';
             <div id="riskHistogramChart" class="chart"></div>
         </article>
 
-        <article class="card table-card">
+        <article class="card table-card chart-span-2">
             <div class="chart-head"><h2>At-Risk Staff</h2></div>
             <div class="table-wrap">
                 <table id="atRiskTable">
                     <thead>
-                        <tr><th>Name</th><th>Department</th><th>Score</th><th>Trend</th><th>Action</th></tr>
+                        <tr>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Score</th>
+                            <th>Trend</th>
+                            <th>Action</th>
+                        </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
         </article>
 
+        <section class="comparison-tool chart-span-2">
+            <div class="comparison-title-wrap">
+                <h2>Staff Comparison</h2>
+                <p>Select any two staff members to compare performance trends, stability, and risk level.</p>
+            </div>
+
+            <div class="comparison-toolbar">
+                <select id="compareDepartmentFilter">
+                    <option value="All Departments">Select Department</option>
+                </select>
+
+                <select id="performanceFilter">
+                    <option value="All Performance">Select Performance</option>
+                    <option value="top">Top</option>
+                    <option value="good">Good</option>
+                    <option value="average">Average</option>
+                    <option value="critical">Critical</option>
+                    <option value="at-risk">At-Risk</option>
+                </select>
+
+                <button class="ghost-btn" id="resetCompareFilters" type="button">✕ Reset Filters</button>
+            </div>
+
+            <div class="comparison-search-row">
+                <div class="search-block">
+                    <input type="text" id="staff1Search" placeholder="Search by name...">
+                    <div class="suggestions" id="staff1Suggestions"></div>
+                </div>
+
+                <div class="search-block">
+                    <input type="text" id="staff2Search" placeholder="Search by name...">
+                    <div class="suggestions" id="staff2Suggestions"></div>
+                </div>
+            </div>
+
+            <div class="comparison-selected-row">
+                <div id="selectedStaff1" class="selected-chip empty">No staff selected</div>
+                <div class="vs-pill">vs</div>
+                <div id="selectedStaff2" class="selected-chip empty">No staff selected</div>
+            </div>
+
+            <div class="suggested-wrap">
+                <div class="suggestion-group">
+                    <h4>Suggestions:</h4>
+                    <div id="topPairSuggestions"></div>
+                </div>
+                <div class="suggestion-group">
+                    <h4>&nbsp;</h4>
+                    <div id="averagePairSuggestions"></div>
+                </div>
+            </div>
+
+            <div class="compare-actions">
+                <button class="compare-main-btn" id="compareBtn" type="button" disabled>Compare Staff</button>
+            </div>
+        </section>
+
         <article class="card table-card chart-span-2">
             <div class="chart-head"><h2>Department Statistics</h2></div>
             <div class="table-wrap">
                 <table id="departmentStatsTable">
                     <thead>
-                        <tr><th>Department</th><th>Average Score</th><th>Top Performers</th><th>At Risk</th><th>Trend</th></tr>
+                        <tr>
+                            <th>Department</th>
+                            <th>Average Score</th>
+                            <th>Top Performers</th>
+                            <th>At Risk</th>
+                            <th>Trend</th>
+                        </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -396,33 +408,132 @@ function renderSummary(data) {
 }
 
 function renderCharts(data) {
+    const trendRows = data.performance_trend || [];
+    const periods = trendRows.map(item => item.period);
+
+    const actualSeries = trendRows.map(item => item.actual);
+    const targetSeries = trendRows.map(item => item.target);
+    const forecastSeries = trendRows.map(item => item.forecast);
+
+    const lastActualIndex = actualSeries
+        .map((value, index) => value !== null ? index : -1)
+        .filter(index => index !== -1)
+        .pop();
+
+    const forecastStartIndex = trendRows.findIndex(item => item.is_forecast === true);
+
+    const forecastConnectorX = [];
+    const forecastConnectorY = [];
+
+    if (lastActualIndex !== undefined && forecastStartIndex > -1) {
+        forecastConnectorX.push(periods[lastActualIndex], periods[forecastStartIndex]);
+        forecastConnectorY.push(actualSeries[lastActualIndex], forecastSeries[forecastStartIndex]);
+    }
+
     Plotly.react('performanceTrendChart', [
         {
-            x: data.performance_trend.map(item => item.period),
-            y: data.performance_trend.map(item => item.score),
-            type: 'bar',
-            name: 'Actual KPI %',
-            marker: { color: data.performance_trend.map(item => item.atRisk ? '#ef4444' : '#4f46e5') },
-            hovertemplate: '%{x}<br>Actual: %{y:.2f}%<extra></extra>'
-        },
-        {
-            x: data.performance_trend.map(item => item.period),
-            y: data.performance_trend.map(item => item.target),
+            x: periods,
+            y: actualSeries,
             type: 'scatter',
             mode: 'lines+markers',
+            name: 'Actual KPI %',
+            line: {
+                color: '#5b4ce6',
+                width: 4,
+                shape: 'spline'
+            },
+            marker: {
+                size: 8,
+                color: actualSeries.map(value => value !== null && value < 80 ? '#ef4444' : '#5b4ce6')
+            },
+            hovertemplate: 'Period: %{x}<br>Actual KPI: %{y:.2f}%<extra></extra>'
+        },
+        {
+            x: periods,
+            y: targetSeries,
+            type: 'scatter',
+            mode: 'lines',
             name: 'Target %',
-            line: { color: '#14b8a6', width: 3 },
-            hovertemplate: '%{x}<br>Target: %{y:.2f}%<extra></extra>'
+            line: {
+                color: '#14b8a6',
+                width: 2
+            },
+            hovertemplate: 'Period: %{x}<br>Target KPI: %{y:.2f}%<extra></extra>'
+        },
+        {
+            x: forecastConnectorX,
+            y: forecastConnectorY,
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Forecast Transition',
+            line: {
+                color: '#ec4899',
+                width: 2,
+                dash: 'dot'
+            },
+            hoverinfo: 'skip',
+            showlegend: false
+        },
+        {
+            x: periods,
+            y: forecastSeries,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Forecast KPI %',
+            line: {
+                color: '#ec4899',
+                width: 3,
+                dash: 'dash',
+                shape: 'spline'
+            },
+            marker: {
+                size: 8,
+                color: forecastSeries.map(value => value !== null && value < 80 ? '#f97316' : '#ec4899')
+            },
+            hovertemplate: 'Period: %{x}<br>Forecast KPI: %{y:.2f}%<extra></extra>'
         }
-
     ], {
-        margin: { t: 10, r: 10, b: 40, l: 50 },
+        margin: { t: 20, r: 20, b: 55, l: 60 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        yaxis: { range: [0, 100], title: 'KPI %' },
-        legend: { orientation: 'h' }
+        xaxis: {
+            title: 'Time Period',
+            tickfont: { size: 12, color: '#6b7280' },
+            showgrid: false
+        },
+        yaxis: {
+            title: 'KPI %',
+            range: [0, 100],
+            tickfont: { size: 12, color: '#6b7280' },
+            gridcolor: 'rgba(148, 163, 184, 0.18)',
+            zeroline: false
+        },
+        legend: {
+            orientation: 'h',
+            x: 0,
+            y: 1.14,
+            font: { size: 12 }
+        },
+        hoverlabel: {
+            bgcolor: '#ffffff',
+            bordercolor: '#e5e7eb',
+            font: { color: '#111827' }
+        }
     }, { responsive: true, displayModeBar: true });
-    document.getElementById('performanceTrendInsight').textContent = data.insight;
+
+    const latestActual = [...trendRows].reverse().find(item => item.actual !== null);
+    const latestForecast = trendRows.find(item => item.is_forecast === true);
+
+    if (latestActual && latestForecast) {
+        const riskText = latestForecast.forecast < 80
+            ? `The next forecasted KPI is ${latestForecast.forecast.toFixed(2)}%, which remains below the 80% target and indicates continued performance risk.`
+            : `The next forecasted KPI is ${latestForecast.forecast.toFixed(2)}%, which is expected to meet the 80% target.`;
+
+        document.getElementById('performanceTrendInsight').textContent =
+            `The latest recorded KPI is ${latestActual.actual.toFixed(2)}%. Trend across recent periods is ${data.insight.toLowerCase().includes('improving') ? 'improving' : data.insight.toLowerCase().includes('declining') ? 'declining' : 'stable'}. ${riskText}`;
+    } else {
+        document.getElementById('performanceTrendInsight').textContent = data.insight;
+    }
 
     Plotly.react('performanceDistributionChart', [{
         labels: ['Excellence', 'Good', 'Moderate', 'Critical', 'At Risk'],
@@ -434,119 +545,356 @@ function renderCharts(data) {
             data.performance_distribution['at-risk']
         ],
         type: 'pie',
-        hole: 0.48,
-        marker: { colors: ['#10b981', '#3b82f6', '#f59e0b', '#fb7185', '#ef4444'] },
-        textinfo: 'label+percent',
-        hovertemplate: '%{label}: %{value}<extra></extra>'
+        hole: 0.62,
+        sort: false,
+        direction: 'clockwise',
+        textinfo: 'percent',
+        textposition: 'inside',
+        insidetextorientation: 'auto',
+        textfont: {
+            size: 12
+        },
+        marker: {
+            colors: ['#10b981', '#3b82f6', '#f59e0b', '#fb7185', '#ef4444']
+        },
+        hovertemplate: '%{label}: %{value} staff (%{percent})<extra></extra>',
+        domain: {
+            x: [0.08, 0.58],
+            y: [0.12, 0.92]
+        }
     }], {
-        margin: { t: 10, r: 10, b: 10, l: 10 },
-        paper_bgcolor: 'transparent'
-    }, { responsive: true, displayModeBar: false });
-
-    Plotly.react('trendDistributionChart', [{
-    labels: ['Improving', 'Stable', 'Declining'],
-    values: [
-        data.trend_distribution.up,
-        data.trend_distribution.stable,
-        data.trend_distribution.down
-    ],
-    type: 'pie',
-    hole: 0.58,
-    marker: { colors: ['#10b981', '#3b82f6', '#ef4444'] },
-    textinfo: 'label+percent',
-    hovertemplate: '%{label}: %{value}<extra></extra>'
-    }], {
-    margin: { t: 10, r: 10, b: 10, l: 10 },
-    paper_bgcolor: 'transparent'
-        }, {
-    responsive: true,
-    displayModeBar: false
+        margin: { t: 10, r: 120, b: 10, l: 40 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        showlegend: true,
+        legend: {
+            orientation: 'v',
+            x: 0.72,
+            y: 0.5,
+            xanchor: 'left',
+            yanchor: 'middle',
+            font: {
+                size: 12,
+                color: '#3a2948'
+            }
+        }
+    }, {
+        responsive: true,
+        displayModeBar: false
     });
 
+        Plotly.react('trendDistributionChart', [{
+        labels: ['Improving', 'Stable', 'Declining'],
+        values: [
+            data.trend_distribution.up,
+            data.trend_distribution.stable,
+            data.trend_distribution.down
+        ],
+        type: 'pie',
+        hole: 0.62,
+        sort: false,
+        direction: 'clockwise',
+        textinfo: 'percent',
+        textposition: 'inside',
+        insidetextorientation: 'auto',
+        textfont: {
+            size: 12
+        },
+        marker: {
+            colors: ['#10b981', '#3b82f6', '#ef4444']
+        },
+        hovertemplate: '%{label}: %{value} staff (%{percent})<extra></extra>',
+        domain: {
+            x: [0.08, 0.58],
+            y: [0.12, 0.92]
+        }
+    }], {
+        margin: { t: 10, r: 120, b: 10, l: 40 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        showlegend: true,
+        legend: {
+            orientation: 'v',
+            x: 0.72,
+            y: 0.5,
+            xanchor: 'left',
+            yanchor: 'middle',
+            font: {
+                size: 12,
+                color: '#3a2948'
+            }
+        }
+    }, {
+        responsive: true,
+        displayModeBar: false
+    });
+
+    const performanceChart = document.getElementById('performanceDistributionChart');
+        if (performanceChart) {
+            performanceChart.on('plotly_click', function(eventData) {
+                const label = eventData.points?.[0]?.label;
+                if (!label) return;
+                openDetailsModal(`${label} Performance Details`, buildPerformanceSliceHtml(label));
+            });
+        }
+
+        const trendChart = document.getElementById('trendDistributionChart');
+        if (trendChart) {
+            trendChart.on('plotly_click', function(eventData) {
+                const label = eventData.points?.[0]?.label;
+                if (!label) return;
+                openDetailsModal(`${label} Trend Details`, buildTrendSliceHtml(label));
+            });
+        }
     document.getElementById('distributionInsight').textContent =
     `${data.performance_distribution.top + data.performance_distribution.good} staff are in the stronger performance bands, while ${data.performance_distribution.critical + data.performance_distribution['at-risk']} staff are below the desired level and need closer support.`;
 
-    Plotly.react('departmentComparisonChart', [
-        {
-            x: data.department_comparison.map(item => item.score),
-            y: data.department_comparison.map(item => item.department),
-            type: 'bar',
-            orientation: 'h',
-            text: data.department_comparison.map(item => item.score.toFixed(2) + '%'),
-            textposition: 'outside',
-            marker: {
-                color: data.department_comparison.map(item => {
-                    if (item.at_risk > 0) return '#ef4444';
-                    if (item.score < 80) return '#f59e0b';
-                    return '#6366f1';
-                })
-            },
-            hovertemplate: '%{y}<br>Average KPI: %{x:.2f}%<extra></extra>'
-        },
-        {
-            x: Array(data.department_comparison.length).fill(80),
-            y: data.department_comparison.map(item => item.department),
-            type: 'scatter',
-            mode: 'lines',
-            name: 'Target 80%',
+    const deptRows = [...(data.department_comparison || [])].sort((a, b) => a.score - b.score);
+
+        const deptNames = deptRows.map(item => item.department);
+        const deptScores = deptRows.map(item => item.score);
+        const deptColors = deptRows.map(item => {
+            if (item.at_risk > 0) return '#ef4444';
+            if (item.score < 80) return '#f59e0b';
+            return '#10b981';
+        });
+
+        const lollipopShapes = deptRows.map((item) => ({
+            type: 'line',
+            x0: 0,
+            x1: item.score,
+            y0: item.department,
+            y1: item.department,
+            xref: 'x',
+            yref: 'y',
+            line: {
+                color: '#2341ec',
+                width: 3
+            }
+        }));
+
+        lollipopShapes.push({
+            type: 'line',
+            x0: 80,
+            x1: 80,
+            y0: -0.5,
+            y1: deptNames.length - 0.5,
+            xref: 'x',
+            yref: 'y',
             line: {
                 color: '#14b8a6',
                 width: 2,
                 dash: 'dash'
-            },
-            hovertemplate: 'Target: 80%<extra></extra>'
-        }
-    ], {
-        margin: { t: 10, r: 30, b: 30, l: 140 },
-        paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
-        xaxis: { range: [0, 100], title: 'Average KPI %' },
-        yaxis: { automargin: true },
-        legend: { orientation: 'h' }
-    }, { responsive: true, displayModeBar: true });
-
-    if (data.department_comparison.length > 0) {
-        const sortedByScore = [...data.department_comparison].sort((a, b) => b.score - a.score);
-        const sortedByRisk = [...data.department_comparison].sort((a, b) => {
-            if (a.at_risk === b.at_risk) return a.score - b.score;
-            return b.at_risk - a.at_risk;
+            }
         });
 
-        const best = sortedByScore[0];
-        const mostCritical = sortedByRisk[0];
+        Plotly.react('departmentComparisonChart', [
+            {
+                x: deptScores,
+                y: deptNames,
+                type: 'scatter',
+                mode: 'markers+text',
+                name: 'Average KPI %',
+                marker: {
+                    color: deptColors,
+                    size: 18,
+                    line: {
+                        color: '#ffffff',
+                        width: 2
+                    }
+                },
+                text: deptScores.map(score => score.toFixed(2) + '%'),
+                textposition: 'middle right',
+                textfont: {
+                    size: 12,
+                    color: '#374151'
+                },
+                customdata: deptRows.map(item => [
+                    item.at_risk,
+                    (80 - item.score).toFixed(2)
+                ]),
+                hovertemplate:
+                    '<b>%{y}</b><br>' +
+                    'Average KPI: %{x:.2f}%<br>' +
+                    'Gap to Target: %{customdata[1]} points<br>' +
+                    'At-Risk Staff: %{customdata[0]}<extra></extra>'
+            },
+            {
+                x: [null],
+                y: [null],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Target 80%',
+                line: {
+                    color: '#14b8a6',
+                    width: 2,
+                    dash: 'dash'
+                },
+                hoverinfo: 'skip'
+            }
+        ], {
+            margin: { t: 20, r: 50, b: 45, l: 170 },
+            paper_bgcolor: 'transparent',
+            plot_bgcolor: 'transparent',
+            shapes: lollipopShapes,
+            xaxis: {
+                range: [0, 100],
+                title: 'Average KPI %',
+                gridcolor: 'rgba(23, 99, 205, 0.15)',
+                zeroline: false
+            },
+            yaxis: {
+                automargin: true,
+                title: 'Department',
+                fontweight: 'bold',
+                categoryorder: 'array',
+                categoryarray: deptNames
+            },
+            legend: {
+                orientation: 'h',
+                x: 0,
+                y: 1.12
+            }
+        }, {
+            responsive: true,
+            displayModeBar: true
+        });
+        const deptChart = document.getElementById('departmentComparisonChart');
 
-        document.getElementById('departmentInsight').textContent =
-            `${best.department} has the strongest average KPI at ${best.score.toFixed(2)}%, while ${mostCritical.department} is the most urgent coaching priority with ${mostCritical.at_risk} at-risk staff and an average KPI of ${mostCritical.score.toFixed(2)}%.`;
-    } else {
-        document.getElementById('departmentInsight').textContent = 'No department data matched the current filters.';
-    }
+        deptChart.on('plotly_hover', function(data) {
+            const pointIndex = data.points[0].pointIndex;
+
+            Plotly.restyle('departmentComparisonChart', {
+                'marker.size': [deptScores.map((_, i) => i === pointIndex ? 24 : 18)],
+                'marker.line.width': [deptScores.map((_, i) => i === pointIndex ? 3 : 2)],
+                'marker.line.color': [deptScores.map((_, i) => i === pointIndex ? '#111827' : '#ffffff')]
+            }, [0]);
+        });
+
+        deptChart.on('plotly_unhover', function() {
+            Plotly.restyle('departmentComparisonChart', {
+                'marker.size': [deptScores.map(() => 18)],
+                'marker.line.width': [deptScores.map(() => 2)],
+                'marker.line.color': [deptScores.map(() => '#ffffff')]
+            }, [0]);
+        });
+
+    if (data.department_comparison.length > 0) {
+            const sortedByScore = [...data.department_comparison].sort((a, b) => b.score - a.score);
+            const sortedByRisk = [...data.department_comparison].sort((a, b) => {
+                if (a.at_risk === b.at_risk) return a.score - b.score;
+                return b.at_risk - a.at_risk;
+                });
+
+            const best = sortedByScore[0];
+            const weakest = [...data.department_comparison].sort((a, b) => a.score - b.score)[0];
+            const mostCritical = sortedByRisk[0];
+
+            document.getElementById('departmentInsight').textContent =
+        `${best.department} currently leads with an average KPI of ${best.score.toFixed(2)}%, while ${weakest.department} records the lowest department KPI at ${weakest.score.toFixed(2)}%. ${mostCritical.department} should be prioritised for closer supervision due to ${mostCritical.at_risk} at-risk staff.`;
+        } else {
+            document.getElementById('departmentInsight').textContent = 'No department data matched the current filters.';
+        }
+
+    const kpiRows = data.kpi_vs_target || [];
+
+const shortCategoryLabels = kpiRows.map(item => {
+    const category = item.category || '';
+
+    if (category === 'Customer Service Quality') return 'Customer Service';
+    if (category === 'Sales Target Contribution') return 'Sales Target';
+    if (category === 'Daily Sales Operations') return 'Daily Sales';
+    if (category === 'Store Operations Support') return 'Store Operations';
+    if (category === 'Inventory & Cost Control') return 'Inventory & Cost';
+    if (category === 'Training, Learning & Team Contribution') return 'Training & Team';
+
+    return category;
+});
+
+const categoryColors = kpiRows.map(item => {
+    const category = item.category || '';
+
+    if (category === 'Customer Service Quality') return '#ef4444';
+    if (category === 'Sales Target Contribution') return '#f97316';
+    if (category === 'Daily Sales Operations') return '#f59e0b';
+    if (category === 'Store Operations Support') return '#3b82f6';
+    if (category === 'Inventory & Cost Control') return '#8b5cf6';
+    if (category === 'Training, Learning & Team Contribution') return '#10b981';
+
+    return '#6366f1';
+});
 
     Plotly.react('kpiVsTargetChart', [
         {
-            x: data.kpi_vs_target.map(item => item.category),
-            y: data.kpi_vs_target.map(item => item.actual),
+            x: shortCategoryLabels,
+            y: kpiRows.map(item => item.actual),
             type: 'bar',
             name: 'Actual %',
-            marker: { color: '#8b5cf6' },
-            hovertemplate: '%{x}<br>Actual: %{y:.2f}%<extra></extra>'
+            marker: {
+                color: categoryColors
+            },
+            text: kpiRows.map(item => item.actual.toFixed(1) + '%'),
+            textposition: 'outside',
+            customdata: kpiRows.map(item => [
+                item.category,
+                item.target,
+                item.gap
+            ]),
+            hovertemplate:
+                '<b>%{customdata[0]}</b><br>' +
+                'Actual KPI: %{y:.2f}%<br>' +
+                'Target KPI: %{customdata[1]:.2f}%<br>' +
+                'Gap: %{customdata[2]:.2f} points<extra></extra>'
         },
         {
-            x: data.kpi_vs_target.map(item => item.category),
-            y: data.kpi_vs_target.map(item => item.target),
+            x: shortCategoryLabels,
+            y: kpiRows.map(item => item.target),
             type: 'scatter',
             mode: 'lines+markers',
             name: 'Target %',
-            marker: { color: '#14b8a6' },
-            line: { color: '#14b8a6', width: 2 },
-            hovertemplate: '%{x}<br>Target: %{y:.2f}%<extra></extra>'
+            marker: {
+                color: '#14b8a6',
+                size: 7
+            },
+            line: {
+                color: '#14b8a6',
+                width: 3,
+                dash: 'dash'
+            },
+            hovertemplate: 'Target: %{y:.2f}%<extra></extra>'
         }
     ], {
-        margin: { t: 10, r: 10, b: 110, l: 50 },
+        margin: { t: 20, r: 20, b: 80, l: 55 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        yaxis: { range: [0, 100], title: 'Score %' },
-        xaxis: { tickangle: -20 }
-    }, { responsive: true, displayModeBar: true });
+        yaxis: {
+            range: [0, 100],
+            title: 'Score %',
+            gridcolor: 'rgba(148, 163, 184, 0.18)',
+            zeroline: false
+        },
+        xaxis: {
+            tickangle: 0,
+            automargin: true,
+            title: 'KPI Categories',
+            tickfont: {
+                size: 11
+            }
+        },
+        legend: {
+            orientation: 'h',
+            x: 0,
+            y: 1.14
+        },
+        hoverlabel: {
+            bgcolor: '#ffffff',
+            bordercolor: '#e5e7eb',
+            font: { color: '#111827' }
+        }
+    }, {
+        responsive: true,
+        displayModeBar: true
+    });
 
     if (data.kpi_vs_target.length > 0) {
         const worstGap = [...data.kpi_vs_target].sort((a, b) => a.gap - b.gap)[0];
@@ -585,8 +933,21 @@ function renderCharts(data) {
         margin: { t: 10, r: 10, b: 40, l: 40 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        yaxis: { title: 'Count' }
+        yaxis: { title: 'StaffCount' },
+        xaxis: { title: 'KPI Score Range' }
     }, { responsive: true, displayModeBar: true });
+
+    const riskChart = document.getElementById('riskHistogramChart');
+
+    riskChart.removeAllListeners?.('plotly_click');
+
+    riskChart.on('plotly_click', function(eventData) {
+        if (!eventData || !eventData.points || !eventData.points.length) return;
+
+        const clickedBand = eventData.points[0].x;
+        openDetailsModal(`${clickedBand} Details`, buildRiskBandDetailsHtml(clickedBand));
+    });
+
 }
 
 function renderTables(data) {
@@ -915,7 +1276,8 @@ function buildAverageKpiHtml() {
             <thead>
                 <tr>
                     <th>Period</th>
-                    <th>Average KPI</th>
+                    <th>Actual KPI</th>
+                    <th>Forecast KPI</th>
                     <th>Target</th>
                 </tr>
             </thead>
@@ -923,7 +1285,8 @@ function buildAverageKpiHtml() {
                 ${trendRows.map(row => `
                     <tr>
                         <td>${escapeHtml(row.period)}</td>
-                        <td>${row.score}%</td>
+                        <td>${row.actual !== null && row.actual !== undefined ? row.actual + '%' : '-'}</td>
+                        <td>${row.forecast !== null && row.forecast !== undefined ? row.forecast + '%' : '-'}</td>
                         <td>${row.target}%</td>
                     </tr>
                 `).join('')}
@@ -1041,6 +1404,204 @@ function buildAtRiskStaffHtml() {
                         <td>${item.score}%</td>
                         <td>${escapeHtml(item.trend)}</td>
                         <td>${escapeHtml(item.action)}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function getRiskBandLabel(score) {
+    const value = Number(score || 0);
+
+    if (value >= 0 && value < 40) return '0-39';
+    if (value >= 40 && value < 50) return '40-49';
+    if (value >= 50 && value < 70) return '50-69';
+    if (value >= 70 && value < 85) return '70-89';
+    return '90-100';
+}
+
+function buildRiskBandDetailsHtml(bandLabel) {
+    if (!latestDashboardData) return '<p>No data available.</p>';
+
+    const allStaff = latestDashboardData.staff_snapshot_list || [];
+    const atRiskStaff = latestDashboardData.at_risk_staff || [];
+
+    let sourceRows = [];
+
+    if (Array.isArray(allStaff) && allStaff.length > 0) {
+        sourceRows = allStaff;
+    } else {
+        sourceRows = atRiskStaff;
+    }
+
+    const matchedRows = sourceRows.filter(item => {
+        const score = Number(item.score ?? item.current_percentage ?? item.kpi_percentage ?? 0);
+        return getRiskBandLabel(score) === bandLabel;
+    });
+
+    const displayBand = {
+        '0-39': 'High Risk (0-39)',
+        '40-49': 'Critical (40-49)',
+        '50-69': 'Moderate (50-69)',
+        '70-84': 'Good (70-84)',
+        '85-100': 'Top (85-100)'
+    }[bandLabel] || bandLabel;
+
+    if (matchedRows.length === 0) {
+        return `<p>No staff found in the <strong>${displayBand}</strong> band under the current filters.</p>`;
+    }
+
+    return `
+        <p><strong>Risk Band:</strong> ${displayBand}</p>
+        <p><strong>Total Staff in Band:</strong> ${matchedRows.length}</p>
+
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Score</th>
+                    <th>Trend</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${matchedRows.map(item => {
+                    const score = Number(item.score ?? item.current_percentage ?? item.kpi_percentage ?? 0).toFixed(2);
+                    const trend = item.trend === 'up'
+                        ? 'Improving'
+                        : item.trend === 'down'
+                        ? 'Declining'
+                        : item.trend === 'stable'
+                        ? 'Stable'
+                        : '-';
+                    const action = (() => {
+                    const score = Number(item.score ?? item.current_percentage ?? 0);
+                    const trend = item.trend;
+
+                    if (score < 40) return 'Immediate coaching plan';
+                    if (score < 50) return trend === 'down' ? 'Targeted intervention' : 'Close monitoring';
+                    if (score < 70) return trend === 'down' ? 'Performance improvement plan' : 'Regular coaching';
+                    if (score < 85) return 'Maintain & monitor';
+                    return 'Recognize & reward';
+                    })();
+                    const department = item.department ?? '-';
+                    const name = item.name ?? '-';
+
+                    return `
+                        <tr>
+                            <td>${escapeHtml(name)}</td>
+                            <td>${escapeHtml(department)}</td>
+                            <td>${score}%</td>
+                            <td>${escapeHtml(trend)}</td>
+                            <td>${escapeHtml(action)}</td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function formatPerformanceLabel(label) {
+    const map = {
+        'Excellence': 'top',
+        'Top': 'top',
+        'Good': 'good',
+        'Moderate': 'average',
+        'Average': 'average',
+        'Critical': 'critical',
+        'At Risk': 'at-risk'
+    };
+    return map[label] || '';
+}
+
+function formatTrendLabel(label) {
+    const map = {
+        'Improving': 'up',
+        'Stable': 'stable',
+        'Declining': 'down'
+    };
+    return map[label] || '';
+}
+
+function buildPerformanceSliceHtml(sliceLabel) {
+    if (!latestDashboardData || !latestDashboardData.staff_snapshot_list) {
+        return '<p>No data available.</p>';
+    }
+
+    const performanceKey = formatPerformanceLabel(sliceLabel);
+    const rows = latestDashboardData.staff_snapshot_list.filter(item => item.performance_level === performanceKey);
+
+    if (rows.length === 0) {
+        return `<p>No staff found in the <strong>${escapeHtml(sliceLabel)}</strong> band under the current filters.</p>`;
+    }
+
+    return `
+        <p><strong>${escapeHtml(sliceLabel)} Staff:</strong> ${rows.length}</p>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Position</th>
+                    <th>Score</th>
+                    <th>Trend</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows.map(item => `
+                    <tr>
+                        <td>${escapeHtml(item.name)}</td>
+                        <td>${escapeHtml(item.department)}</td>
+                        <td>${escapeHtml(item.position || '-')}</td>
+                        <td>${item.score}%</td>
+                        <td>${escapeHtml(item.trend === 'up' ? 'Improving' : item.trend === 'down' ? 'Declining' : 'Stable')}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function buildTrendSliceHtml(sliceLabel) {
+    if (!latestDashboardData || !latestDashboardData.staff_snapshot_list) {
+        return '<p>No data available.</p>';
+    }
+
+    const trendKey = formatTrendLabel(sliceLabel);
+    const rows = latestDashboardData.staff_snapshot_list.filter(item => item.trend === trendKey);
+
+    if (rows.length === 0) {
+        return `<p>No staff found in the <strong>${escapeHtml(sliceLabel)}</strong> trend group under the current filters.</p>`;
+    }
+
+    return `
+        <p><strong>${escapeHtml(sliceLabel)} Staff:</strong> ${rows.length}</p>
+        <table class="modal-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Position</th>
+                    <th>Score</th>
+                    <th>Performance Band</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows.map(item => `
+                    <tr>
+                        <td>${escapeHtml(item.name)}</td>
+                        <td>${escapeHtml(item.department)}</td>
+                        <td>${escapeHtml(item.position || '-')}</td>
+                        <td>${item.score}%</td>
+                        <td>${escapeHtml(
+                            item.performance_level === 'top' ? 'Top' :
+                            item.performance_level === 'good' ? 'Good' :
+                            item.performance_level === 'average' ? 'Average' :
+                            item.performance_level === 'critical' ? 'Critical' : 'At Risk'
+                        )}</td>
                     </tr>
                 `).join('')}
             </tbody>

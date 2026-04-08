@@ -10,10 +10,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $score = floatval($_POST['score']);
     $date = $_POST['date'];
     
-    // Insert KPI data
-    $sql = "INSERT INTO kpi_data (Date, Name, KPI_Code, Score) VALUES (?, ?, ?, ?)";
+    // Get the active template ID for the year of the KPI
+    $year = date('Y', strtotime($date));
+    $templateSql = "SELECT id FROM kpi_templates WHERE year = ? AND status = 'active' LIMIT 1";
+    $templateStmt = $conn->prepare($templateSql);
+    $templateStmt->bind_param("i", $year);
+    $templateStmt->execute();
+    $templateResult = $templateStmt->get_result();
+    $template = $templateResult->fetch_assoc();
+    $templateId = $template ? $template['id'] : null;
+    
+    // If no active template for the year, get the default/inactive one
+    if (!$templateId) {
+        $fallbackSql = "SELECT id FROM kpi_templates WHERE year = ? LIMIT 1";
+        $fallbackStmt = $conn->prepare($fallbackSql);
+        $fallbackStmt->bind_param("i", $year);
+        $fallbackStmt->execute();
+        $fallbackResult = $fallbackStmt->get_result();
+        $fallbackTemplate = $fallbackResult->fetch_assoc();
+        $templateId = $fallbackTemplate ? $fallbackTemplate['id'] : null;
+    }
+    
+    // Insert KPI data with template_id
+    $sql = "INSERT INTO kpi_data (Date, Name, KPI_Code, Score, template_id) VALUES (?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssd", $date, $staffName, $kpiCode, $score);
+    $stmt->bind_param("sssdi", $date, $staffName, $kpiCode, $score, $templateId);
     
     if ($stmt->execute()) {
         // Redirect back to the referring page
