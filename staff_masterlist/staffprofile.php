@@ -1,15 +1,40 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/db.php';
-$activePage = 'staff';
 
-$staffId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+$conn->set_charset('utf8mb4');
 
-if (!$staffId) {
-    header("Location: stafflist.php");
-    exit();
+$staffId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($staffId <= 0) {
+    die('Invalid staff ID.');
 }
 
+$success = '';
+$error = '';
+
+define('KPI_TARGET_PERCENT', 80.0);
+define('TREND_STABLE_DELTA', 0.2);
+
+$SECTION1_COMPETENCY_WEIGHTS = [
+    'S1.1' => 0.05,
+    'S1.2' => 0.10,
+    'S1.3' => 0.10
+];
+
+$SECTION2_GROUP_WEIGHTS = [
+    'Daily Sales Operations' => 0.15,
+    'Customer Service Quality' => 0.15,
+    'Sales Target Contribution' => 0.15,
+    'Training, Learning & Team Contribution' => 0.10,
+    'Inventory & Cost Control' => 0.05,
+    'Store Operations Support' => 0.15
+];
+
+function normalizeAvatarPath(string $path): string
+{
+    return trim($path) !== '' ? trim($path) : '../asset/images/staff/default-profile.jpg';
+}
 
 function classifyPerformanceLevel(float $percentage): string
 {
@@ -88,33 +113,29 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param('i', $staffId);
 $stmt->execute();
-$staff = $stmt->get_result()->fetch_assoc();
+$staffResult = $stmt->get_result();
+$staff = $staffResult->fetch_assoc();
+$stmt->close();
 
 if (!$staff) {
     die('Staff not found.');
 }
 
-
-// Fetch yearly KPI scores for trend
-$yearlySql = "SELECT 
-        YEAR(Date) as year,
-        ROUND(AVG(Score),2) as avg_score,
-        ROUND((AVG(Score)/5)*100,2) as percentage
-    FROM kpi_data 
-    WHERE Name = ? AND Date IS NOT NULL
-    GROUP BY YEAR(Date)
-    ORDER BY year DESC";
-$stmt = $conn->prepare($yearlySql);
-$stmt->bind_param("s", $staff['full_name']);
-$stmt->execute();
-$yearlyScores = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-
-// Fetch category scores
-$categorySql = "SELECT 
-        km.kpi_group as category_name,
-        ROUND(AVG(kd.Score),2) as score,
-        ROUND((AVG(kd.Score)/5)*100,2) as percentage,
-        5 as target
+/*
+|--------------------------------------------------------------------------
+| LOAD KPI RECORDS FOR THIS STAFF
+|--------------------------------------------------------------------------
+*/
+$stmt = $conn->prepare("
+    SELECT
+        kd.`Date` AS evaluation_date,
+        kd.`KPI_Code` AS kpi_code,
+        kd.`Score` AS score,
+        km.`section`,
+        km.`kpi_group`,
+        km.`kpi_description`,
+        kc.`Supervisor Comments` AS supervisor_comments,
+        kc.`Training/Development Recommendations` AS training_recommendations
     FROM kpi_data kd
     LEFT JOIN kpi_master_list km
         ON TRIM(km.`kpi_code`) = TRIM(kd.`KPI_Code`)
@@ -135,42 +156,57 @@ $categorySql = "SELECT
 $staffName = trim((string)$staff['full_name']);
 $stmt->bind_param('s', $staffName);
 $stmt->execute();
-$categoryScores = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$kpiResult = $stmt->get_result();
 
-// Determine strengths and weaknesses
-$strengths = [];
-$weaknesses = [];
-foreach ($categoryScores as $cat) {
-    if ($cat['percentage'] >= 80) {
-        $strengths[] = $cat['category_name'];
-    } elseif ($cat['percentage'] < 60) {
-        $weaknesses[] = $cat['category_name'];
+$records = [];
+while ($row = $kpiResult->fetch_assoc()) {
+    $date = DateTime::createFromFormat('Y-m-d', trim((string)$row['evaluation_date']));
+    if (!$date) {
+        continue;
     }
+
+    $records[] = [
+        'period' => $date->format('Y-m'),
+        'year' => (int)$date->format('Y'),
+        'score' => (int)$row['score'],
+        'kpi_code' => trim((string)$row['kpi_code']),
+        'section' => trim((string)($row['section'] ?? '')),
+        'kpi_group' => trim((string)($row['kpi_group'] ?? '')),
+        'kpi_description' => trim((string)($row['kpi_description'] ?? '')),
+        'supervisor_comments' => trim((string)($row['supervisor_comments'] ?? '')),
+        'training_recommendations' => trim((string)($row['training_recommendations'] ?? '')),
+    ];
 }
+$stmt->close();
 
-// Fetch recommendations
-$recSql = "SELECT `Training/Development Recommendations` as recommendation 
-           FROM kpi_comment 
-           WHERE Name = ? 
-           ORDER BY Year DESC LIMIT 1";
-$stmt = $conn->prepare($recSql);
-$stmt->bind_param("s", $staff['full_name']);
-$stmt->execute();
-$recommendation = $stmt->get_result()->fetch_assoc();
+/*
+|--------------------------------------------------------------------------
+| BUILD PERIOD SCORES
+|--------------------------------------------------------------------------
+*/
+$groupedPeriods = [];
 
-// Get current and previous year scores
-$currentScore = $yearlyScores[0]['avg_score'] ?? 0;
-$previousScore = $yearlyScores[1]['avg_score'] ?? null;
+foreach ($records as $row) {
+    $period = $row['period'];
 
-// Calculate trend
-if ($previousScore) {
-    $trendValue = $currentScore - $previousScore;
-    if ($trendValue > 0.3) {
-        $trend = 'up';
-        $trendText = 'Improving';
-    } elseif ($trendValue < -0.3) {
-        $trend = 'down';
-        $trendText = 'Declining';
+    if (!isset($groupedPeriods[$period])) {
+        $groupedPeriods[$period] = [
+            'section1_scores' => [],
+            'section2_groups' => [],
+            'all_scores' => [],
+            'comments' => $row['supervisor_comments'],
+            'training' => $row['training_recommendations'],
+        ];
+    }
+
+    $score = (int)$row['score'];
+    $code = $row['kpi_code'];
+    $groupName = $row['kpi_group'] !== '' ? $row['kpi_group'] : 'Other KPI';
+
+    $groupedPeriods[$period]['all_scores'][] = $score;
+
+    if ($row['section'] === 'Section 1' || str_starts_with($code, 'S1.')) {
+        $groupedPeriods[$period]['section1_scores'][$code] = $score;
     } else {
         if (!isset($groupedPeriods[$period]['section2_groups'][$groupName])) {
             $groupedPeriods[$period]['section2_groups'][$groupName] = [];
@@ -294,31 +330,26 @@ if ($riskLevel === 'Low') {
 } elseif ($riskLevel === 'Moderate') {
     $riskInsight = 'Risk is moderate because KPI performance is still acceptable, but stronger consistency and improvement are needed.';
 } else {
-    $trend = 'stable';
-    $trendText = 'Stable';
+    $riskInsight = 'Risk is high because KPI performance is below target and requires immediate supervisory attention.';
 }
 
-// Determine performance level
-$scorePercentage = ($currentScore / 5) * 100;
-if ($scorePercentage >= 90) {
-    $performanceLevel = 'top';
-    $levelText = 'Top Performer';
-    $levelColor = 'green';
-} elseif ($scorePercentage >= 75) {
-    $performanceLevel = 'good';
-    $levelText = 'Good';
-    $levelColor = 'blue';
-} elseif ($scorePercentage >= 60) {
-    $performanceLevel = 'average';
-    $levelText = 'Average';
-    $levelColor = 'gray';
+$supervisorAction = '';
+if ($riskLevel === 'Low') {
+    $supervisorAction = 'Maintain performance momentum, recognise strong contribution, and consider advanced development opportunities.';
+} elseif ($riskLevel === 'Moderate') {
+    $supervisorAction = 'Provide focused coaching on weaker KPI categories and monitor the next evaluation periods closely.';
 } else {
-    $performanceLevel = 'at-risk';
-    $levelText = 'At Risk';
-    $levelColor = 'orange';
+    $supervisorAction = 'Start an immediate coaching plan, review weak KPI areas, and assign a structured improvement target.';
 }
-?>
 
+$profilePhoto = htmlspecialchars(normalizeAvatarPath((string)($staff['profile_photo'] ?? '')));
+$trendSeriesLabels = array_map(fn($row) => $row['period'], $periodSummaries);
+$trendSeriesValues = array_map(fn($row) => $row['percentage'], $periodSummaries);
+$categoryLabels = array_map(fn($row) => $row['category'], $latest['category_scores']);
+$categoryValues = array_map(fn($row) => $row['percentage'], $latest['category_scores']);
+$hasTrendData = !empty($trendSeriesLabels) && !empty($trendSeriesValues);
+$hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -659,30 +690,23 @@ if ($scorePercentage >= 90) {
     </style>
 </head>
 <body>
+<?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
-<div class="dashboard">
-        
-    <?php include("../includes/sidebar.php"); ?>
+<main class="staff-profile-page">
+    <section class="staff-profile-header">
+        <a href="./stafflist.php" class="back-link">← Back to Staff List</a>
+        <h1>Staff Performance Profile</h1>
+        <p>View profile information, review KPI performance, and manage supervisor-facing staff details.</p>
+    </section>
 
-    <div class="staff-profile-content">
-        <!-- Back Button -->
-        <div class="back-nav">
-            <a href="stafflist.php" class="back-link">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-                Back to Staff List
-            </a>
-        </div>
-
-        <!-- Profile Header Card -->
-        <div class="profile-header-card">
-            <div class="profile-cover"></div>
-            <div class="profile-info-wrapper">
-                <div class="profile-avatar-large">
-                    <img src="<?php echo htmlspecialchars($staff['profile_photo'] ? '../' . $staff['profile_photo'] : '../asset/images/staff/default-profile.jpg'); ?>" 
-                        alt="<?php echo htmlspecialchars($staff['full_name']); ?>"
-                        onerror="this.src='../asset/images/staff/default-profile.jpg'">
+    <section class="profile-shell">
+        <section class="profile-top-banner profile-card">
+            <div class="profile-top-left">
+                <img src="<?= $profilePhoto ?>" alt="<?= htmlspecialchars($staff['full_name']) ?>">
+                <div class="profile-identity">
+                    <h2><?= htmlspecialchars($staff['full_name']) ?></h2>
+                    <p class="identity-line"><?= htmlspecialchars($staff['position']) ?> • <?= htmlspecialchars($staff['staff_code']) ?></p>
+                    <p class="identity-line"><?= htmlspecialchars($staff['department']) ?></p>
                 </div>
             </div>
 
@@ -693,33 +717,23 @@ if ($scorePercentage >= 90) {
                         <span>Email</span>
                         <strong><?= htmlspecialchars($staff['email'] ?? '-') ?></strong>
                     </div>
+                </div>
 
-                    <div class="profile-contact-info">
-                        <div class="contact-item">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                            </svg>
-                            <span><?php echo htmlspecialchars($staff['email']); ?></span>
-                        </div>
-                        <div class="contact-item">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
-                            </svg>
-                            <span>+60 12 345 6789</span>
-                        </div>
-                        <div class="contact-item">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <span>Joined Jan 2024</span>
-                        </div>
-                        <div class="contact-item">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
-                            </svg>
-                            <span>Sales Department</span>
-                        </div>
+                <div class="profile-meta-item">
+                    <i class="ph ph-phone"></i>
+                    <div class="profile-meta-text">
+                        <span>Phone</span>
+                        <strong><?= htmlspecialchars($staff['phone_number'] ?? '-') ?></strong>
                     </div>
+                </div>
+
+                <div class="profile-meta-item">
+                    <i class="ph ph-calendar-blank"></i>
+                    <div class="profile-meta-text">
+                        <span>Join Date</span>
+                        <strong><?= !empty($staff['join_date']) ? htmlspecialchars($staff['join_date']) : '-' ?></strong>
+                    </div>
+                </div>
 
                 <div class="profile-meta-item">
                     <i class="ph ph-buildings"></i>
@@ -729,7 +743,47 @@ if ($scorePercentage >= 90) {
                     </div>
                 </div>
             </div>
-        </div>
+
+            <div class="profile-banner-actions">
+                <button type="button" class="profile-edit-btn" id="editProfileBtn">Edit Profile</button>
+            </div>
+        </section>
+
+        <section class="profile-main-card">
+            <h2>Edit Staff Information</h2>
+
+            <?php if ($success): ?>
+                <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="profile-message message-error"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+
+            <form method="POST" id="staffProfileForm">
+                <input type="hidden" name="update_profile" value="1">
+                <input type="hidden" name="staff_id" value="<?= (int)$staff['id'] ?>">
+
+                <div class="profile-form-grid" id="profileFormGrid">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" value="<?= htmlspecialchars($staff['email'] ?? '') ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone_number" value="<?= htmlspecialchars($staff['phone_number'] ?? '') ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input type="text" name="department" value="<?= htmlspecialchars($staff['department'] ?? '') ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Position</label>
+                        <input type="text" name="position" value="<?= htmlspecialchars($staff['position'] ?? '') ?>">
+                    </div>
 
                     <div class="form-group">
                         <label>Join Date</label>
@@ -750,12 +804,26 @@ if ($scorePercentage >= 90) {
                 <div class="text-panel">
                     <p>No KPI records were matched for this staff profile. Please check whether the staff name in the <strong>staff</strong> table matches the name used in <strong>kpi_data</strong>.</p>
                 </div>
-                <?php endif; ?>
-            </div>
+            </section>
+        <?php endif; ?>
 
-            <div class="overview-card">
-                <div class="overview-header">
-                    <span class="overview-label">Strengths</span>
+        <section class="profile-summary-row">
+            <article class="summary-box profile-card summary-score-card">
+                <h3>Current KPI Score</h3>
+                <div class="kpi-big-score"><?= number_format((float)$latest['percentage'], 2) ?>%</div>
+                <div class="summary-subnote">
+                    Previous 5-scale score: <?= number_format((float)$latest['score_5'], 2) ?> / 5
+                </div>
+                <div class="badge-row">
+                    <span class="profile-pill <?= $performanceLevel === 'Top' ? 'pill-top' : ($performanceLevel === 'Good' ? 'pill-good' : ($performanceLevel === 'Average' ? 'pill-average' : 'pill-risk')) ?>">
+                        <?= htmlspecialchars($performanceLevel) ?>
+                    </span>
+                    <span class="profile-pill <?= $riskLevel === 'Low' ? 'pill-low' : ($riskLevel === 'Moderate' ? 'pill-moderate' : 'pill-high') ?>">
+                        <?= htmlspecialchars($riskLevel) ?> Risk
+                    </span>
+                    <span class="profile-pill <?= $trendLabel === 'Improving' ? 'pill-low' : ($trendLabel === 'Stable' ? 'pill-good' : 'pill-high') ?>">
+                        <?= htmlspecialchars($trendLabel) ?>
+                    </span>
                 </div>
             </article>
 
@@ -769,19 +837,17 @@ if ($scorePercentage >= 90) {
                                 — <?= number_format((float)$item['percentage'], 2) ?>%
                             </li>
                         <?php endforeach; ?>
-                    </ul>
-                <?php else: ?>
-                    <p class="no-data-text">No standout strengths yet</p>
-                <?php endif; ?>
-            </div>
+                    <?php else: ?>
+                        <li>No strength data available.</li>
+                    <?php endif; ?>
+                </ul>
+            </article>
 
-            <div class="overview-card">
-                <div class="overview-header">
-                    <span class="overview-label">Areas for Improvement</span>
-                </div>
-                <?php if (!empty($weaknesses)): ?>
-                    <ul class="weakness-list">
-                        <?php foreach ($weaknesses as $weakness): ?>
+            <article class="summary-box profile-card summary-improve-card">
+                <h3>Areas of Improvement</h3>
+                <ul class="summary-list">
+                    <?php if (!empty($improvements)): ?>
+                        <?php foreach ($improvements as $item): ?>
                             <li>
                                 <strong><?= htmlspecialchars($item['category']) ?></strong>
                                 — <?= number_format((float)$item['percentage'], 2) ?>%
@@ -819,49 +885,35 @@ if ($scorePercentage >= 90) {
                 <?php if (!$hasCategoryData): ?>
                     <p class="empty-chart-note">No category breakdown available for this staff.</p>
                 <?php endif; ?>
-            </div>
-        </div>
+            </article>
 
-        <!-- Performance Trend Chart -->
-        <?php if (count($yearlyScores) > 1): ?>
-        <div class="chart-card">
-            <h2>Performance Trend</h2>
-            <div class="trend-chart">
-                <?php
-                $years = array_reverse(array_column($yearlyScores, 'year'));
-                $scores = array_reverse(array_column($yearlyScores, 'avg_score'));
-                $maxScore = max($scores);
-                ?>
-                <div class="chart-bars">
-                    <?php foreach ($yearlyScores as $index => $yearData): ?>
-                    <div class="chart-bar-wrapper">
-                        <div class="chart-bar-label"><?php echo $yearData['year']; ?></div>
-                        <div class="chart-bar-container">
-                            <div class="chart-bar" style="height: <?php echo ($yearData['avg_score'] / 5) * 100; ?>%"></div>
-                        </div>
-                        <div class="chart-bar-value"><?php echo number_format($yearData['avg_score'], 1); ?></div>
+            <article class="profile-panel">
+                <h2>Detailed KPI Breakdown</h2>
+                <div class="detail-breakdown-grid">
+                    <div class="detail-box">
+                        <h3>Latest Summary</h3>
+                        <ul class="detail-list">
+                            <li><strong>Latest Period:</strong> <?= htmlspecialchars($latest['period'] ?: '-') ?></li>
+                            <li><strong>Trend Delta:</strong> <?= number_format((float)$trendDelta, 2) ?></li>
+                            <li><strong>Stability Score:</strong> <?= (int)$stabilityScore ?>/100</li>
+                            <li><strong>Current 5-Scale Score:</strong> <?= number_format((float)$latest['score_5'], 2) ?> / 5</li>
+                        </ul>
                     </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
 
-        <!-- Category Breakdown -->
-        <div class="chart-card">
-            <h2>KPI Category Breakdown</h2>
-            <div class="category-list">
-                <?php foreach ($categoryScores as $cat): ?>
-                <div class="category-item">
-                    <div class="category-header">
-                        <span class="category-name"><?php echo htmlspecialchars($cat['category_name']); ?></span>
-                        <span class="category-score <?php echo $cat['percentage'] >= 80 ? 'score-high-text' : ($cat['percentage'] >= 60 ? 'score-medium-text' : 'score-low-text'); ?>">
-                            <?php echo number_format($cat['score'], 1); ?> / 5
-                        </span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill <?php echo $cat['percentage'] >= 80 ? 'fill-high' : ($cat['percentage'] >= 60 ? 'fill-medium' : 'fill-low'); ?>" 
-                             style="width: <?php echo $cat['percentage']; ?>%"></div>
+                    <div class="detail-box">
+                        <h3>KPI Categories</h3>
+                        <ul class="detail-list">
+                            <?php if (!empty($latest['category_scores'])): ?>
+                                <?php foreach ($latest['category_scores'] as $item): ?>
+                                    <li>
+                                        <strong><?= htmlspecialchars($item['category']) ?></strong>
+                                        — <?= number_format((float)$item['percentage'], 2) ?>%
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <li>No KPI category data available.</li>
+                            <?php endif; ?>
+                        </ul>
                     </div>
                 </div>
             </article>
@@ -872,81 +924,142 @@ if ($scorePercentage >= 90) {
             <div class="text-panel">
                 <p><?= htmlspecialchars($latestComment) ?></p>
             </div>
-        </div>
+        </section>
 
-        <!-- Training Recommendations -->
-        <?php if ($recommendation && !empty($recommendation['recommendation'])): ?>
-        <div class="recommendations-card">
-            <h2>Training Recommendations</h2>
-            <div class="recommendation-content">
-                <div class="recommendation-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                    </svg>
-                </div>
-                <p><?php echo htmlspecialchars($recommendation['recommendation']); ?></p>
+        <section class="profile-wide-panel">
+            <h2>Training & Development Recommendation</h2>
+            <div class="text-panel">
+                <p><?= htmlspecialchars($latestTraining) ?></p>
             </div>
-        </div>
-        <?php endif; ?>
-    </div>
-</div>
+        </section>
 
-<!-- Add KPI Modal (same as in stafflist.php) -->
-<div id="addKPIModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Add KPI Score</h3>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
-        </div>
-        <form id="addKPIForm" action="add_kpi.php" method="POST">
-            <input type="hidden" name="staff_id" id="modalStaffId">
-            <input type="hidden" name="staff_name" id="modalStaffName">
-            
-            <div class="form-group">
-                <label>Staff Member</label>
-                <input type="text" id="modalStaffNameDisplay" readonly>
-            </div>
-            
-            <div class="form-group">
-                <label>KPI Category</label>
-                <select name="kpi_code" required>
-                    <option value="">Select KPI Category</option>
-                    <?php
-                    $kpiSql = "SELECT kpi_code, kpi_group, kpi_description FROM kpi_master_list ORDER BY kpi_group";
-                    $kpiResult = $conn->query($kpiSql);
-                    $currentGroup = '';
-                    while ($kpi = $kpiResult->fetch_assoc()) {
-                        if ($currentGroup != $kpi['kpi_group']) {
-                            if ($currentGroup != '') echo '</optgroup>';
-                            echo '<optgroup label="' . htmlspecialchars($kpi['kpi_group']) . '">';
-                            $currentGroup = $kpi['kpi_group'];
-                        }
-                        echo '<option value="' . $kpi['kpi_code'] . '">' . htmlspecialchars($kpi['kpi_description']) . '</option>';
-                    }
-                    echo '</optgroup>';
-                    ?>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Score (1-5)</label>
-                <input type="number" name="score" min="1" max="5" step="0.5" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Date</label>
-                <input type="date" name="date" value="<?php echo date('Y-m-d'); ?>" required>
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="btn-submit">Add Score</button>
-            </div>
-        </form>
-    </div>
-</div>
+        <section class="profile-wide-panel">
+            <h2>Supervisor Insight</h2>
 
-<script src="staffprofile.js"></script>
+            <div class="text-panel" style="margin-bottom:12px;">
+                <h3>Performance Insight</h3>
+                <p><?= htmlspecialchars($performanceInsight) ?></p>
+            </div>
 
+            <div class="text-panel" style="margin-bottom:12px;">
+                <h3>Risk Interpretation</h3>
+                <p><?= htmlspecialchars($riskInsight) ?></p>
+            </div>
+
+            <div class="text-panel">
+                <h3>Recommended Supervisor Action</h3>
+                <p><?= htmlspecialchars($supervisorAction) ?></p>
+            </div>
+        </section>
+
+        <section class="profile-wide-panel">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions-row">
+                <a href="../Dashboard/staff_comparison_patched.php?staff1=<?= (int)$staff['id'] ?>&staff2=1" class="profile-action-btn" style="text-decoration:none;">
+                    Compare Staff
+                </a>
+                <button type="button" class="profile-action-btn" onclick="alert('You can link this button to your Add KPI modal or Add KPI page.')">
+                    Add KPI Record
+                </button>
+            </div>
+        </section>
+    </section>
+</main>
+
+<script>
+const editBtn = document.getElementById('editProfileBtn');
+const cancelBtn = document.getElementById('cancelEditBtn');
+const formGrid = document.getElementById('profileFormGrid');
+const editActions = document.getElementById('profileEditActions');
+
+editBtn.addEventListener('click', () => {
+    formGrid.style.display = 'grid';
+    editActions.style.display = 'flex';
+    editBtn.style.display = 'none';
+});
+
+cancelBtn.addEventListener('click', () => {
+    formGrid.style.display = 'none';
+    editActions.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+});
+
+const trendLabels = <?= json_encode($trendSeriesLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+const trendValues = <?= json_encode($trendSeriesValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+const categoryLabels = <?= json_encode($categoryLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+const categoryValues = <?= json_encode($categoryValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+if (trendLabels.length > 0 && trendValues.length > 0) {
+    Plotly.react('staffTrendChart', [
+        {
+            x: trendLabels,
+            y: trendValues,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'KPI %',
+            line: { color: '#e8308c', width: 3, shape: 'spline' },
+            marker: { size: 8, color: '#e8308c' },
+            hovertemplate: '%{x}<br>KPI: %{y:.2f}%<extra></extra>'
+        },
+        {
+            x: trendLabels,
+            y: trendLabels.map(() => 80),
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Target',
+            line: { color: '#14b8a6', dash: 'dash', width: 2 },
+            hovertemplate: '%{x}<br>Target: %{y:.2f}%<extra></extra>'
+        }
+    ], {
+        margin: { t: 10, r: 10, b: 40, l: 50 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        yaxis: { range: [0, 100], title: 'KPI %' },
+        legend: { orientation: 'h', y: 1.12 }
+    }, { responsive: true, displayModeBar: true });
+}
+
+if (categoryLabels.length > 0 && categoryValues.length > 0) {
+    Plotly.react('staffRadarChart', [{
+        type: 'scatterpolar',
+        r: categoryValues,
+        theta: categoryLabels,
+        fill: 'toself',
+        name: 'KPI Category Score',
+        line: { color: '#e8308c', width: 3 },
+        fillcolor: 'rgba(232,48,140,0.20)',
+        hovertemplate: '%{theta}<br>Score: %{r:.2f}%<extra></extra>'
+    }], {
+        paper_bgcolor: 'transparent',
+        margin: { t: 20, r: 20, b: 20, l: 20 },
+        polar: {
+            radialaxis: {
+                visible: true,
+                range: [0, 100]
+            }
+        },
+        showlegend: false
+    }, { responsive: true, displayModeBar: true });
+
+    Plotly.react('staffCategoryChart', [{
+        x: categoryLabels,
+        y: categoryValues,
+        type: 'bar',
+        marker: {
+            color: ['#ec4899', '#f97316', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981']
+        },
+        text: categoryValues.map(v => Number(v).toFixed(1) + '%'),
+        textposition: 'outside',
+        hovertemplate: '%{x}<br>Score: %{y:.2f}%<extra></extra>'
+    }], {
+        margin: { t: 10, r: 10, b: 90, l: 50 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        yaxis: { range: [0, 100], title: 'Score %' },
+        xaxis: { tickangle: -18 },
+        showlegend: false
+    }, { responsive: true, displayModeBar: true });
+}
+</script>
 </body>
 </html>
