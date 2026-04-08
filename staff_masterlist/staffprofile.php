@@ -349,7 +349,22 @@ $categoryLabels = array_map(fn($row) => $row['category'], $latest['category_scor
 $categoryValues = array_map(fn($row) => $row['percentage'], $latest['category_scores']);
 $hasTrendData = !empty($trendSeriesLabels) && !empty($trendSeriesValues);
 $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
+
+$recordCount = count($periodSummaries);
+$hasPreviousComparison = $recordCount >= 2;
+
+$currentPerformanceBadgeClass =
+    $performanceLevel === 'Top' ? 'pill-top' :
+    ($performanceLevel === 'Good' ? 'pill-good' :
+    ($performanceLevel === 'Average' ? 'pill-average' : 'pill-risk'));
+
+$currentTrendBadgeClass =
+    $trendLabel === 'Improving' ? 'pill-low' :
+    ($trendLabel === 'Stable' ? 'pill-good' : 'pill-high');
 ?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -687,6 +702,239 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
                 padding: 110px 18px 28px;
             }
         }
+
+        .profile-hero-card {
+    display: grid;
+    grid-template-columns: 320px 1fr auto;
+    gap: 18px;
+    align-items: center;
+    padding: 22px 24px;
+    background: linear-gradient(135deg, #ffffff 0%, #fff7fb 100%);
+    border: 1px solid #edd7e5;
+    border-radius: 24px;
+    box-shadow: 0 12px 28px rgba(192, 112, 181, 0.10);
+}
+
+.profile-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.profile-hero-left img {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #efd6e5;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
+
+.profile-hero-identity h2 {
+    margin: 0;
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #231942;
+}
+
+.profile-hero-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.hero-role-line {
+    margin: 0;
+    color: #675a70;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.profile-hero-details-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    align-items: stretch;
+}
+
+.hero-detail-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #f0dce7;
+    border-radius: 16px;
+    padding: 12px 14px;
+    min-width: 0;
+}
+
+.hero-detail-chip i {
+    font-size: 1.05rem;
+    color: #b35d99;
+    flex-shrink: 0;
+}
+
+.hero-detail-chip span {
+    display: block;
+    font-size: 0.76rem;
+    color: #9b8796;
+    margin-bottom: 2px;
+}
+
+.hero-detail-chip strong {
+    display: block;
+    font-size: 0.93rem;
+    color: #2a2038;
+    word-break: break-word;
+}
+
+.profile-hero-action {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+}
+
+.profile-edit-btn-strong {
+    background: linear-gradient(135deg, #9f5cff 0%, #e8308c 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 10px 20px rgba(179, 93, 153, 0.20);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-edit-btn-strong:hover {
+    filter: brightness(1.03);
+}
+
+.profile-edit-drawer {
+    border: 1px solid #edd9e7;
+    background: #fff;
+}
+
+.profile-summary-row-refined {
+    grid-template-columns: 1.1fr 1fr 1fr;
+    align-items: stretch;
+}
+
+.summary-score-card-main {
+    box-shadow: 0 10px 24px rgba(219, 39, 119, 0.08);
+}
+
+.summary-score-card {
+    background: linear-gradient(135deg, #fff1f4 0%, #fff8fa 100%);
+    border: 1px solid #f3c9d6;
+}
+
+.summary-strength-card {
+    background: linear-gradient(135deg, #f2fff7 0%, #fbfffd 100%);
+    border: 1px solid #cfead9;
+}
+
+.summary-improve-card {
+    background: linear-gradient(135deg, #fff9ee 0%, #fffdf8 100%);
+    border: 1px solid #f3dfb7;
+}
+
+.summary-title-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.summary-title-row h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #221834;
+}
+
+.summary-title-row h3 i {
+    font-size: 1rem;
+    color: #b35d99;
+}
+
+.summary-title-green h3 {
+    color: #166534;
+}
+
+.summary-title-green h3 i {
+    color: #16a34a;
+}
+
+.summary-title-amber h3 {
+    color: #a16207;
+}
+
+.summary-title-amber h3 i {
+    color: #d97706;
+}
+
+.summary-list-strong {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.summary-list-strong li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.summary-list-strong li:last-child {
+    border-bottom: none;
+}
+
+.summary-item-label {
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.summary-item-label-green {
+    color: #15803d;
+}
+
+.summary-item-label-amber {
+    color: #b45309;
+}
+
+.summary-item-value {
+    font-size: 0.9rem;
+    color: #6b5b67;
+    font-weight: 600;
+}
+
+@media (max-width: 1300px) {
+    .profile-hero-card {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-hero-details-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .profile-hero-action {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 900px) {
+    .profile-hero-details-row,
+    .profile-summary-row-refined {
+        grid-template-columns: 1fr;
+    }
+}
     </style>
 </head>
 <body>
@@ -700,165 +948,197 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
     </section>
 
     <section class="profile-shell">
-        <section class="profile-top-banner profile-card">
-            <div class="profile-top-left">
-                <img src="<?= $profilePhoto ?>" alt="<?= htmlspecialchars($staff['full_name']) ?>">
-                <div class="profile-identity">
+
+    <section class="profile-hero-card">
+        <div class="profile-hero-left">
+            <img src="<?= $profilePhoto ?>" alt="<?= htmlspecialchars($staff['full_name']) ?>">
+
+            <div class="profile-hero-identity">
+                <div class="profile-hero-title-row">
                     <h2><?= htmlspecialchars($staff['full_name']) ?></h2>
-                    <p class="identity-line"><?= htmlspecialchars($staff['position']) ?> • <?= htmlspecialchars($staff['staff_code']) ?></p>
-                    <p class="identity-line"><?= htmlspecialchars($staff['department']) ?></p>
+                    <span class="profile-pill <?= $currentPerformanceBadgeClass ?>">
+                        <?= htmlspecialchars($performanceLevel) ?>
+                    </span>
+                </div>
+                <div>
+                <p class="hero-role-line">
+                    <?= htmlspecialchars($staff['position']) ?> • <?= htmlspecialchars($staff['staff_code']) ?>
+                </p>
+                 </div>
+            </div>
+        </div>
+
+        <div class="profile-hero-details-row">
+            <div class="hero-detail-chip">
+                <i class="ph ph-envelope-simple"></i>
+                <div>
+                    <span>Email</span>
+                    <strong><?= htmlspecialchars($staff['email'] ?? '-') ?></strong>
                 </div>
             </div>
 
-            <div class="profile-meta-grid">
-                <div class="profile-meta-item">
-                    <i class="ph ph-envelope-simple"></i>
-                    <div class="profile-meta-text">
-                        <span>Email</span>
-                        <strong><?= htmlspecialchars($staff['email'] ?? '-') ?></strong>
-                    </div>
-                </div>
-
-                <div class="profile-meta-item">
-                    <i class="ph ph-phone"></i>
-                    <div class="profile-meta-text">
-                        <span>Phone</span>
-                        <strong><?= htmlspecialchars($staff['phone_number'] ?? '-') ?></strong>
-                    </div>
-                </div>
-
-                <div class="profile-meta-item">
-                    <i class="ph ph-calendar-blank"></i>
-                    <div class="profile-meta-text">
-                        <span>Join Date</span>
-                        <strong><?= !empty($staff['join_date']) ? htmlspecialchars($staff['join_date']) : '-' ?></strong>
-                    </div>
-                </div>
-
-                <div class="profile-meta-item">
-                    <i class="ph ph-buildings"></i>
-                    <div class="profile-meta-text">
-                        <span>Department</span>
-                        <strong><?= htmlspecialchars($staff['department'] ?? '-') ?></strong>
-                    </div>
+            <div class="hero-detail-chip">
+                <i class="ph ph-phone"></i>
+                <div>
+                    <span>Phone</span>
+                    <strong><?= htmlspecialchars($staff['phone_number'] ?? '-') ?></strong>
                 </div>
             </div>
 
-            <div class="profile-banner-actions">
-                <button type="button" class="profile-edit-btn" id="editProfileBtn">Edit Profile</button>
+            <div class="hero-detail-chip">
+                <i class="ph ph-calendar-blank"></i>
+                <div>
+                    <span>Join Date</span>
+                    <strong><?= !empty($staff['join_date']) ? htmlspecialchars($staff['join_date']) : '-' ?></strong>
+                </div>
             </div>
-        </section>
 
-        <section class="profile-main-card">
-            <h2>Edit Staff Information</h2>
-
-            <?php if ($success): ?>
-                <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
-            <?php endif; ?>
-
-            <?php if ($error): ?>
-                <div class="profile-message message-error"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
-
-            <form method="POST" id="staffProfileForm">
-                <input type="hidden" name="update_profile" value="1">
-                <input type="hidden" name="staff_id" value="<?= (int)$staff['id'] ?>">
-
-                <div class="profile-form-grid" id="profileFormGrid">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" value="<?= htmlspecialchars($staff['email'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Phone Number</label>
-                        <input type="text" name="phone_number" value="<?= htmlspecialchars($staff['phone_number'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Department</label>
-                        <input type="text" name="department" value="<?= htmlspecialchars($staff['department'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Position</label>
-                        <input type="text" name="position" value="<?= htmlspecialchars($staff['position'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Join Date</label>
-                        <input type="date" name="join_date" value="<?= htmlspecialchars($staff['join_date'] ?? '') ?>">
-                    </div>
+            <div class="hero-detail-chip">
+                <i class="ph ph-buildings"></i>
+                <div>
+                    <span>Department</span>
+                    <strong><?= htmlspecialchars($staff['department'] ?? '-') ?></strong>
                 </div>
+            </div>
+        </div>
 
-                <div class="profile-action-row" id="profileEditActions">
-                    <button type="button" class="profile-cancel-btn" id="cancelEditBtn">Cancel</button>
-                    <button type="submit" class="profile-save-btn">Save Changes</button>
-                </div>
-            </form>
-        </section>
+        <div class="profile-hero-action">
+            <button type="button" class="profile-edit-btn profile-edit-btn-strong" id="editProfileBtn">
+                <i class="ph ph-pencil-simple"></i>
+                Edit Profile
+            </button>
+        </div>
+    </section>
 
-        <?php if (empty($records)): ?>
-            <section class="profile-wide-panel">
-                <h2>Data Status</h2>
-                <div class="text-panel">
-                    <p>No KPI records were matched for this staff profile. Please check whether the staff name in the <strong>staff</strong> table matches the name used in <strong>kpi_data</strong>.</p>
-                </div>
-            </section>
+    <section class="profile-edit-drawer profile-main-card" id="profileEditDrawer" style="display:none;">
+        <h2>Edit Profile</h2>
+
+        <?php if ($success): ?>
+            <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
 
-        <section class="profile-summary-row">
-            <article class="summary-box profile-card summary-score-card">
-                <h3>Current KPI Score</h3>
-                <div class="kpi-big-score"><?= number_format((float)$latest['percentage'], 2) ?>%</div>
+        <?php if ($error): ?>
+            <div class="profile-message message-error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+
+        <form method="POST" id="staffProfileForm">
+            <input type="hidden" name="update_profile" value="1">
+            <input type="hidden" name="staff_id" value="<?= (int)$staff['id'] ?>">
+
+            <div class="profile-form-grid" id="profileFormGrid" style="display:grid;">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="<?= htmlspecialchars($staff['email'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" name="phone_number" value="<?= htmlspecialchars($staff['phone_number'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" name="department" value="<?= htmlspecialchars($staff['department'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Position</label>
+                    <input type="text" name="position" value="<?= htmlspecialchars($staff['position'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Join Date</label>
+                    <input type="date" name="join_date" value="<?= htmlspecialchars($staff['join_date'] ?? '') ?>">
+                </div>
+            </div>
+
+            <div class="profile-action-row" id="profileEditActions" style="display:flex;">
+                <button type="button" class="profile-cancel-btn" id="cancelEditBtn">Cancel</button>
+                <button type="submit" class="profile-save-btn">Save Changes</button>
+            </div>
+        </form>
+    </section>
+
+    <?php if (empty($records)): ?>
+        <section class="profile-wide-panel">
+            <h2>Data Status</h2>
+            <div class="text-panel">
+                <p>No KPI records were matched for this staff profile. Please check whether the staff name in the <strong>staff</strong> table matches the name used in <strong>kpi_data</strong>.</p>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <section class="profile-summary-row profile-summary-row-refined">
+        <article class="summary-box profile-card summary-score-card summary-score-card-main">
+            <div class="summary-title-row">
+                <h3><i class="ph ph-chart-line-up"></i> Current Performance Score</h3>
+            </div>
+
+            <div class="kpi-big-score"><?= number_format((float)$latest['percentage'], 2) ?>%</div>
+
+            <?php if ($hasPreviousComparison): ?>
                 <div class="summary-subnote">
                     Previous 5-scale score: <?= number_format((float)$latest['score_5'], 2) ?> / 5
                 </div>
-                <div class="badge-row">
-                    <span class="profile-pill <?= $performanceLevel === 'Top' ? 'pill-top' : ($performanceLevel === 'Good' ? 'pill-good' : ($performanceLevel === 'Average' ? 'pill-average' : 'pill-risk')) ?>">
-                        <?= htmlspecialchars($performanceLevel) ?>
-                    </span>
-                    <span class="profile-pill <?= $riskLevel === 'Low' ? 'pill-low' : ($riskLevel === 'Moderate' ? 'pill-moderate' : 'pill-high') ?>">
-                        <?= htmlspecialchars($riskLevel) ?> Risk
-                    </span>
-                    <span class="profile-pill <?= $trendLabel === 'Improving' ? 'pill-low' : ($trendLabel === 'Stable' ? 'pill-good' : 'pill-high') ?>">
-                        <?= htmlspecialchars($trendLabel) ?>
-                    </span>
+            <?php else: ?>
+                <div class="summary-subnote">
+                    Current 5-scale score: <?= number_format((float)$latest['score_5'], 2) ?> / 5
                 </div>
-            </article>
+            <?php endif; ?>
 
-            <article class="summary-box profile-card summary-strength-card">
-                <h3>Strengths</h3>
-                <ul class="summary-list">
-                    <?php if (!empty($strengths)): ?>
-                        <?php foreach ($strengths as $item): ?>
-                            <li>
-                                <strong><?= htmlspecialchars($item['category']) ?></strong>
-                                — <?= number_format((float)$item['percentage'], 2) ?>%
-                            </li>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <li>No strength data available.</li>
-                    <?php endif; ?>
-                </ul>
-            </article>
+            <div class="badge-row">
+                <span class="profile-pill <?= $currentPerformanceBadgeClass ?>">
+                    <?= htmlspecialchars($performanceLevel) ?>
+                </span>
+            </div>
+        </article>
 
-            <article class="summary-box profile-card summary-improve-card">
-                <h3>Areas of Improvement</h3>
-                <ul class="summary-list">
-                    <?php if (!empty($improvements)): ?>
-                        <?php foreach ($improvements as $item): ?>
-                            <li>
-                                <strong><?= htmlspecialchars($item['category']) ?></strong>
-                                — <?= number_format((float)$item['percentage'], 2) ?>%
-                            </li>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <li>No improvement data available.</li>
-                    <?php endif; ?>
-                </ul>
-            </article>
-        </section>
+        <article class="summary-box profile-card summary-strength-card">
+            <div class="summary-title-row summary-title-green">
+                <h3><i class="ph ph-medal"></i> Strengths</h3>
+            </div>
+
+            <ul class="summary-list summary-list-strong">
+                <?php if (!empty($strengths)): ?>
+                    <?php foreach ($strengths as $item): ?>
+                        <li>
+                            <span class="summary-item-label summary-item-label-green">
+                                <?= htmlspecialchars($item['category']) ?>
+                            </span>
+                            <span class="summary-item-value">
+                                <?= number_format((float)$item['percentage'], 2) ?>%
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <li>No strength data available.</li>
+                <?php endif; ?>
+            </ul>
+        </article>
+
+        <article class="summary-box profile-card summary-improve-card">
+            <div class="summary-title-row summary-title-amber">
+                <h3><i class="ph ph-warning-circle"></i> Areas of Improvement</h3>
+            </div>
+
+            <ul class="summary-list summary-list-strong">
+                <?php if (!empty($improvements)): ?>
+                    <?php foreach ($improvements as $item): ?>
+                        <li>
+                            <span class="summary-item-label summary-item-label-amber">
+                                <?= htmlspecialchars($item['category']) ?>
+                            </span>
+                            <span class="summary-item-value">
+                                <?= number_format((float)$item['percentage'], 2) ?>%
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <li>No improvement data available.</li>
+                <?php endif; ?>
+            </ul>
+        </article>
+    </section>
 
         <section class="profile-chart-row">
             <article class="profile-panel">
@@ -969,20 +1249,20 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
 <script>
 const editBtn = document.getElementById('editProfileBtn');
 const cancelBtn = document.getElementById('cancelEditBtn');
-const formGrid = document.getElementById('profileFormGrid');
-const editActions = document.getElementById('profileEditActions');
+const editDrawer = document.getElementById('profileEditDrawer');
 
-editBtn.addEventListener('click', () => {
-    formGrid.style.display = 'grid';
-    editActions.style.display = 'flex';
-    editBtn.style.display = 'none';
-});
+if (editBtn && cancelBtn && editDrawer) {
+    editBtn.addEventListener('click', () => {
+        editDrawer.style.display = 'block';
+        editBtn.style.display = 'none';
+        editDrawer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
-cancelBtn.addEventListener('click', () => {
-    formGrid.style.display = 'none';
-    editActions.style.display = 'none';
-    editBtn.style.display = 'inline-block';
-});
+    cancelBtn.addEventListener('click', () => {
+        editDrawer.style.display = 'none';
+        editBtn.style.display = 'inline-flex';
+    });
+}
 
 const trendLabels = <?= json_encode($trendSeriesLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 const trendValues = <?= json_encode($trendSeriesValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
