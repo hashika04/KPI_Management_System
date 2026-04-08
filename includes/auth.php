@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_SESSION['username'])) {
     header("Location: ../Login/index.php");
@@ -28,3 +30,4 @@ $initials = strtoupper(substr($nameParts[0],0,1));
 if(isset($nameParts[1])){
     $initials .= strtoupper(substr($nameParts[1],0,1));
 }
+
