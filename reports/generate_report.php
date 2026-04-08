@@ -970,43 +970,64 @@ elseif ($report_type == 'training') {
     // =============================================
     $training_categories = [
         'Communication Skills' => [
-            'keywords' => ['communication', 'presentation', 'teamwork', 'collaboration', 'customer service', 'complaints'],
+            'keywords' => ['communication', 'presentation', 'teamwork', 'collaboration', 'customer service', 'complaints', 'service standards', 'customer'],
             'kpi_groups' => ['Customer Service Quality', 'Daily Sales Operations'],
-            'threshold' => 3, // Score below 3 indicates weakness (1-5 scale)
-            'priority_threshold_high' => 8,
-            'priority_threshold_medium' => 4
+            'threshold_percentage' => 60, // Below 60% average = weak area
+            'priority_threshold_high' => 5,
+            'priority_threshold_medium' => 3
         ],
         'Technical Skills' => [
-            'keywords' => ['technical', 'system', 'debugging', 'process improvement', 'efficiency', 'accuracy'],
-            'kpi_groups' => ['Inventory & Cost Control', 'Store Operations Support', 'Daily Sales Operations'],
-            'threshold' => 3,
-            'priority_threshold_high' => 8,
-            'priority_threshold_medium' => 4
+            'keywords' => ['technical', 'system', 'debugging', 'process improvement', 'efficiency', 'accuracy', 'technical upskilling', 'task planning', 'quality control'],
+            'kpi_groups' => ['Inventory & Cost Control', 'Store Operations Support', 'AI Utilization & Digital Efficiency'],
+            'threshold_percentage' => 60,
+            'priority_threshold_high' => 5,
+            'priority_threshold_medium' => 3
         ],
         'Leadership & Management' => [
-            'keywords' => ['leadership', 'management', 'mentoring', 'supervisory', 'initiative', 'decision-making'],
+            'keywords' => ['leadership', 'management', 'mentoring', 'supervisory', 'initiative', 'decision-making', 'leadership fundamentals', 'confidence-building', 'strategic thinking', 'proactive'],
             'kpi_groups' => ['Competency', 'Sales Target Contribution'],
-            'threshold' => 3,
-            'priority_threshold_high' => 6,
-            'priority_threshold_medium' => 3
+            'threshold_percentage' => 60,
+            'priority_threshold_high' => 4,
+            'priority_threshold_medium' => 2
         ],
         'Time Management' => [
-            'keywords' => ['time', 'deadline', 'punctual', 'prioritisation', 'productivity', 'workload'],
-            'kpi_groups' => ['Training, Learning & Team Contribution', 'Competency'],
-            'threshold' => 3,
-            'priority_threshold_high' => 6,
-            'priority_threshold_medium' => 3
+            'keywords' => ['time', 'deadline', 'punctual', 'prioritisation', 'productivity', 'workload', 'time optimisation', 'efficiency training', 'deadlines'],
+            'kpi_groups' => ['Training, Learning & Team Contribution', 'People, Training, Learning & Team Contribution'],
+            'threshold_percentage' => 60,
+            'priority_threshold_high' => 4,
+            'priority_threshold_medium' => 2
         ],
         'Professional Development' => [
-            'keywords' => ['professional', 'conduct', 'reliability', 'accountability', 'attendance', 'compliance'],
-            'kpi_groups' => ['Competency', 'People, Training, Learning & Team Contribution'],
-            'threshold' => 3,
-            'priority_threshold_high' => 7,
-            'priority_threshold_medium' => 4
+            'keywords' => ['professional', 'conduct', 'reliability', 'accountability', 'attendance', 'compliance', 'professional growth', 'career development', 'performance improvement', 'coaching', 'competency'],
+            'kpi_groups' => ['Competency'],
+            'threshold_percentage' => 60,
+            'priority_threshold_high' => 4,
+            'priority_threshold_medium' => 2
         ]
     ];
     
-    $employees = getEmployeeScores($conn, $year, $department);
+    // =============================================
+    // Get actual staff for the selected year
+    // =============================================
+    $staff_query = "SELECT DISTINCT Name 
+                    FROM kpi_data 
+                    WHERE YEAR(Date) = ?";
+    $stmt = mysqli_prepare($conn, $staff_query);
+    mysqli_stmt_bind_param($stmt, "i", $year);
+    mysqli_stmt_execute($stmt);
+    $staff_result = mysqli_stmt_get_result($stmt);
+    
+    $employees = [];
+    while ($row = mysqli_fetch_assoc($staff_result)) {
+        $employees[] = ['name' => $row['Name']];
+    }
+    
+    $total_staff_count = count($employees);
+    
+    if ($total_staff_count == 0) {
+        echo '<div class="alert alert-warning">No KPI data found for year ' . $year . '. Please select a different year.</div>';
+        return;
+    }
     
     // Initialize tracking arrays
     $training_needs = [];
@@ -1014,69 +1035,105 @@ elseif ($report_type == 'training') {
     $kpi_weakness_source = [];
     $supervisor_source = [];
     $employee_scores_detail = [];
+    $employee_group_averages = [];
+    $employee_weakness_details = [];
     $trend_data = [];
     
     // =============================================
-    // LAYER 2: Auto-Detect Weak Areas from KPI Scores
+    // LAYER 2: Calculate AVERAGE per KPI Group
     // =============================================
     foreach ($employees as $emp) {
+        $employee_name = $emp['name'];
         
-        // Get KPI details with scores
-        $query = "SELECT kti.kpi_group, kti.kpi_description, kd.Score, kti.weight
+        // Get ALL KPI scores for this employee in the selected year
+        $query = "SELECT kti.kpi_group, kti.kpi_code, kd.Score
                   FROM kpi_data kd
                   JOIN kpi_template_items kti 
                   ON kd.KPI_Code = kti.kpi_code AND kd.template_id = kti.template_id
                   WHERE kd.Name = ? AND YEAR(kd.Date) = ? AND kti.is_active = 1";
         
         $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "si", $emp['name'], $year);
+        mysqli_stmt_bind_param($stmt, "si", $employee_name, $year);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         
-        $employee_weak_areas = [];
-        $employee_scores = [];
+        // Store individual scores by KPI group
+        $group_scores = [];
         
         while ($row = mysqli_fetch_assoc($result)) {
             $kpi_group = $row['kpi_group'];
             $score = $row['Score'];
             
-            // Store for detailed analysis
-            if (!isset($employee_scores[$kpi_group])) {
-                $employee_scores[$kpi_group] = ['total' => 0, 'count' => 0];
+            if (!isset($group_scores[$kpi_group])) {
+                $group_scores[$kpi_group] = [];
             }
-            $employee_scores[$kpi_group]['total'] += $score;
-            $employee_scores[$kpi_group]['count']++;
+            $group_scores[$kpi_group][] = $score;
+        }
+        
+        // Calculate AVERAGE for each KPI group and convert to percentage
+        $group_averages = [];
+        foreach ($group_scores as $group => $scores) {
+            $average = array_sum($scores) / count($scores);
+            $percentage = round(($average / 5) * 100, 1);
+            $group_averages[$group] = [
+                'average_score' => $average,
+                'percentage' => $percentage,
+                'kpi_count' => count($scores)
+            ];
+        }
+        
+        $employee_group_averages[$employee_name] = $group_averages;
+        
+        // Determine weak areas based on AVERAGE percentage
+        $employee_weak_areas = [];
+        
+        foreach ($training_categories as $category => $config) {
+            $category_scores = [];
+            $category_groups = [];
             
-            // Detect weakness (score < threshold)
-            foreach ($training_categories as $category => $config) {
-                if (in_array($kpi_group, $config['kpi_groups']) && $score < $config['threshold']) {
+            // Collect all scores from KPI groups in this category
+            foreach ($config['kpi_groups'] as $kpi_group) {
+                if (isset($group_averages[$kpi_group])) {
+                    $category_scores[] = $group_averages[$kpi_group]['percentage'];
+                    $category_groups[] = $kpi_group;
+                }
+            }
+            
+            // If we have scores for this category
+            if (!empty($category_scores)) {
+                $category_average = array_sum($category_scores) / count($category_scores);
+                
+                // Store for detailed display
+                if (!isset($employee_scores_detail[$employee_name])) {
+                    $employee_scores_detail[$employee_name] = [];
+                }
+                $employee_scores_detail[$employee_name][$category] = $category_average;
+                
+                // Check if below threshold (WEAK AREA)
+                if ($category_average < $config['threshold_percentage']) {
+                    $employee_weak_areas[] = $category;
+                    
+                    // Add to training needs (count unique staff per category)
                     if (!isset($training_needs[$category])) {
                         $training_needs[$category] = 0;
                         $staff_by_training[$category] = [];
                         $kpi_weakness_source[$category] = 0;
                     }
                     
-                    $training_needs[$category]++;
-                    $kpi_weakness_source[$category]++;
-                    $employee_weak_areas[] = $category;
-                    
-                    if (!in_array($emp['name'], $staff_by_training[$category])) {
-                        $staff_by_training[$category][] = $emp['name'];
+                    if (!in_array($employee_name, $staff_by_training[$category])) {
+                        $training_needs[$category]++;
+                        $kpi_weakness_source[$category]++;
+                        $staff_by_training[$category][] = $employee_name;
                     }
                 }
             }
         }
         
-        // Calculate average scores per category for this employee
-        $employee_avg_scores = [];
-        foreach ($employee_scores as $group => $data) {
-            $employee_avg_scores[$group] = round(($data['total'] / $data['count']) * 20, 1); // Convert 1-5 to percentage
-        }
-        $employee_scores_detail[$emp['name']] = $employee_avg_scores;
+        $employee_weakness_details[$employee_name] = $employee_weak_areas;
     }
     
     // =============================================
-    // LAYER 1 (CONTINUED): Map Supervisor Comments to Categories
+    // Map Supervisor Comments to Categories
     // =============================================
     $supervisor_query = "SELECT Name, `Training/Development Recommendations` as recommendation 
                          FROM kpi_comment 
@@ -1090,64 +1147,112 @@ elseif ($report_type == 'training') {
         $recommendation = strtolower($row['recommendation']);
         $employee_name = $row['Name'];
         
+        // Verify employee exists in this year's KPI data
+        $employee_exists = false;
+        foreach ($employees as $emp) {
+            if ($emp['name'] == $employee_name) {
+                $employee_exists = true;
+                break;
+            }
+        }
+        
+        if (!$employee_exists) {
+            continue;
+        }
+        
         foreach ($training_categories as $category => $config) {
             foreach ($config['keywords'] as $keyword) {
                 if (strpos($recommendation, $keyword) !== false) {
                     if (!isset($supervisor_source[$category])) {
                         $supervisor_source[$category] = 0;
                     }
-                    $supervisor_source[$category]++;
                     
-                    // Add to training needs if not already counted from KPI
-                    if (!isset($training_needs[$category])) {
-                        $training_needs[$category] = 0;
-                        $staff_by_training[$category] = [];
-                    }
-                    
-                    if (!in_array($employee_name, $staff_by_training[$category])) {
+                    // Add to training needs if not already counted
+                    if (!isset($staff_by_training[$category]) || !in_array($employee_name, $staff_by_training[$category])) {
+                        if (!isset($training_needs[$category])) {
+                            $training_needs[$category] = 0;
+                            $staff_by_training[$category] = [];
+                        }
                         $training_needs[$category]++;
                         $staff_by_training[$category][] = $employee_name;
                     }
+                    
+                    $supervisor_source[$category]++;
                     break;
                 }
             }
         }
     }
     
-    // Sort by highest need
+    // Remove duplicates
+    foreach ($staff_by_training as $category => $staffs) {
+        $staff_by_training[$category] = array_unique($staffs);
+        $training_needs[$category] = count($staff_by_training[$category]);
+    }
+    
     arsort($training_needs);
     
     // =============================================
-    // LAYER 2D: Trend Analysis (Historical Data)
+    // Trend Analysis using Averages
     // =============================================
     $trend_years = [2022, 2023, 2024, 2025];
     foreach ($trend_years as $trend_year) {
+        // Get staff for this year
+        $trend_staff_query = "SELECT DISTINCT Name FROM kpi_data WHERE YEAR(Date) = ?";
+        $stmt = mysqli_prepare($conn, $trend_staff_query);
+        mysqli_stmt_bind_param($stmt, "i", $trend_year);
+        mysqli_stmt_execute($stmt);
+        $trend_staff_result = mysqli_stmt_get_result($stmt);
+        
+        $yearly_staff = [];
+        while ($row = mysqli_fetch_assoc($trend_staff_result)) {
+            $yearly_staff[] = $row['Name'];
+        }
+        
         foreach ($training_categories as $category => $config) {
-            $trend_data[$category][$trend_year] = 0;
+            $weak_count = 0;
             
-            $trend_query = "SELECT DISTINCT kd.Name
-                           FROM kpi_data kd
-                           JOIN kpi_template_items kti ON kd.KPI_Code = kti.kpi_code
-                           WHERE YEAR(kd.Date) = ? 
-                           AND kti.kpi_group IN ('" . implode("','", $config['kpi_groups']) . "')
-                           AND kd.Score < ?";
+            // For each staff member, calculate average for this category
+            foreach ($yearly_staff as $staff_name) {
+                // Get all KPI scores for this staff in this year
+                $query = "SELECT kti.kpi_group, kd.Score
+                          FROM kpi_data kd
+                          JOIN kpi_template_items kti 
+                          ON kd.KPI_Code = kti.kpi_code AND kd.template_id = kti.template_id
+                          WHERE kd.Name = ? AND YEAR(kd.Date) = ? 
+                          AND kti.kpi_group IN ('" . implode("','", $config['kpi_groups']) . "')";
+                
+                $stmt = mysqli_prepare($conn, $query);
+                mysqli_stmt_bind_param($stmt, "si", $staff_name, $trend_year);
+                mysqli_stmt_execute($stmt);
+                $result = mysqli_stmt_get_result($stmt);
+                
+                $scores = [];
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $scores[] = $row['Score'];
+                }
+                
+                if (!empty($scores)) {
+                    $average = array_sum($scores) / count($scores);
+                    $percentage = ($average / 5) * 100;
+                    
+                    if ($percentage < $config['threshold_percentage']) {
+                        $weak_count++;
+                    }
+                }
+            }
             
-            $stmt = mysqli_prepare($conn, $trend_query);
-            $threshold = $config['threshold'];
-            mysqli_stmt_bind_param($stmt, "ii", $trend_year, $threshold);
-            mysqli_stmt_execute($stmt);
-            $trend_result = mysqli_stmt_get_result($stmt);
-            $trend_data[$category][$trend_year] = mysqli_num_rows($trend_result);
+            $trend_data[$category][$trend_year] = $weak_count;
         }
     }
     
     // =============================================
-    // LAYER 2E: Generate Smart Recommendations
+    // Generate Smart Recommendations
     // =============================================
     $smart_recommendations = [];
     foreach ($training_needs as $category => $count) {
         $config = $training_categories[$category];
-        $percentage = round(($count / count($employees)) * 100, 1);
+        $percentage = round(($count / $total_staff_count) * 100, 1);
         
         if ($count >= $config['priority_threshold_high']) {
             $priority = "High";
@@ -1184,10 +1289,14 @@ elseif ($report_type == 'training') {
     }
 ?>
 
+<!-- HTML DISPLAY SECTION -->
 <div class="report-card-wrapper" id="reportCard">
     <div class="card-header-custom">
         <h3>🧠 Enhanced Training Needs Summary - <?php echo $year; ?></h3>
-        <p class="text-muted mb-0">Auto-generated from KPI scores and supervisor feedback</p>
+        <p class="text-muted mb-0">
+            Auto-generated from AVERAGE KPI group scores and supervisor feedback | 
+            <strong>Total Staff Evaluated: <?php echo $total_staff_count; ?></strong>
+        </p>
     </div>
 
     <div class="card-body-custom">
@@ -1195,6 +1304,12 @@ elseif ($report_type == 'training') {
         <!-- SECTION A: Training Demand Overview -->
         <div class="mb-5">
             <h5 class="border-bottom pb-2">📊 A. Training Demand Overview</h5>
+            <?php if (empty($smart_recommendations)): ?>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> No significant training needs detected for <?php echo $year; ?>! 
+                    All staff are meeting performance expectations (average score ≥ 60%).
+                </div>
+            <?php else: ?>
             <table class="performance-table">
                 <thead>
                     <tr>
@@ -1210,7 +1325,7 @@ elseif ($report_type == 'training') {
                     <?php foreach ($smart_recommendations as $rec): ?>
                     <tr>
                         <td><strong><?php echo $rec['category']; ?></strong></td>
-                        <td><?php echo $rec['count']; ?></td>
+                        <td><?php echo $rec['count']; ?> / <?php echo $total_staff_count; ?></td>
                         <td><?php echo $rec['percentage']; ?>%</td>
                         <td>
                             <span class="badge bg-<?php echo $rec['priority_class']; ?>">
@@ -1223,16 +1338,66 @@ elseif ($report_type == 'training') {
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            <?php endif; ?>
         </div>
         
-        <!-- SECTION B: Source Breakdown -->
+        <!-- SECTION B: Detailed Staff Performance by Category -->
         <div class="mb-5">
-            <h5 class="border-bottom pb-2">🔄 B. Source Breakdown (KPI vs Supervisor Alignment)</h5>
+            <h5 class="border-bottom pb-2">📋 Staff Performance Details (Average % per Category)</h5>
+            <div class="table-responsive">
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Staff Name</th>
+                            <?php foreach ($training_categories as $category => $config): ?>
+                                <th><?php echo $category; ?></th>
+                            <?php endforeach; ?>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($employee_scores_detail as $name => $scores): ?>
+                        <tr>
+                            <td><strong><?php echo $name; ?></strong></td>
+                            <?php foreach ($training_categories as $category => $config): ?>
+                                <?php 
+                                $score = isset($scores[$category]) ? $scores[$category] : null;
+                                $score_display = $score ? $score . '%' : 'N/A';
+                                $score_class = ($score && $score < 60) ? 'text-danger fw-bold' : 'text-success';
+                                ?>
+                                <td class="<?php echo $score_class; ?>">
+                                    <?php echo $score_display; ?>
+                                </td>
+                            <?php endforeach; ?>
+                            <td>
+                                <?php 
+                                $weak_areas = $employee_weakness_details[$name] ?? [];
+                                if (!empty($weak_areas)): 
+                                ?>
+                                    <span class="badge bg-warning text-dark">
+                                        Needs Training (<?php echo count($weak_areas); ?> areas)
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge bg-success">
+                                        Meets Expectations
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- SECTION C: Source Breakdown -->
+        <div class="mb-5">
+            <h5 class="border-bottom pb-2">🔄 C. Source Breakdown (KPI vs Supervisor Alignment)</h5>
             <table class="performance-table">
                 <thead>
                     <tr>
                         <th>Training Area</th>
-                        <th>From KPI Weakness</th>
+                        <th>From KPI Weakness (Avg < 60%)</th>
                         <th>From Supervisor Comments</th>
                         <th>Alignment Status</th>
                     </tr>
@@ -1256,19 +1421,18 @@ elseif ($report_type == 'training') {
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            <div class="info-box mt-2 small text-muted">
-                <i class="fas fa-info-circle"></i> 
-                <strong>Insight:</strong> High alignment indicates consistent observations. 
-                Data-driven only suggests areas where supervisors may need more visibility.
-            </div>
         </div>
         
-        <!-- SECTION C: Staff Grouping by Training Need -->
+        <!-- SECTION D: Staff Grouping by Training Need -->
         <div class="mb-5">
-            <h5 class="border-bottom pb-2">👥 C. Staff Grouped by Training Requirements</h5>
+            <h5 class="border-bottom pb-2">👥 D. Staff Grouped by Training Requirements</h5>
             <div class="row">
-                <?php foreach ($staff_by_training as $category => $staffs): 
+                <?php 
+                $displayed_categories = 0;
+                foreach ($staff_by_training as $category => $staffs): 
                     if (empty($staffs)) continue;
+                    $displayed_categories++;
+                    $config = $training_categories[$category];
                 ?>
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="info-box h-100">
@@ -1277,40 +1441,39 @@ elseif ($report_type == 'training') {
                             <span class="badge bg-primary"><?php echo count($staffs); ?> staff</span>
                         </div>
                         <ul class="mb-0">
-                            <?php foreach (array_unique($staffs) as $name): ?>
+                            <?php foreach ($staffs as $name): ?>
                                 <li>
-                                    <?php echo $name; ?>
-                                    <?php if (isset($employee_scores_detail[$name])): ?>
-                                        <small class="text-muted">
-                                            (Avg: 
-                                            <?php 
-                                            $scores = $employee_scores_detail[$name];
-                                            $relevant_scores = [];
-                                            foreach ($training_categories[$category]['kpi_groups'] as $group) {
-                                                if (isset($scores[$group])) {
-                                                    $relevant_scores[] = $scores[$group];
-                                                }
-                                            }
-                                            if (!empty($relevant_scores)) {
-                                                echo round(array_sum($relevant_scores) / count($relevant_scores), 1) . '%)';
-                                            } else {
-                                                echo 'Needs improvement)';
-                                            }
-                                            ?>
+                                    <strong><?php echo $name; ?></strong>
+                                    <?php if (isset($employee_scores_detail[$name][$category])): ?>
+                                        <br>
+                                        <small class="text-danger">
+                                            Average: <?php echo $employee_scores_detail[$name][$category]; ?>% 
+                                            (Below 60% threshold)
                                         </small>
                                     <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
+                        <div class="mt-2 small text-muted">
+                            Threshold: Below <?php echo $config['threshold_percentage']; ?>%
+                        </div>
                     </div>
                 </div>
                 <?php endforeach; ?>
+                <?php if ($displayed_categories == 0): ?>
+                <div class="col-12">
+                    <div class="alert alert-success">
+                        No staff members require training based on current data (all averages ≥ 60%).
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
         
-        <!-- SECTION D: Trend Analysis -->
+        <!-- SECTION E: Trend Analysis -->
         <div class="mb-5">
-            <h5 class="border-bottom pb-2">📈 D. Historical Trend Analysis (2022-2025)</h5>
+            <h5 class="border-bottom pb-2">📈 E. Historical Trend Analysis (2022-2025)</h5>
+            <p class="text-muted small">Based on staff with average score below 60% in each category</p>
             <table class="performance-table">
                 <thead>
                     <tr>
@@ -1345,40 +1508,19 @@ elseif ($report_type == 'training') {
                     <?php endforeach; ?>
                 </tbody>
             </table>
-            
-            <?php 
-            // Generate trend insights
-            $increasing_categories = [];
-            foreach ($training_categories as $category => $config) {
-                $values = [];
-                foreach ($trend_years as $trend_year) {
-                    $values[] = $trend_data[$category][$trend_year] ?? 0;
-                }
-                if (end($values) > reset($values)) {
-                    $increasing_categories[] = $category;
-                }
-            }
-            if (!empty($increasing_categories)):
-            ?>
-            <div class="alert alert-info mt-3">
-                <strong>💡 Trend Insight:</strong> 
-                <?php echo implode(' and ', $increasing_categories); ?> 
-                skill gaps have <?php echo count($increasing_categories) > 1 ? 'increased' : 'increased'; ?> 
-                over the past 4 years. Consider proactive intervention strategies.
-            </div>
-            <?php endif; ?>
         </div>
         
-        <!-- SECTION E: Smart Recommendations -->
+        <!-- SECTION F: Smart Recommendations -->
         <div class="mb-4">
-            <h5 class="border-bottom pb-2">🤖 E. AI-Generated Smart Recommendations</h5>
+            <h5 class="border-bottom pb-2">🤖 F. AI-Generated Smart Recommendations</h5>
+            <?php if (!empty($smart_recommendations)): ?>
             <div class="row">
                 <?php 
-                $top_recommendations = array_slice($smart_recommendations, 0, 3);
+                $top_recommendations = array_slice($smart_recommendations, 0, min(3, count($smart_recommendations)));
                 foreach ($top_recommendations as $rec): 
                 ?>
                 <div class="col-md-4 mb-3">
-                    <div class="info-box bg-<?php echo $rec['priority_class']; ?>-light">
+                    <div class="info-box border-start border-4 border-<?php echo $rec['priority_class']; ?>">
                         <div class="d-flex align-items-center mb-2">
                             <span class="badge bg-<?php echo $rec['priority_class']; ?> me-2">
                                 <?php echo $rec['priority']; ?> Priority
@@ -1401,35 +1543,45 @@ elseif ($report_type == 'training') {
             
             <!-- Executive Summary -->
             <div class="alert alert-success mt-3">
-                <strong>🎯 Executive Summary:</strong>
+                <strong>🎯 Executive Summary (<?php echo $year; ?>):</strong>
                 <?php 
-                if (!empty($smart_recommendations)) {
-                    $top_category = $smart_recommendations[0];
-                    echo "Based on KPI analysis and supervisor feedback for {$year}, ";
-                    echo "<strong>{$top_category['category']}</strong> emerges as the highest priority with ";
-                    echo "<strong>{$top_category['count']} staff ({$top_category['percentage']}%)</strong> requiring intervention. ";
-                    
-                    if ($top_category['priority'] == 'High') {
-                        echo "Immediate training intervention is recommended to address these gaps and prevent performance deterioration.";
-                    } else {
-                        echo "Scheduled training programs should be planned for the next quarter to address identified development areas.";
-                    }
+                $top_category = $smart_recommendations[0];
+                echo "Based on AVERAGE KPI group scores of <strong>{$total_staff_count} staff members</strong> and supervisor feedback for {$year}, ";
+                echo "<strong>{$top_category['category']}</strong> emerges as the highest priority with ";
+                echo "<strong>{$top_category['count']} staff ({$top_category['percentage']}%)</strong> scoring below 60% average in this area. ";
+                
+                if ($top_category['priority'] == 'High') {
+                    echo "Immediate training intervention is recommended to address these gaps.";
                 } else {
-                    echo "No significant training needs detected for {$year}. Continue monitoring performance metrics.";
+                    echo "Scheduled training programs should be planned for the next quarter.";
                 }
                 ?>
             </div>
+            <?php else: ?>
+            <div class="alert alert-success">
+                <strong>🎉 Excellent Results!</strong> No critical training needs identified for <?php echo $year; ?>. 
+                All staff are meeting or exceeding the 60% average threshold across all categories.
+            </div>
+            <?php endif; ?>
         </div>
         
     </div>
 </div>
 
 <style>
-.bg-danger-light { background-color: #fff5f5; border-left: 4px solid #dc3545; }
-.bg-warning-light { background-color: #fffbf0; border-left: 4px solid #ffc107; }
-.bg-info-light { background-color: #f0f9ff; border-left: 4px solid #0dcaf0; }
+.border-start.border-4 { border-left-width: 4px !important; }
+.border-danger { border-left-color: #dc3545 !important; }
+.border-warning { border-left-color: #ffc107 !important; }
+.border-info { border-left-color: #0dcaf0 !important; }
 .info-box { padding: 15px; background: #f8f9fa; border-radius: 8px; }
-.performance-table th, .performance-table td { padding: 10px; }
+.performance-table { width: 100%; border-collapse: collapse; }
+.performance-table th, 
+.performance-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+.performance-table th { background-color: #f8f9fa; font-weight: 600; }
+.badge { padding: 5px 10px; border-radius: 4px; font-size: 12px; }
+.table-responsive { overflow-x: auto; }
+.text-danger { color: #dc3545 !important; }
+.text-success { color: #28a745 !important; }
 </style>
 
 <?php
