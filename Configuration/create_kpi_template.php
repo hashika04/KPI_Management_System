@@ -50,7 +50,7 @@ if ($is_edit) {
     $template_data = $result->fetch_assoc();
     
     if (!$template_data) {
-        header("Location: kpi_template_management.php");
+        header("Location: configuration.php");
         exit();
     }
     
@@ -178,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Redirect after successful creation
             if (!$is_edit) {
-                header("Location: kpi_template_management.php?created=1");
+                header("Location: configuration.php?created=1");
                 exit();
             } else {
                 header("Location: edit_kpi_template.php?id=" . $template_id . "&success=1");
@@ -751,7 +751,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         <div class="reports-content">
             <!-- Back Button -->
             <div class="top-bar">
-                <a href="kpi_template_management.php" class="btn-back">
+                <a href="configuration.php" class="btn-back">
                     <i class="fas fa-arrow-left"></i>
                     Back to Templates
                 </a>
@@ -894,7 +894,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                             <button type="submit" class="btn btn-primary-custom">
                                 <i class="fas fa-save me-2"></i> <?php echo $is_edit ? 'Update' : 'Create'; ?> Template
                             </button>
-                            <a href="kpi_template_management.php" class="btn btn-secondary-custom btn-outline-secondary">
+                            <a href="configuration.php" class="btn btn-secondary-custom btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i> Cancel
                             </a>
                         </div>

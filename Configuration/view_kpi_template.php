@@ -7,7 +7,7 @@ $activePage = 'config';
 $template_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if (!$template_id) {
-    header("Location: kpi_template_management.php");
+    header("Location: configuration.php");
     exit();
 }
 
@@ -19,7 +19,7 @@ $stmt->execute();
 $template = $stmt->get_result()->fetch_assoc();
 
 if (!$template) {
-    header("Location: kpi_template_management.php");
+    header("Location: configuration.php");
     exit();
 }
 
@@ -567,7 +567,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
         <div class="reports-content">
             <!-- Top Bar with Back Button and Action Buttons -->
             <div class="top-bar no-print">
-                <a href="kpi_template_management.php" class="btn-back">
+                <a href="configuration.php" class="btn-back">
                     <i class="fas fa-arrow-left"></i>
                     Back to Templates
                 </a>

@@ -14,7 +14,7 @@ $error_message = '';
 $success_message = '';
 
 if (!$template_id) {
-    header("Location: kpi_template_management.php");
+    header("Location: configuration.php");
     exit();
 }
 
@@ -26,7 +26,7 @@ $stmt->execute();
 $template = $stmt->get_result()->fetch_assoc();
 
 if (!$template) {
-    header("Location: kpi_template_management.php");
+    header("Location: configuration.php");
     exit();
 }
 
@@ -698,7 +698,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="reports-content">
             <div class="top-bar">
-                <a href="kpi_template_management.php" class="btn-back">
+                <a href="configuration.php" class="btn-back">
                     <i class="fas fa-arrow-left"></i>
                     Back to Templates
                 </a>
@@ -852,7 +852,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <button type="submit" class="btn btn-primary-custom">
                                 <i class="fas fa-save me-2"></i> Save Changes
                             </button>
-                            <a href="kpi_template_management.php" class="btn btn-secondary-custom btn-outline-secondary">
+                            <a href="configuration.php" class="btn btn-secondary-custom btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i> Cancel
                             </a>
                         </div>
