@@ -322,7 +322,7 @@ $percentageOfTarget = min($percentageOfTarget, 100);
 
 if ($percentageOfTarget >= 100) {
     $targetInsight = "Excellent! The actual average KPI for $speedoYear ($actualForYear%) meets or exceeds the target of $speedoTarget%. Keep up the great work.";
-} elseif ($percentageOfTarget >= 80) {
+} elseif ($percentageOfTarget >= 80) {  
     $targetInsight = "Good progress. The actual average ($actualForYear%) is $percentageOfTarget% of the target ($speedoTarget%). A small push can help close the gap.";
 } elseif ($percentageOfTarget >= 60) {
     $targetInsight = "Moderate performance. The team is at $percentageOfTarget% of the target. Focus on the weakest KPI groups shown in the heatmap above.";

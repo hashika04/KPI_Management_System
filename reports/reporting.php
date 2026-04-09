@@ -336,6 +336,46 @@ $depts_result = mysqli_query($conn, $depts_query);
         font-size: 11px;
         margin-bottom: 4px;
     }
+
+    /* QR button styling */
+    .report-btn-outer {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .qr-icon {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        margin-left: 6px;
+        vertical-align: middle;
+        border-radius: 4px;
+        transition: transform 0.1s;
+    }
+    .qr-icon:active {
+        transform: scale(0.95);
+    }
+    .qr-expand {
+        position: absolute;
+        z-index: 10000;
+        background: white;
+        padding: 10px;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+    .qr-expand img {
+        width: 180px;
+        height: 180px;
+    }
+    .qr-expand span {
+        font-size: 10px;
+        color: #333;
+    }
     
     /* Print styles */
     @media print {
@@ -600,6 +640,196 @@ $depts_result = mysqli_query($conn, $depts_query);
         // Open preview in new tab
         window.open(previewUrl, '_blank');
     }
+
+    // ----- QR Code Injection with Centered Modal Popup -----
+    let qrModal = null; // singleton modal reference
+
+    function createQrModal() {
+        if (qrModal) return qrModal;
+        
+        const modal = document.createElement('div');
+        modal.id = 'qrModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.2s;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 90%;
+        `;
+        
+        const qrImg = document.createElement('img');
+        qrImg.id = 'qrModalImg';
+        qrImg.style.width = '250px';
+        qrImg.style.height = '250px';
+        qrImg.style.display = 'block';
+        qrImg.style.margin = '0 auto';
+        
+        const hint = document.createElement('p');
+        hint.style.marginTop = '12px';
+        hint.style.fontSize = '14px';
+        hint.style.fontWeight = '500';
+        hint.style.color = '#333';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Close';
+        closeBtn.style.cssText = `
+            margin-top: 16px;
+            padding: 8px 20px;
+            background: #4361ee;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+        `;
+        closeBtn.onclick = () => hideModal();
+        
+        modalContent.appendChild(qrImg);
+        modalContent.appendChild(hint);
+        modalContent.appendChild(closeBtn);
+        modal.appendChild(modalContent);
+        
+        // Close modal when clicking outside content
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal();
+        });
+        
+        document.body.appendChild(modal);
+        qrModal = modal;
+        return qrModal;
+    }
+
+    function showModal(imageUrl, hintText) {
+        const modal = createQrModal();
+        const img = document.getElementById('qrModalImg');
+        const hint = modal.querySelector('p');
+        img.src = imageUrl;
+        hint.textContent = hintText;
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+    }
+
+    function hideModal() {
+        if (qrModal) {
+            qrModal.style.visibility = 'hidden';
+            qrModal.style.opacity = '0';
+        }
+    }
+
+    function getCurrentReportParams() {
+        const form = document.getElementById('filterForm');
+        if (!form) return new URLSearchParams();
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        for (let [key, value] of formData.entries()) {
+            if (value) params.set(key, value);
+        }
+        const employeeSelect = document.querySelector('.employee-select');
+        if (employeeSelect && employeeSelect.value) {
+            params.set('employee', employeeSelect.value);
+        }
+        return params;
+    }
+
+    function buildQrImageUrl(basePage, params) {
+        const baseUrl = 'https://kpimonitor.infinityfreeapp.com/KPI_Management_System/reports';
+        const fullUrl = `${baseUrl}/${basePage}?${params.toString()}`;
+        return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(fullUrl)}`;
+    }
+
+    function injectQrCodes() {
+        const pdfButtons = document.querySelectorAll('#reportContent button[onclick*="exportToPDF"]');
+        const excelButtons = document.querySelectorAll('#reportContent button[onclick*="exportToExcel"]');
+        
+        if (pdfButtons.length === 0 && excelButtons.length === 0) {
+            setTimeout(injectQrCodes, 200);
+            return;
+        }
+        
+        const params = getCurrentReportParams();
+        
+        function addQrToButton(btn, previewPage) {
+            if (btn.querySelector('.qr-icon')) return;
+            
+            const qrIcon = document.createElement('img');
+            qrIcon.className = 'qr-icon';
+            // Use a 250x250 QR (scaled down by CSS)
+            qrIcon.src = buildQrImageUrl(previewPage, params);
+            qrIcon.alt = 'QR';
+            qrIcon.style.width = '24px';
+            qrIcon.style.height = '24px';
+            qrIcon.style.marginLeft = '8px';
+            qrIcon.style.cursor = 'pointer';
+            qrIcon.style.verticalAlign = 'middle';
+            
+            qrIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const fullQrUrl = buildQrImageUrl(previewPage, params);
+                const hintText = `Scan to open ${previewPage === 'pdf_preview.php' ? 'PDF' : 'Excel'} preview`;
+                showModal(fullQrUrl, hintText);
+            });
+            
+            btn.appendChild(qrIcon);
+        }
+        
+        pdfButtons.forEach(btn => addQrToButton(btn, 'pdf_preview.php'));
+        excelButtons.forEach(btn => addQrToButton(btn, 'excel_preview.php'));
+    }
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideModal();
+    });
+
+    // Override generateReport to re-inject QR after content load
+    const originalGenerateReport = window.generateReport;
+    window.generateReport = function() {
+        const container = document.getElementById('reportContent');
+        container.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3">Loading report...</p></div>`;
+        
+        const formData = new FormData(document.getElementById('filterForm'));
+        const params = new URLSearchParams(formData);
+        history.replaceState(null, '', '?' + params.toString());
+        
+        fetch('generate_report.php?' + params.toString())
+            .then(response => response.text())
+            .then(html => {
+                container.innerHTML = html;
+                // Re-execute scripts
+                const scripts = container.querySelectorAll("script");
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement("script");
+                    newScript.text = oldScript.text;
+                    document.body.appendChild(newScript);
+                    oldScript.remove();
+                });
+                injectQrCodes();
+            })
+            .catch(error => {
+                container.innerHTML = '<div class="alert alert-danger">Error loading report</div>';
+            });
+    };
+
+    // Initial injection
+    setTimeout(injectQrCodes, 500);
     </script>
 </body>
 </html>

@@ -1,5 +1,10 @@
 <?php
-include("../includes/auth.php");
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Include database connection
+require_once __DIR__ . '/../config/db.php';
 
 $year = isset($_GET['year']) ? $_GET['year'] : date('Y');
 $department = isset($_GET['department']) ? $_GET['department'] : '';

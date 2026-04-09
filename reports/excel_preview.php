@@ -1,12 +1,10 @@
 <?php
-session_start();
-include("../includes/auth.php");
-
-// Check if user is logged in
-if (!isset($_SESSION['username'])) {
-    header("Location: ../login.php");
-    exit();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
+
+// Include database connection
+require_once __DIR__ . '/../config/db.php';
 
 // Get parameters from URL
 $year = isset($_GET['year']) ? $_GET['year'] : date('Y');
@@ -443,14 +441,30 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
                 top_count: urlParams.get('top_count') || 10,
                 custom_dept: urlParams.get('custom_dept') || '',
                 custom_min_score: urlParams.get('custom_min_score') || 0,
-                custom_max_score: urlParams.get('custom_max_score') || 100
+                custom_max_score: urlParams.get('custom_max_score') || 100,
+                download: '1'  // Add flag to indicate download (optional, can be used in export_excel_preview.php)
             });
             
-            window.location.href = 'export_excel.php?' + params.toString();
-            
-            setTimeout(() => {
+            try {
+                const response = await fetch('export_excel_preview.php?' + params.toString());
+                const html = await response.text();
+                
+                // Create a Blob with the HTML content
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.href = url;
+                link.download = `kpi_report_${params.get('report_type')}_${params.get('year')}.xls`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Error generating Excel file. Please try again.');
+            } finally {
                 loadingOverlay.style.display = 'none';
-            }, 2000);
+            }
         }
         
         function printReport() {

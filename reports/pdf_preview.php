@@ -1,12 +1,10 @@
 <?php
-session_start();
-include("../includes/auth.php");
-
-// Check if user is logged in
-if (!isset($_SESSION['username'])) {
-    header("Location: ../login.php");
-    exit();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
+
+// Include database connection
+require_once __DIR__ . '/../config/db.php';
 
 // Get parameters from URL
 $year = isset($_GET['year']) ? $_GET['year'] : date('Y');
