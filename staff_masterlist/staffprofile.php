@@ -32,6 +32,8 @@ $SECTION2_GROUP_WEIGHTS = [
     'Store Operations Support' => 0.15
 ];
 
+
+
 function normalizeAvatarPath(string $path): string
 {
     return trim($path) !== '' ? trim($path) : '../asset/images/staff/default-profile.jpg';
@@ -468,7 +470,7 @@ $currentTrendBadgeClass =
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Profile</title>
+    <title>Sales Assistant Profile</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
     <link rel="stylesheet" href="../asset/universal.css?v=2">
@@ -485,19 +487,33 @@ $currentTrendBadgeClass =
         margin-bottom: 20px;
     }
 
-    .staff-profile-header h1 {
-        font-size: 2.8rem;
-        font-weight: 900;
-        color: #1a132f;
-        letter-spacing: -0.5px;
-        margin-bottom: 6px;
-    }
+.staff-profile-header h1 {
+    font-size: 1.8rem !important;
+    font-weight: 800 !important;
+    color: #1d1635 !important;
+    letter-spacing: -0.8px !important;
+    margin: 8px 0 0 !important;
+}
 
-    .staff-profile-header p {
-        font-size: 1.05rem;
-        color: #7c6f87;
-        margin: 0;
-    }
+.staff-profile-header p {
+    margin: 8px 0 0 !important;
+    color: #b07d97 !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+}
+
+.staff-profile-header .back-link {
+    display: inline-block !important;
+    color: #a24cc9 !important;
+    text-decoration: none !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 4px !important;
+}
+
+.staff-profile-header .back-link:hover {
+    color: #e8308c !important;
+}
 
     .profile-shell {
         display: grid;
@@ -1334,6 +1350,8 @@ $currentTrendBadgeClass =
 </head>
 <body>
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+
+
 
 <main class="staff-profile-page">
     <section class="staff-profile-header">
