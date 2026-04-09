@@ -1286,6 +1286,26 @@ $currentTrendBadgeClass =
     border: 1px solid #bbf7d0;
     box-shadow: 0 6px 18px rgba(34, 197, 94, 0.12);
 }
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    position: relative;
+    overflow-y: auto;
+}
 </style>
 </head>
 <body>
@@ -1375,8 +1395,8 @@ $currentTrendBadgeClass =
 
         <!-- ROW 2 RIGHT: buttons -->
         <div class="profile-hero-action">
-            <button class="profile-action-btn action-kpi">
-                <i class="ph ph-note-pencil"></i> Edit KPI
+            <button class="profile-action-btn action-kpi" onclick="openAddKPIModal(<?= $staff['id'] ?>, '<?= htmlspecialchars($staff['full_name'], ENT_QUOTES) ?>')">
+                Edit KPI
             </button>
 
             <button class="profile-action-btn action-report">
@@ -1647,6 +1667,15 @@ $currentTrendBadgeClass =
     </section>
 </main>
 
+<div id="addKPIModal" class="modal">
+    <div class="modal-content"
+         style="max-width:900px; width:95%; max-height:92vh; padding:0; border-radius:20px;">
+        <div id="modalContentTarget">
+            Loading...
+        </div>
+    </div>
+</div>
+
 <script>
 const editBtn = document.getElementById('editProfileBtn');
 const cancelBtn = document.getElementById('cancelEditBtn');
@@ -1823,5 +1852,8 @@ if (categoryLabels.length > 0 && categoryValues.length > 0) {
         });
     });
 </script>
+
+<script src="staff.js"></script>
+
 </body>
 </html>
