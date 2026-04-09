@@ -280,7 +280,8 @@ require_once __DIR__ . '/../includes/auth.php';
         </section>
     </main>
 
-            <div class="risk-modal" id="detailsModal">
+    <!-- Modal moved outside main for proper positioning -->
+    <div class="risk-modal" id="detailsModal">
         <div class="risk-modal-box">
             <div class="risk-modal-head">
                 <h3 id="detailsModalTitle"></h3>
@@ -288,7 +289,8 @@ require_once __DIR__ . '/../includes/auth.php';
             </div>
             <div class="risk-modal-body" id="detailsModalBody"></div>
         </div>
-        </div>
+    </div>
+
     <script>
     const state = {
         year: '',
@@ -1100,6 +1102,7 @@ require_once __DIR__ . '/../includes/auth.php';
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
     }
+
 function openDetailsModal(title, html) {
     const modal = document.getElementById('detailsModal');
     const titleEl = document.getElementById('detailsModalTitle');
@@ -1120,23 +1123,6 @@ function closeDetailsModal() {
     modal.classList.remove('show');
     document.body.style.overflow = '';
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('detailsModal');
-    const closeBtn = document.getElementById('detailsModalClose');
-
-    if (modal) modal.classList.remove('show');
-
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeDetailsModal);
-    }
-
-    if (modal) {
-        modal.addEventListener('click', (event) => {
-            if (event.target === modal) closeDetailsModal();
-        });
-    }
-});
 
     function buildDepartmentDetailsHtml(departmentName) {
         if (!latestDashboardData) return '<p>No data available.</p>';
@@ -1568,64 +1554,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function attachEvents() {
-        document.getElementById('compareDepartmentFilter').addEventListener('change', event => {
-        state.compareDepartment = event.target.value;
-        if (latestDashboardData) {
-            populateStaffDropdown(latestDashboardData);
-        }
-    });
-
-    document.getElementById('performanceFilter').addEventListener('change', event => {
-        state.performance = event.target.value;
-        if (latestDashboardData) {
-            populateStaffDropdown(latestDashboardData);
-        }
-    });
-
-    document.getElementById('staff1Select').addEventListener('change', event => {
-        const selected = event.target.selectedOptions[0];
-        state.staff1 = selected ? selected.value : '';
-        state.staff1Name = selected ? selected.dataset.name || '' : '';
-        document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
-    });
-
-    document.getElementById('staff2Select').addEventListener('change', event => {
-        const selected = event.target.selectedOptions[0];
-        state.staff2 = selected ? selected.value : '';
-        state.staff2Name = selected ? selected.dataset.name || '' : '';
-        document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
-    });
-
-    document.getElementById('resetCompareFilters').addEventListener('click', () => {
-        state.compareDepartment = 'All Departments';
-        state.performance = 'All Performance';
-        state.staff1 = '';
-        state.staff2 = '';
-        state.staff1Name = '';
-        state.staff2Name = '';
-
-        document.getElementById('compareDepartmentFilter').value = 'All Departments';
-        document.getElementById('performanceFilter').value = 'All Performance';
-
-        if (latestDashboardData) {
-            populateStaffDropdown(latestDashboardData);
-        }
-    });
-
-    document.getElementById('compareBtn').addEventListener('click', () => {
-        if (!state.staff1 || !state.staff2 || state.staff1 === state.staff2) return;
-
-        const params = new URLSearchParams({
-            staff1: state.staff1,
-            staff2: state.staff2
+        // Main filter events
+        document.getElementById('yearFilter').addEventListener('change', (event) => {
+            state.year = event.target.value;
+            loadDashboard();
         });
 
-        window.location.href = './staff_comparison_patched.php?' + params.toString();
-    });
+        document.getElementById('departmentFilter').addEventListener('change', (event) => {
+            state.department = event.target.value;
+            loadDashboard();
+        });
+
+        document.getElementById('periodFilter').addEventListener('change', (event) => {
+            state.period = event.target.value;
+            loadDashboard();
+        });
+
+        document.getElementById('resetTopFilters').addEventListener('click', () => {
+            state.year = '';
+            state.department = 'All Departments';
+            state.period = 'Monthly';
+            
+            document.getElementById('yearFilter').value = '';
+            document.getElementById('departmentFilter').value = 'All Departments';
+            document.getElementById('periodFilter').value = 'Monthly';
+            
+            loadDashboard();
+        });
+
+        // Comparison filter events
+        document.getElementById('compareDepartmentFilter').addEventListener('change', event => {
+            state.compareDepartment = event.target.value;
+            if (latestDashboardData) {
+                populateStaffDropdown(latestDashboardData);
+            }
+        });
+
+        document.getElementById('performanceFilter').addEventListener('change', event => {
+            state.performance = event.target.value;
+            if (latestDashboardData) {
+                populateStaffDropdown(latestDashboardData);
+            }
+        });
+
+        document.getElementById('staff1Select').addEventListener('change', event => {
+            const selected = event.target.selectedOptions[0];
+            state.staff1 = selected ? selected.value : '';
+            state.staff1Name = selected ? selected.dataset.name || '' : '';
+            document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
+        });
+
+        document.getElementById('staff2Select').addEventListener('change', event => {
+            const selected = event.target.selectedOptions[0];
+            state.staff2 = selected ? selected.value : '';
+            state.staff2Name = selected ? selected.dataset.name || '' : '';
+            document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
+        });
+
+        document.getElementById('resetCompareFilters').addEventListener('click', () => {
+            state.compareDepartment = 'All Departments';
+            state.performance = 'All Performance';
+            state.staff1 = '';
+            state.staff2 = '';
+            state.staff1Name = '';
+            state.staff2Name = '';
+
+            document.getElementById('compareDepartmentFilter').value = 'All Departments';
+            document.getElementById('performanceFilter').value = 'All Performance';
+
+            if (latestDashboardData) {
+                populateStaffDropdown(latestDashboardData);
+            }
+        });
+
+        document.getElementById('compareBtn').addEventListener('click', () => {
+            if (!state.staff1 || !state.staff2 || state.staff1 === state.staff2) return;
+
+            const params = new URLSearchParams({
+                staff1: state.staff1,
+                staff2: state.staff2
+            });
+
+            window.location.href = './staff_comparison_patched.php?' + params.toString();
+        });
+
+        // Modal events
         document.getElementById('detailsModalClose').addEventListener('click', closeDetailsModal);
         document.getElementById('detailsModal').addEventListener('click', (event) => {
             if (event.target.id === 'detailsModal') closeDetailsModal();
         });
+
+        // Card detail buttons
         document.getElementById('highRiskDetailsBtn').addEventListener('click', () => {
             if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
                 openDetailsModal('High Risk Alert Details', '<p>No high-risk department under the current filters.</p>');
@@ -1634,6 +1653,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const dept = latestDashboardData.high_risk_departments[0];
             openDetailsModal('High Risk Alert Details', buildDepartmentDetailsHtml(dept.department));
         });
+
         document.getElementById('moderateRiskDetailsBtn').addEventListener('click', () => {
             if (!latestDashboardData || !latestDashboardData.moderate_risk_departments || latestDashboardData.moderate_risk_departments.length === 0) {
                 openDetailsModal('Moderate Risk Alert Details', '<p>No moderate-risk department under the current filters.</p>');
@@ -1642,6 +1662,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const dept = latestDashboardData.moderate_risk_departments[0];
             openDetailsModal('Moderate Risk Alert Details', buildDepartmentDetailsHtml(dept.department));
         });
+
         document.getElementById('totalStaffBtn').addEventListener('click', () => openDetailsModal('Total Staff Details', buildTotalStaffHtml()));
         document.getElementById('avgKpiBtn').addEventListener('click', () => openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml()));
         document.getElementById('improvingBtn').addEventListener('click', () => openDetailsModal('Improving Performance Details', buildImprovingStaffHtml()));
@@ -1650,10 +1671,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('atRiskCountBtn').addEventListener('click', () => openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml()));
     }
 
-    attachEvents();
-    loadDashboard().catch(error => {
-        console.error(error);
-        document.getElementById('performanceTrendInsight').textContent = 'Unable to load analytics data. Check analytics_data_patched.php and your database connection.';
+    // Initialize everything when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        attachEvents();
+        loadDashboard().catch(error => {
+            console.error(error);
+            document.getElementById('performanceTrendInsight').textContent = 'Unable to load analytics data. Check analytics_data_patched.php and your database connection.';
+        });
     });
 
     </script>
