@@ -1346,7 +1346,7 @@ $currentTrendBadgeClass =
             <input type="hidden" name="id" value="<?= (int)$staff['id'] ?>">
 
             <select name="year" onchange="this.form.submit()">
-                <option value="">All Years</option>
+                <option value=""> Years</option>
                 <?php foreach ($availableYears as $year): ?>
                     <option value="<?= htmlspecialchars($year) ?>" <?= $selectedYear === (string)$year ? 'selected' : '' ?>>
                         <?= htmlspecialchars($year) ?>

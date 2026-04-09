@@ -258,7 +258,7 @@ require_once __DIR__ . '/../includes/auth.php';
 
             <div class="filter-toolbar">
                 <select id="yearFilter">
-                    <option value="">All Years</option>
+                    <option value="">Years</option>
                 </select>
 
                 <select id="departmentFilter">
@@ -550,7 +550,7 @@ require_once __DIR__ . '/../includes/auth.php';
         if (!yearFilter) return;
 
         const current = state.year || '';
-        yearFilter.innerHTML = '<option value="">All Years</option>';
+        yearFilter.innerHTML = '<option value="">Years</option>';
 
         safeYears.forEach(year => {
             const option = document.createElement('option');
