@@ -65,7 +65,7 @@ $depts_result = mysqli_query($conn, $depts_query);
         .dashboard {
             margin-left: 200px;
             background: #fcf2fa;        /* ← PINK BACKGROUND */
-            padding: 76px 20px 40px;
+            padding: 85px 45px 40px;
             min-height: 100vh;
         }
                 /* Main content area matching config page */

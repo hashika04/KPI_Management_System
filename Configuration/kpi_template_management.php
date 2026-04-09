@@ -165,7 +165,7 @@ while ($row = $depts_result->fetch_assoc()) {
             --dark: #2b2d42;
             --light: #f8f9fa;
             --text-main: #1a1a2e;
-            --text-muted: #6c757d;
+            --text-muted: #b08090;
             --border-soft: #e9ecef;
             --bg-main: #f0f2f5;
         }
@@ -177,8 +177,8 @@ while ($row = $depts_result->fetch_assoc()) {
         
         .dashboard {
             margin-left: 200px;
-            background: #fcf2fa;        /* ← PINK BACKGROUND (matching reporting) */
-            padding: 76px 20px 40px;
+            background: #fcf2fa;        /* ← PINK BACKGROUND */
+            padding: 85px 45px 40px;
             min-height: 100vh;
         }
         

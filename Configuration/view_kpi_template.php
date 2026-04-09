@@ -93,7 +93,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             --dark: #2b2d42;
             --light: #f8f9fa;
             --text-main: #1a1a2e;
-            --text-muted: #6c757d;
+            --text-muted: #b08090;
             --border-soft: #e9ecef;
             --bg-main: #f0f2f5;
         }
@@ -105,8 +105,8 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
         
         .dashboard {
             margin-left: 200px;
-            background: #fcf2fa;
-            padding: 76px 20px 40px;
+            background: #fcf2fa;        /* ← PINK BACKGROUND */
+            padding: 85px 45px 40px;
             min-height: 100vh;
         }
         
