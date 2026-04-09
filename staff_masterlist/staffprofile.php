@@ -1346,6 +1346,40 @@ $currentTrendBadgeClass =
 .chart-interpretation li + li {
     margin-top: 6px;
 }
+
+.global-notification {
+    width: 100%;
+    margin-bottom: 18px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    animation: fadeSlideDown 0.4s ease;
+}
+
+.global-notification.success {
+    background: #ecfdf5;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.global-notification.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+@keyframes fadeSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 </style>
 </head>
 <body>
@@ -1355,112 +1389,124 @@ $currentTrendBadgeClass =
 
 <main class="staff-profile-page">
     <section class="staff-profile-header">
-    <a href="./stafflist.php" class="back-link">← Back to Staff List</a>
-    <h1>Sales Assistant Profile</h1>
-    <p>View profile information, review KPI performance, and manage supervisor-facing staff details.</p>
+        <a href="./stafflist.php" class="back-link">← Back to Staff List</a>
+        <h1>Sales Assistant Profile</h1>
+        <p>View profile information, review KPI performance, and manage supervisor-facing staff details.</p>
 
-    <div class="profile-top-filter-row">
-        <form method="GET" class="profile-top-filter-form">
-            <input type="hidden" name="id" value="<?= (int)$staff['id'] ?>">
+        <div class="profile-top-filter-row">
+            <form method="GET" class="profile-top-filter-form">
+                <input type="hidden" name="id" value="<?= (int)$staff['id'] ?>">
 
-            <select name="year" onchange="this.form.submit()">
-                <option value=""> Years</option>
-                <?php foreach ($availableYears as $year): ?>
-                    <option value="<?= htmlspecialchars($year) ?>" <?= $selectedYear === (string)$year ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($year) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </form>
-    </div>
-</section>
-
- <section class="profile-hero-card">
-
-    <div class="profile-hero-topband"></div>
-
-    <div class="profile-hero-content">
-
-        <!-- ROW 1: avatar + identity -->
-        <div class="profile-hero-left">
-            <img src="<?= $profilePhoto ?>" alt="<?= htmlspecialchars($staff['full_name']) ?>">
-
-            <div class="profile-hero-identity">
-                <div class="profile-hero-title-row">
-                    <h2><?= htmlspecialchars($staff['full_name']) ?></h2>
-
-                    <span class="profile-pill <?= $currentPerformanceBadgeClass ?>">
-                        <?= htmlspecialchars($performanceLevel) ?>
-                    </span>
-                </div>
-
-                <p class="hero-role-line">
-                    <?= htmlspecialchars($staff['position']) ?> • <?= htmlspecialchars($staff['staff_code']) ?>
-                </p>
-            </div>
+                <select name="year" onchange="this.form.submit()">
+                    <option value=""> Years</option>
+                    <?php foreach ($availableYears as $year): ?>
+                        <option value="<?= htmlspecialchars($year) ?>" <?= $selectedYear === (string)$year ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($year) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
         </div>
+    </section>
 
-        <!-- ROW 2 LEFT: details -->
-        <div class="profile-hero-details-row">
-            <div class="hero-detail-inline">
-                <i class="ph ph-envelope-simple"></i>
-                <div>
-                    <span>Email</span>
-                    <strong><?= htmlspecialchars($staff['email'] ?? '-') ?></strong>
-                </div>
-            </div>
-
-            <div class="hero-detail-inline">
-                <i class="ph ph-phone"></i>
-                <div>
-                    <span>Phone</span>
-                    <strong><?= htmlspecialchars($staff['phone_number'] ?? '-') ?></strong>
-                </div>
-            </div>
-
-            <div class="hero-detail-inline">
-                <i class="ph ph-calendar-blank"></i>
-                <div>
-                    <span>Join Date</span>
-                    <strong><?= !empty($staff['join_date']) ? htmlspecialchars($staff['join_date']) : '-' ?></strong>
-                </div>
-            </div>
-
-            <div class="hero-detail-inline">
-                <i class="ph ph-buildings"></i>
-                <div>
-                    <span>Department</span>
-                    <strong><?= htmlspecialchars($staff['department'] ?? '-') ?></strong>
-                </div>
-            </div>
+    <?php if ($success): ?>
+        <div class="global-notification success">
+            <?= htmlspecialchars($success) ?>
         </div>
+    <?php endif; ?>
 
-        <!-- ROW 2 RIGHT: buttons -->
-        <div class="profile-hero-action">
-            <button class="profile-action-btn action-kpi" onclick="openAddKPIModal(<?= $staff['id'] ?>, '<?= htmlspecialchars($staff['full_name'], ENT_QUOTES) ?>')">
-                Edit KPI
-            </button>
-
-            <button class="profile-action-btn action-profile" id="editProfileBtn">
-                <i class="ph ph-pencil-simple"></i> Edit Profile
-            </button>
+    <?php if ($error): ?>
+        <div class="global-notification error">
+            <?= htmlspecialchars($error) ?>
         </div>
+    <?php endif; ?>
 
-    </div>
-</section>
+    <script>
+    setTimeout(() => {
+        const notif = document.querySelector('.global-notification');
+        if (notif) {
+            notif.style.transition = 'opacity 0.5s';
+            notif.style.opacity = '0';
+            setTimeout(() => notif.remove(), 500);
+        }
+    }, 3000);
+    </script>
 
-</section>
+    <section class="profile-hero-card">
+        <div class="profile-hero-topband"></div>
+
+        <div class="profile-hero-content">
+
+            <!-- ROW 1: avatar + identity -->
+            <div class="profile-hero-left">
+                <img src="<?= $profilePhoto ?>" alt="<?= htmlspecialchars($staff['full_name']) ?>">
+
+                <div class="profile-hero-identity">
+                    <div class="profile-hero-title-row">
+                        <h2><?= htmlspecialchars($staff['full_name']) ?></h2>
+
+                        <span class="profile-pill <?= $currentPerformanceBadgeClass ?>">
+                            <?= htmlspecialchars($performanceLevel) ?>
+                        </span>
+                    </div>
+
+                    <p class="hero-role-line">
+                        <?= htmlspecialchars($staff['position']) ?> • <?= htmlspecialchars($staff['staff_code']) ?>
+                    </p>
+                </div>
+            </div>
+
+            <!-- ROW 2 LEFT: details -->
+            <div class="profile-hero-details-row">
+                <div class="hero-detail-inline">
+                    <i class="ph ph-envelope-simple"></i>
+                    <div>
+                        <span>Email</span>
+                        <strong><?= htmlspecialchars($staff['email'] ?? '-') ?></strong>
+                    </div>
+                </div>
+
+                <div class="hero-detail-inline">
+                    <i class="ph ph-phone"></i>
+                    <div>
+                        <span>Phone</span>
+                        <strong><?= htmlspecialchars($staff['phone_number'] ?? '-') ?></strong>
+                    </div>
+                </div>
+
+                <div class="hero-detail-inline">
+                    <i class="ph ph-calendar-blank"></i>
+                    <div>
+                        <span>Join Date</span>
+                        <strong><?= !empty($staff['join_date']) ? htmlspecialchars($staff['join_date']) : '-' ?></strong>
+                    </div>
+                </div>
+
+                <div class="hero-detail-inline">
+                    <i class="ph ph-buildings"></i>
+                    <div>
+                        <span>Department</span>
+                        <strong><?= htmlspecialchars($staff['department'] ?? '-') ?></strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 2 RIGHT: buttons -->
+            <div class="profile-hero-action">
+                <button class="profile-action-btn action-kpi" onclick="openAddKPIModal(<?= $staff['id'] ?>, '<?= htmlspecialchars($staff['full_name'], ENT_QUOTES) ?>')">
+                    Edit KPI
+                </button>
+
+                <button class="profile-action-btn action-profile" id="editProfileBtn">
+                    <i class="ph ph-pencil-simple"></i> Edit Profile
+                </button>
+            </div>
+
+        </div>
+    </section>
 
     <section class="profile-edit-drawer profile-main-card" id="profileEditDrawer" style="display:none;">
         <h2>Edit Profile</h2>
-
-        <?php if ($success): ?>
-            <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
-        <?php endif; ?>
-
-        <?php if ($error): ?>
-            <div class="profile-message message-error"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
 
         <form method="POST" id="staffProfileForm">
             <input type="hidden" name="update_profile" value="1">
@@ -1498,9 +1544,7 @@ $currentTrendBadgeClass =
                 <button type="submit" class="profile-save-btn">Save Changes</button>
             </div>
         </form>
-
     </section>
-
     <?php if (empty($records)): ?>
         <section class="profile-wide-panel">
             <h2>Data Status</h2>
@@ -1509,8 +1553,9 @@ $currentTrendBadgeClass =
             </div>
         </section>
     <?php endif; ?>
-        
-        
+
+
+
     <section class="profile-summary-row profile-summary-row-refined">
         <article class="summary-box profile-card summary-score-card summary-score-card-main">
             <div class="summary-title-row">
@@ -1969,7 +2014,14 @@ if (categoryLabels.length > 0 && categoryValues.length > 0) {
     });
 </script>
 
-<script src="staff.js"></script>
-
+<div id="addKPIModal" class="modal">
+    <div class="modal-content"
+         style="max-width:900px; width:95%; max-height:92vh; padding:0; border-radius:20px;">
+        <div id="modalContentTarget">
+            Loading...
+        </div>
+    </div>
+</div>
+<script src="../staff_masterlist/staff.js"></script>
 </body>
 </html>
