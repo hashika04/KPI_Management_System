@@ -853,88 +853,6 @@ td {
 
 
 
-
-
-.risk-modal {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    background: rgba(32, 18, 33, 0.35);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 99999;
-}
-
-.risk-modal.show {
-    display: flex;
-}
-
-.risk-modal-box {
-    width: min(760px, 92vw);
-    max-height: 85vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background: #fff;
-    border-radius: 24px;
-    box-shadow: 0 24px 60px rgba(27, 20, 35, 0.24);
-    border: 1px solid #f0dce7;
-    animation: popIn 0.25s ease;
-}
-
-@keyframes popIn {
-    from {
-        transform: scale(0.95);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-.risk-modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 22px;
-  border-bottom: 1px solid #f1d5db;
-}
-
-.risk-modal-head h3 {
-  margin: 0;
-  font-size: 22px;
-  color: #231942;
-}
-
-.risk-modal-close {
-  border: none;
-  background: #fdf2f8;
-  color: #be185d;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-.risk-modal-body {
-  padding: 22px;
-  color: #4b3a4c;
-  line-height: 1.7;
-}
-
-.risk-modal-body ul {
-  margin: 10px 0 0;
-  padding-left: 18px;
-}
-
-.risk-modal-body li {
-  margin-bottom: 6px;
-}
-
 /* RESPONSIVE */
 @media (max-width: 1200px) {
   .cards-grid,
@@ -1169,43 +1087,6 @@ td {
 .clickable-workforce-list li:hover strong,
 .clickable-workforce-list li:hover .workforce-text {
   color: #c0267d;
-}
-
-/* MODAL */
-.modal-list {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.modal-list li {
-  margin-bottom: 8px;
-}
-
-.modal-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  background: #fff;
-}
-
-.modal-table th,
-.modal-table td {
-  border-bottom: 1px solid #f1dce7;
-  padding: 10px 8px;
-  text-align: left;
-  font-size: 0.92rem;
-}
-
-.modal-table th {
-  color: #8d7488;
-  font-weight: 700;
-  background: #fcf7fb;
-}
-
-.modal-note {
-  margin-top: 12px;
-  color: #7d6979;
-  font-size: 0.92rem;
 }
 
 .stat-icon-circle {
@@ -1880,28 +1761,6 @@ td {
 .moderate-risk-card .risk-focus-value,
 .moderate-risk-card .risk-focus-count {
     color: #ea580c;
-}
-
-.risk-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.risk-modal {
-    background: white;
-    border-radius: 20px;
-    padding: 24px;
-    width: 700px;
-}
-
-.risk-modal-head {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 16px;
 }
 
 /* SUMMARY */
