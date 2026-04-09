@@ -357,7 +357,7 @@ $depts_result = mysqli_query($conn, $depts_query);
             <!-- Header -->
             <div class="reports-header">
                 <div>
-                    <h1>KPI Reports</h1>
+                    <h1>Reports</h1>
                     <p class="reports-subtitle">Comprehensive performance analytics and reporting</p>
                 </div>
             </div>
