@@ -28,6 +28,21 @@ require_once __DIR__ . '/../includes/auth.php';
 .comparison-action-row{margin-top:6px}.compare-main-btn{width:100%;min-height:50px}
 @media (max-width:1200px){.cards-grid,.chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-span-2{grid-column:span 2}}
 @media (max-width:768px){.cards-grid,.chart-grid,.comparison-toolbar,.comparison-select{grid-template-columns:1fr}.chart-span-2{grid-column:span 1}}
+
+/* analytics_patched final clean overrides */
+.comparison-toolbar{display:flex!important;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
+.comparison-toolbar select{flex:1 1 220px;min-width:220px;}
+.comparison-toolbar .ghost-btn{flex:0 0 auto!important;grid-column:auto!important;width:auto!important;min-width:130px;}
+.comparison-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.comparison-select-box label{display:block;margin:0 0 8px;font-size:.9rem;font-weight:700;color:#6f6376;}
+.comparison-select-box select{width:100%;border:1.5px solid #eed4e3;border-radius:14px;background:#fff;padding:10px 14px;min-height:46px;color:#3a2948;font-size:.95rem;box-shadow:0 4px 10px rgba(232,48,140,.04);}
+.compare-main-btn{max-width:none;}
+.risk-modal{position:fixed!important;inset:0!important;display:none!important;align-items:center!important;justify-content:center!important;padding:24px!important;background:rgba(32,18,33,.38)!important;backdrop-filter:blur(4px)!important;-webkit-backdrop-filter:blur(4px)!important;z-index:99999!important;}
+.risk-modal.show{display:flex!important;}
+.risk-modal-box{width:min(760px,92vw)!important;max-height:85vh!important;overflow-y:auto!important;overflow-x:hidden!important;margin:0 auto!important;background:#fff!important;border-radius:24px!important;box-shadow:0 24px 60px rgba(27,20,35,.24)!important;border:1px solid #f0dce7!important;}
+.risk-modal-body{padding:22px!important;}
+@media (max-width: 900px){.comparison-select-grid{grid-template-columns:1fr;}}
+
 </style>
 </head>
 <body>
@@ -165,6 +180,7 @@ require_once __DIR__ . '/../includes/auth.php';
         <article class="card chart-card">
             <div class="chart-head"><h2>Trend Distribution</h2></div>
             <div id="trendDistributionChart" class="chart small"></div>
+            <p class="interpretation" id="trendDistributionInsight"></p>
         </article>
 
         <article class="card chart-card">
@@ -206,78 +222,6 @@ require_once __DIR__ . '/../includes/auth.php';
                 </table>
             </div>
         </article>
-
-        <section class="profile-panel">
-        <h2>Detailed KPI Breakdown</h2>
-
-        <div class="kpi-drilldown-list">
-
-            <?php if ($latest && !empty($latest['category_scores'])): ?>
-
-                <?php foreach ($latest['category_scores'] as $index => $category): ?>
-                    <?php
-                        $percent = (float)$category['percentage'];
-                        $barClass = 'bar-mid';
-
-                        if ($percent >= 85) {
-                            $barClass = 'bar-strong';
-                        } elseif ($percent >= 70) {
-                            $barClass = 'bar-good';
-                        } elseif ($percent < 50) {
-                            $barClass = 'bar-risk';
-                        }
-                    ?>
-
-                    <div class="kpi-drill-card">
-                        <button type="button" class="kpi-drill-header" data-target="kpiDetail<?= $index ?>">
-
-                            <div class="kpi-drill-title-row">
-                                <span class="kpi-drill-name"><?= htmlspecialchars($category['category']) ?></span>
-                                <span class="kpi-drill-percent"><?= number_format($percent, 2) ?>%</span>
-                            </div>
-
-                            <div class="kpi-progress-wrap">
-                                <div class="kpi-progress-track">
-                                    <div class="kpi-progress-fill <?= $barClass ?>" style="width: <?= min($percent, 100) ?>%;"></div>
-                                </div>
-                                <span class="kpi-drill-icon">▾</span>
-                            </div>
-                        </button>
-
-                        <div class="kpi-drill-body" id="kpiDetail<?= $index ?>" style="display:none;">
-
-                            <?php if (!empty($category['items'])): ?>
-
-                                <div class="kpi-item-table">
-                                    <?php foreach ($category['items'] as $item): ?>
-                                        <div class="kpi-item-row">
-                                            <div class="kpi-item-left">
-                                                <strong><?= htmlspecialchars($item['code']) ?></strong>
-                                                <p><?= htmlspecialchars($item['description'] ?: 'No description') ?></p>
-                                            </div>
-                                            <div class="kpi-item-right">
-                                                <span><?= number_format((float)$item['score_5'], 2) ?>/5</span>
-                                                <strong><?= number_format((float)$item['percentage'], 2) ?>%</strong>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-
-                            <?php else: ?>
-                                <p class="empty-chart-note">No KPI item details available for this category.</p>
-                            <?php endif; ?>
-
-                        </div>
-                    </div>
-
-                <?php endforeach; ?>
-
-            <?php else: ?>
-                <p class="empty-chart-note">No KPI category data available.</p>
-            <?php endif; ?>
-
-        </div>
-        </section>
 
         <article class="comparison-tool">
             <div class="comparison-title-wrap">
@@ -709,6 +653,20 @@ require_once __DIR__ . '/../includes/auth.php';
         document.getElementById('distributionInsight').textContent =
         `${data.performance_distribution.top + data.performance_distribution.good} staff are in the stronger performance bands, while ${data.performance_distribution.critical + data.performance_distribution['at-risk']} staff are below the desired level and need closer support.`;
 
+        const trendInsightEl = document.getElementById('trendDistributionInsight');
+        if (trendInsightEl) {
+            const up = Number(data.trend_distribution?.up || 0);
+            const stable = Number(data.trend_distribution?.stable || 0);
+            const down = Number(data.trend_distribution?.down || 0);
+            if (up > stable && up > down) {
+                trendInsightEl.textContent = `${up} staff are currently improving, making improvement the most common movement pattern under the selected filters.`;
+            } else if (down > up && down > stable) {
+                trendInsightEl.textContent = `${down} staff are declining, which suggests closer monitoring is needed for recent KPI movement.`;
+            } else {
+                trendInsightEl.textContent = `${stable} staff are stable, indicating performance is relatively steady under the current filters.`;
+            }
+        }
+
         const deptRows = [...(data.department_comparison || [])].sort((a, b) => a.score - b.score);
 
             const deptNames = deptRows.map(item => item.department);
@@ -1107,9 +1065,6 @@ require_once __DIR__ . '/../includes/auth.php';
         if (performance !== 'all performance') {
             staff = staff.filter(item => String(item.performance_level).toLowerCase() === performance);
         }
-    if (state.year) {
-        staff = staff.filter(item => String(item.year) === String(state.year));
-    }
         staff.sort((a, b) => a.name.localeCompare(b.name));
 
         select1.innerHTML = '<option value="">Select Staff 1</option>';
@@ -1140,13 +1095,6 @@ require_once __DIR__ . '/../includes/auth.php';
         document.getElementById('compareBtn').disabled = true;
     }
 
-    function toggleKpi(index) {
-        const el = document.getElementById('kpiDetail' + index);
-        if (!el) return;
-
-        el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    }
-
     async function loadDashboard() {
         try {
             const data = await fetchJson({
@@ -1164,7 +1112,6 @@ require_once __DIR__ . '/../includes/auth.php';
             renderSummary(data);
             renderCharts(data);
             renderTables(data);
-            renderKpiBreakdown(data);
             populateStaffDropdown(data);
             updateSelectedChips();
         } catch (error) {
@@ -1172,48 +1119,6 @@ require_once __DIR__ . '/../includes/auth.php';
             document.getElementById('performanceTrendInsight').textContent =
                 'Unable to load analytics data. Check analytics_data_patched.php and your database connection.';
         }
-    }
-
-    function renderKpiBreakdown(data) {
-        const container = document.getElementById('kpiBreakdownList');
-        if (!container) return;
-
-        const snapshots = Array.isArray(data.staff_snapshot_list) ? data.staff_snapshot_list : [];
-
-        if (!snapshots.length) {
-            container.innerHTML = '<p>No data</p>';
-            return;
-        }
-
-        const latest = snapshots[0];
-
-        if (!latest.category_scores || !latest.category_scores.length) {
-            container.innerHTML = '<p>No KPI category data available</p>';
-            return;
-        }
-
-        container.innerHTML = latest.category_scores.map((cat) => {
-
-            const percent = Number(cat.percentage || 0);
-
-            let color = 'yellow';
-            if (percent >= 85) color = 'green';
-            else if (percent >= 70) color = 'blue';
-            else if (percent < 50) color = 'red';
-
-            return `
-                <div class="kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-title">${cat.category}</span>
-                        <span class="kpi-percent">${percent.toFixed(2)}%</span>
-                    </div>
-
-                    <div class="kpi-bar">
-                        <div class="kpi-fill ${color}" style="width:${percent}%"></div>
-                    </div>
-                </div>
-            `;
-        }).join('');
     }
 
     function escapeHtml(value) {
@@ -1228,77 +1133,19 @@ require_once __DIR__ . '/../includes/auth.php';
         const modal = document.getElementById('detailsModal');
         const titleEl = document.getElementById('detailsModalTitle');
         const bodyEl = document.getElementById('detailsModalBody');
+        if (!modal || !titleEl || !bodyEl) return;
 
         titleEl.textContent = title || 'Details';
         bodyEl.innerHTML = html || '<p>No details available.</p>';
-
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
 
     function closeDetailsModal() {
         const modal = document.getElementById('detailsModal');
-        modal.classList.remove('show');
-        document.body.style.overflow = 'auto';
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('detailsModal');
-        const closeBtn = document.getElementById('detailsModalClose');
-
-        if (modal) {
-            modal.classList.remove('show');
-        }
-
-        document.body.style.overflow = 'auto';
-
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeDetailsModal);
-        }
-
-        if (modal) {
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    closeDetailsModal();
-                }
-            });
-        }
-    });
-
-    function closeDetailsModal() {
-        const modal = document.getElementById('detailsModal');
+        if (!modal) return;
         modal.classList.remove('show');
         document.body.style.overflow = '';
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('detailsModal');
-        if (modal) {
-            modal.classList.remove('show');
-        }
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('detailsModal');
-        const closeBtn = document.getElementById('detailsModalClose');
-
-        if (modal) modal.classList.remove('show');
-
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeDetailsModal);
-        }
-
-        if (modal) {
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    closeDetailsModal();
-                }
-            });
-        }
-    });
-
-    function closeDetailsModal() {
-        document.getElementById('detailsModal').classList.remove('show');
     }
 
     function buildDepartmentDetailsHtml(departmentName) {

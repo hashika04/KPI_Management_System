@@ -11,7 +11,7 @@ require_once __DIR__ . '/../includes/auth.php';
     <title>Individual Staff Comparison</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <link rel="stylesheet" href="../asset/universal.css?v=2">
-    <link rel="stylesheet" href="../asset/analytics.css?v=20">
+    <link rel="stylesheet" href="../asset/analytics.css?v=">
 </head>
 <body>
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -47,16 +47,25 @@ require_once __DIR__ . '/../includes/auth.php';
         <article class="card chart-card chart-span-2">
             <div class="chart-head"><h2>KPI Trend Comparison</h2></div>
             <div id="compareTrendChart" class="chart"></div>
+            <div id="trendInterpretation" class="interpretation">
+                Loading trend interpretation...
+            </div>
         </article>
 
         <article class="card chart-card">
             <div class="chart-head"><h2>Category Performance Comparison</h2></div>
             <div id="compareRadarChart" class="chart"></div>
+            <div id="radarInterpretation" class="interpretation">
+                Loading category interpretation...
+            </div>
         </article>
 
         <article class="card chart-card">
             <div class="chart-head"><h2>Category Performance Gap</h2></div>
             <div id="categoryGapChart" class="chart"></div>
+            <div id="gapInterpretation" class="interpretation">
+                Loading gap interpretation...
+            </div>
         </article>
 
         <article class="card insight-card chart-span-2">
@@ -197,6 +206,132 @@ function renderStaffCard(targetId, data, theme) {
     `;
 }
 
+
+function wrapCategoryLabel(label) {
+    const map = {
+        'Customer Service Quality': 'Customer<br>Service<br>Quality',
+        'Daily Sales Operations': 'Daily<br>Sales<br>Operations',
+        'Inventory & Cost Control': 'Inventory &<br>Cost Control',
+        'Training, Learning & Team Contribution': 'Training,<br>Learning & Team<br>Contribution',
+        'Sales Target Contribution': 'Sales Target<br>Contribution',
+        'Store Operations Support': 'Store Operations<br>Support'
+    };
+
+    return map[label] || label;
+}
+
+function formatNumber(value) {
+    return Number(value).toFixed(2);
+}
+
+function joinLabelsNaturally(items) {
+    if (!items || items.length === 0) return '';
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return items[0] + ' and ' + items[1];
+    return items.slice(0, -1).join(', ') + ', and ' + items[items.length - 1];
+}
+
+function buildTrendInterpretation(payload) {
+    const left = payload.staff1;
+    const right = payload.staff2;
+
+    const leftScore = Number(left.current_percentage);
+    const rightScore = Number(right.current_percentage);
+    const gap = Math.abs(leftScore - rightScore);
+
+    let leaderText = '';
+    if (leftScore > rightScore) {
+        leaderText = `${left.staff.name} is currently leading with ${formatNumber(leftScore)}%, compared to ${right.staff.name} at ${formatNumber(rightScore)}%.`;
+    } else if (rightScore > leftScore) {
+        leaderText = `${right.staff.name} is currently leading with ${formatNumber(rightScore)}%, compared to ${left.staff.name} at ${formatNumber(leftScore)}%.`;
+    } else {
+        leaderText = `Both staff members currently have the same overall KPI performance at ${formatNumber(leftScore)}%.`;
+    }
+
+    let stabilityText = '';
+    if (Number(left.stability_score) > Number(right.stability_score)) {
+        stabilityText = `${left.staff.name} also shows more stable recent performance.`;
+    } else if (Number(right.stability_score) > Number(left.stability_score)) {
+        stabilityText = `${right.staff.name} also shows more stable recent performance.`;
+    } else {
+        stabilityText = `Both staff members show a similar level of stability.`;
+    }
+
+    if (gap > 0) {
+        return `${leaderText} The current KPI gap between them is ${formatNumber(gap)} percentage points. ${stabilityText}`;
+    }
+
+    return `${leaderText} ${stabilityText}`;
+}
+
+function buildRadarInterpretation(payload) {
+    const radar = payload.radar_categories || [];
+    if (!radar.length) return 'No KPI category comparison data is available.';
+
+    const positiveRows = radar.filter(row => Number(row.staff1) > Number(row.staff2));
+    const negativeRows = radar.filter(row => Number(row.staff2) > Number(row.staff1));
+    const equalRows = radar.filter(row => Number(row.staff1) === Number(row.staff2));
+
+    const topPositive = positiveRows.sort((a, b) => (Number(b.staff1) - Number(b.staff2)) - (Number(a.staff1) - Number(a.staff2)))[0];
+    const topNegative = negativeRows.sort((a, b) => (Number(b.staff2) - Number(b.staff1)) - (Number(a.staff2) - Number(a.staff1)))[0];
+
+    let text = 'This chart compares both staff members across the main KPI categories. ';
+
+    if (topPositive) {
+        text += `${payload.staff1.staff.name} performs better in ${topPositive.category}, where the score advantage is ${formatNumber(Number(topPositive.staff1) - Number(topPositive.staff2))} points. `;
+    }
+
+    if (topNegative) {
+        text += `${payload.staff2.staff.name} performs better in ${topNegative.category}, with a ${formatNumber(Number(topNegative.staff2) - Number(topNegative.staff1))} point advantage. `;
+    }
+
+    if (equalRows.length > 0) {
+        text += `Both staff members are equal in ${joinLabelsNaturally(equalRows.map(row => row.category))}.`;
+    }
+
+    return text.trim();
+}
+
+function buildGapInterpretation(payload) {
+    const gapRows = payload.category_gap || [];
+    if (!gapRows.length) return 'No category gap data is available.';
+
+    const positiveRows = gapRows.filter(row => Number(row.gap) > 0);
+    const negativeRows = gapRows.filter(row => Number(row.gap) < 0);
+    const neutralRows = gapRows.filter(row => Number(row.gap) === 0);
+
+    const strongestPositive = [...positiveRows].sort((a, b) => Number(b.gap) - Number(a.gap))[0];
+    const strongestNegative = [...negativeRows].sort((a, b) => Number(a.gap) - Number(b.gap))[0];
+
+    let text = '';
+
+    if (strongestPositive) {
+        text += `${payload.staff1.staff.name} has the biggest positive advantage in ${strongestPositive.category} at ${formatNumber(Number(strongestPositive.gap))} points. `;
+    }
+
+    if (strongestNegative) {
+        text += `${payload.staff2.staff.name} has the biggest positive advantage in ${strongestNegative.category} at ${formatNumber(Math.abs(Number(strongestNegative.gap)))} points. `;
+    }
+
+    if (neutralRows.length > 0) {
+        text += `Both staff members perform equally in ${joinLabelsNaturally(neutralRows.map(row => row.category))}.`;
+    }
+
+    return text.trim();
+}
+
+function renderChartInterpretations(payload) {
+    document.getElementById('trendInterpretation').innerHTML =
+        `<strong>Interpretation:</strong> ${escapeHtml(buildTrendInterpretation(payload))}`;
+
+    document.getElementById('radarInterpretation').innerHTML =
+        `<strong>Interpretation:</strong> ${escapeHtml(buildRadarInterpretation(payload))}`;
+
+    document.getElementById('gapInterpretation').innerHTML =
+        `<strong>Interpretation:</strong> ${escapeHtml(buildGapInterpretation(payload))}`;
+}
+
+
 function renderCharts(payload) {
     const trendRows = payload.trend_series || [];
 
@@ -250,6 +385,7 @@ function renderCharts(payload) {
     }, { responsive: true, displayModeBar: true });
 
     const radar = payload.radar_categories || [];
+    const wrappedRadarLabels = radar.map(row => wrapCategoryLabel(row.category));
 
     Plotly.react('compareRadarChart', [
         {
@@ -273,7 +409,7 @@ function renderCharts(payload) {
         {
             type: 'scatterpolar',
             r: radar.map(row => row.target),
-            theta: radar.map(row => row.category),
+            theta: wrappedRadarLabels,
             fill: 'none',
             name: 'Target %',
             line: { color: '#94a3b8', dash: 'dot', width: 2 }
@@ -296,8 +432,10 @@ function renderCharts(payload) {
 
     const gapRows = payload.category_gap || [];
 
+    const wrappedGapLabels = gapRows.map(row => wrapCategoryLabel(row.category));
+
     Plotly.react('categoryGapChart', [{
-        x: gapRows.map(row => row.category),
+        x: wrappedGapLabels,
         y: gapRows.map(row => row.gap),
         type: 'bar',
         marker: {
@@ -314,7 +452,8 @@ function renderCharts(payload) {
             gridcolor: 'rgba(148, 163, 184, 0.18)'
         },
         xaxis: {
-            tickangle: -90
+            tickangle: 0,
+            automargin: true
         }
     }, { responsive: true, displayModeBar: true });
 }
@@ -348,6 +487,11 @@ async function loadComparison() {
         staff2: rightStaff
     });
 
+    renderChartInterpretations({
+    ...payload,
+    staff1: leftStaff,
+    staff2: rightStaff
+});
     document.getElementById('supervisorInsight').textContent =
         buildComparisonInsight(leftStaff, rightStaff, payload);
 
