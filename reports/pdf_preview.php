@@ -490,23 +490,44 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
     </div>
     
     <div class="preview-container">
-        <div class="preview-toolbar no-print">
+    <div class="preview-toolbar no-print" style="background: linear-gradient(135deg, #ffffff 0%, #fef5f9 100%); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 20px 24px; margin-bottom: 24px; border: 1px solid #f0f0f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
             <div>
-                <h4 class="mb-0"><i class="fas fa-file-pdf me-2"></i>Report Preview</h4>
-                <small class="text-muted">Review your report before downloading</small>
+                <h4 class="mb-0" style="font-size: 20px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.3px;">
+                    <i class="fas fa-file-pdf me-2" style="color: #e83e8c; font-size: 20px;"></i>
+                    Report Preview
+                </h4>
+                <small class="text-muted" style="font-size: 12px; color: #b08090; margin-top: 4px; display: inline-block;">
+                    <i class="fas fa-eye me-1" style="font-size: 11px;"></i>Review your report before downloading
+                </small>
             </div>
-            <div class="toolbar-buttons">
-                <button class="btn-back" onclick="goBack()">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Reports
+            <div class="toolbar-buttons" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn-back" onclick="goBack()" 
+                        style="border-radius: 12px; padding: 10px 20px; font-size: 13px; font-weight: 600; background: #fff; color: #6c757d; border: 1.5px solid #e9ecef; transition: all 0.2s ease; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;"
+                        onmouseover="this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                        onmouseout="this.style.background='#fff'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <i class="fas fa-arrow-left" style="font-size: 13px;"></i>
+                    Back to Reports
                 </button>
-                <button class="btn-print" onclick="printReport()">
-                    <i class="fas fa-print me-2"></i>Print
+                
+                <button class="btn-print" onclick="printReport()" 
+                        style="border-radius: 12px; padding: 10px 24px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; transition: all 0.2s ease; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(40,167,69,0.25);"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(40,167,69,0.35)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(40,167,69,0.25)';">
+                    <i class="fas fa-print" style="font-size: 13px;"></i>
+                    Print
                 </button>
-                <button class="btn-download" onclick="downloadPDF()">
-                    <i class="fas fa-download me-2"></i>Download PDF
+                
+                <button class="btn-download" onclick="downloadPDF()" 
+                        style="border-radius: 12px; padding: 10px 24px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #e83e8c 0%, #d63384 100%); color: white; border: none; transition: all 0.2s ease; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(232,62,140,0.25);"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(232,62,140,0.35)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(232,62,140,0.25)';">
+                    <i class="fas fa-download" style="font-size: 13px;"></i>
+                    Download PDF
                 </button>
             </div>
         </div>
+    </div>
         
         <div class="report-preview-content" id="reportContent">
             <!-- Report content will be loaded here -->

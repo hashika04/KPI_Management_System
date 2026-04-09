@@ -692,11 +692,6 @@ while ($row = $depts_result->fetch_assoc()) {
                                                                 <small class="text-muted" style="font-size: 11px;">
                                                                     <i class="far fa-clock me-1"></i> Created: <?php echo date('M d, Y', strtotime($template['created_at'])); ?>
                                                                 </small>
-                                                                <?php if($has_kpi_data): ?>
-                                                                    <small class="text-muted" style="font-size: 11px; background: #e7f3ff; padding: 2px 8px; border-radius: 12px;">
-                                                                        <i class="fas fa-database me-1" style="color: #0dcaf0;"></i> Has KPI data
-                                                                    </small>
-                                                                <?php endif; ?>
                                                             </div>
                                                         </div>
                                                         

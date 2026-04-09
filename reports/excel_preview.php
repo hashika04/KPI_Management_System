@@ -362,31 +362,56 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
     </div>
     
     <div class="preview-container">
-        <div class="preview-toolbar">
+    <div class="preview-toolbar" style="background: linear-gradient(135deg, #ffffff 0%, #f0f9f0 100%); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 20px 24px; margin-bottom: 24px; border: 1px solid #e0f0e0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
             <div>
-                <h4 class="mb-0"><i class="fas fa-file-excel me-2" style="color: #1e7e34;"></i>Excel Preview</h4>
-                <small class="text-muted">Review your data before exporting to Excel</small>
+                <h4 class="mb-0" style="font-size: 20px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.3px;">
+                    <i class="fas fa-file-excel me-2" style="color: #1e7e34; font-size: 20px;"></i>
+                    Excel Preview
+                </h4>
+                <small class="text-muted" style="font-size: 12px; color: #6c757d; margin-top: 4px; display: inline-block;">
+                    <i class="fas fa-table me-1" style="font-size: 11px;"></i>Review your data before exporting to Excel
+                </small>
             </div>
-            <div class="toolbar-buttons">
-                <button class="btn-back" onclick="goBack()">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Reports
+            <div class="toolbar-buttons" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn-back" onclick="goBack()" 
+                        style="border-radius: 12px; padding: 10px 20px; font-size: 13px; font-weight: 600; background: #fff; color: #6c757d; border: 1.5px solid #e9ecef; transition: all 0.2s ease; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;"
+                        onmouseover="this.style.background='#f8f9fa'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                        onmouseout="this.style.background='#fff'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <i class="fas fa-arrow-left" style="font-size: 13px;"></i>
+                    Back to Reports
                 </button>
-                <button class="btn-print" onclick="printReport()">
-                    <i class="fas fa-print me-2"></i>Print
+                
+                <button class="btn-print" onclick="printReport()" 
+                        style="border-radius: 12px; padding: 10px 24px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; transition: all 0.2s ease; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(40,167,69,0.25);"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(40,167,69,0.35)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(40,167,69,0.25)';">
+                    <i class="fas fa-print" style="font-size: 13px;"></i>
+                    Print
                 </button>
-                <button class="btn-download" onclick="downloadExcel()">
-                    <i class="fas fa-download me-2"></i>Download Excel
+                
+                <button class="btn-download" onclick="downloadExcel()" 
+                        style="border-radius: 12px; padding: 10px 24px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #1e7e34 0%, #28a745 100%); color: white; border: none; transition: all 0.2s ease; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(30,126,52,0.25);"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(30,126,52,0.35)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(30,126,52,0.25)';">
+                    <i class="fas fa-download" style="font-size: 13px;"></i>
+                    Download Excel
                 </button>
-            </div>
-        </div>
-        
-        <div class="report-preview-content" id="reportContent">
-            <div class="text-center py-5">
-                <div class="spinner-border text-success"></div>
-                <p class="mt-3">Loading Excel preview...</p>
             </div>
         </div>
     </div>
+    
+    <div class="report-preview-content" id="reportContent" style="background: #ffffff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 24px; border: 1px solid #f0f0f0; min-height: 400px;">
+        <div class="text-center py-5" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div class="spinner-border text-success" role="status" style="width: 40px; height: 40px; border-width: 3px;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3" style="color: #6c757d; font-size: 14px;">
+                <i class="fas fa-spinner fa-pulse me-2"></i>Loading Excel preview...
+            </p>
+        </div>
+    </div>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
