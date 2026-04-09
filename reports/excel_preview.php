@@ -43,7 +43,6 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             padding: 15px;
         }
         
-        /* Preview Container */
         .preview-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -53,7 +52,6 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             overflow: hidden;
         }
         
-        /* Toolbar for preview */
         .preview-toolbar {
             background: white;
             border-bottom: 1px solid #e0e0e0;
@@ -119,13 +117,23 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             transition: all 0.3s;
         }
         
-        /* Report Content Area - Excel Style */
         .report-preview-content {
             padding: 20px 24px;
             background: white;
             overflow-x: auto;
         }
-        
+        /* Table wrapper for horizontal scroll */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .table-wrapper .excel-table {
+            margin-bottom: 0;
+            min-width: 800px;
+        }
         /* Excel-style table */
         .excel-table {
             width: 100%;
@@ -133,29 +141,72 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             font-family: 'Segoe UI', 'Inter', sans-serif;
             font-size: 11px;
             margin-bottom: 20px;
+            table-layout: fixed;
         }
-        
+
         .excel-table th,
         .excel-table td {
             border: 1px solid #d0d0d0;
-            padding: 6px 10px;
+            padding: 8px 10px;
             text-align: left;
             vertical-align: top;
+            word-wrap: break-word;
         }
-        
+
         .excel-table th {
             background: #f3f3f3;
             font-weight: 600;
             font-size: 11px;
             color: #1e293b;
             border-bottom: 2px solid #c0c0c0;
+            white-space: nowrap;
         }
-        
+
+        .excel-table td {
+            white-space: normal;
+        }
+
+        /* Specific column widths */
+        .excel-table th:nth-child(1) { width: 10%; }  /* KPI Code */
+        .excel-table th:nth-child(2) { width: 15%; }  /* KPI Group */
+        .excel-table th:nth-child(3) { width: 35%; }  /* Description */
+        .excel-table th:nth-child(4) { width: 10%; }  /* Score */
+        .excel-table th:nth-child(5) { width: 10%; }  /* Weight */
+        .excel-table th:nth-child(6) { width: 20%; }  /* Weighted Score */
+
+        /* For tables with different column counts */
+        .excel-table.cols-5 th:nth-child(1) { width: 15%; }
+        .excel-table.cols-5 th:nth-child(2) { width: 20%; }
+        .excel-table.cols-5 th:nth-child(3) { width: 30%; }
+        .excel-table.cols-5 th:nth-child(4) { width: 15%; }
+        .excel-table.cols-5 th:nth-child(5) { width: 20%; }
+
         .excel-table tr:hover {
             background: #f8f9fa;
         }
-        
-        /* Excel header styling */
+
+        /* Ensure tables are scrollable on small screens */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 20px;
+        }
+
+        /* Right align numeric columns */
+        .excel-table td:nth-child(4),
+        .excel-table td:nth-child(5),
+        .excel-table td:nth-child(6),
+        .excel-table th:nth-child(4),
+        .excel-table th:nth-child(5),
+        .excel-table th:nth-child(6) {
+            text-align: center;
+        }
+
+        /* Section total row styling */
+        .excel-table tr:last-child td {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
         .excel-header {
             margin-bottom: 20px;
             border-bottom: 2px solid #e0e0e0;
@@ -175,7 +226,6 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             margin-bottom: 3px;
         }
         
-        /* Loading overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -221,42 +271,35 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             100% { transform: rotate(360deg); }
         }
         
-        /* Print styles for Excel export */
         @media print {
             .preview-toolbar {
                 display: none;
             }
-            
             body {
                 background: white;
                 padding: 0;
                 margin: 0;
             }
-            
             .preview-container {
                 box-shadow: none;
                 margin: 0;
                 padding: 0;
                 max-width: 100%;
             }
-            
             .report-preview-content {
                 padding: 10px 15px;
             }
-            
             .excel-table th,
             .excel-table td {
                 padding: 4px 8px;
                 font-size: 9px;
             }
-            
             @page {
                 size: landscape;
                 margin: 0.5in;
             }
         }
         
-        /* Status badges */
         .status-badge {
             display: inline-block;
             padding: 2px 8px;
@@ -271,7 +314,6 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
         .status-critical { background: #fb8500; color: white; }
         .status-risk { background: #ef476f; color: white; }
         
-        /* Summary cards */
         .summary-stats {
             display: flex;
             gap: 15px;
@@ -302,11 +344,9 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             .report-preview-content {
                 padding: 15px;
             }
-            
             .excel-table {
                 font-size: 9px;
             }
-            
             .excel-table th,
             .excel-table td {
                 padding: 4px 6px;
@@ -343,7 +383,6 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
         </div>
         
         <div class="report-preview-content" id="reportContent">
-            <!-- Report content will be loaded here -->
             <div class="text-center py-5">
                 <div class="spinner-border text-success"></div>
                 <p class="mt-3">Loading Excel preview...</p>
@@ -356,11 +395,15 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
         // Get all parameters from URL
         const urlParams = new URLSearchParams(window.location.search);
         
+        // Debug: Log the employee parameter
+        console.log('Employee from URL:', urlParams.get('employee'));
+        console.log('Report type:', urlParams.get('report_type'));
+        
         // Load the report content in Excel format
         async function loadReport() {
             const container = document.getElementById('reportContent');
             
-            // Build URL for export_excel_preview.php
+            // Get all parameters from URL - including employee
             const params = new URLSearchParams({
                 year: urlParams.get('year') || '<?php echo $year; ?>',
                 department: urlParams.get('department') || '',
@@ -374,11 +417,14 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
                 preview: 'true'
             });
             
+            console.log('Loading with params:', params.toString());
+            
             try {
                 const response = await fetch('export_excel_preview.php?' + params.toString());
                 const html = await response.text();
                 container.innerHTML = html;
             } catch (error) {
+                console.error('Error:', error);
                 container.innerHTML = '<div class="alert alert-danger">Error loading Excel preview. Please try again.</div>';
             }
         }
@@ -388,7 +434,6 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             const loadingOverlay = document.getElementById('loadingOverlay');
             loadingOverlay.style.display = 'flex';
             
-            // Build download URL
             const params = new URLSearchParams({
                 year: urlParams.get('year') || '<?php echo $year; ?>',
                 department: urlParams.get('department') || '',
@@ -401,7 +446,6 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
                 custom_max_score: urlParams.get('custom_max_score') || 100
             });
             
-            // Open download in same window
             window.location.href = 'export_excel.php?' + params.toString();
             
             setTimeout(() => {
@@ -409,12 +453,10 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             }, 2000);
         }
         
-        // Print report
         function printReport() {
             window.print();
         }
         
-        // Go back to reports page
         function goBack() {
             const params = new URLSearchParams();
             params.set('report_type', urlParams.get('report_type') || 'overall');

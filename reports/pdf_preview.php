@@ -381,10 +381,30 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
         margin-bottom: 10px;
     }
     
+    /* Hide export buttons in print and PDF */
+    .no-print {
+        display: block;
+    }
+    
     /* Print styles - Optimized for A4 */
     @media print {
         .preview-toolbar {
-            display: none;
+            display: none !important;
+        }
+        
+        .no-print {
+            display: none !important;
+        }
+        
+        /* Hide any export buttons inside the report */
+        .export-buttons,
+        .btn-export-pdf,
+        .btn-export-excel,
+        .btn-print,
+        button[onclick*="exportToPDF"],
+        button[onclick*="exportToExcel"],
+        button[onclick*="printReport"] {
+            display: none !important;
         }
         
         body {
@@ -472,7 +492,7 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
     </div>
     
     <div class="preview-container">
-        <div class="preview-toolbar">
+        <div class="preview-toolbar no-print">
             <div>
                 <h4 class="mb-0"><i class="fas fa-file-pdf me-2"></i>Report Preview</h4>
                 <small class="text-muted">Review your report before downloading</small>
@@ -526,6 +546,10 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
                 const response = await fetch('generate_report.php?' + params.toString());
                 const html = await response.text();
                 container.innerHTML = html;
+                
+                // Remove any export buttons from the loaded content
+                const exportButtons = container.querySelectorAll('.export-buttons, .btn-export-pdf, .btn-export-excel, .btn-print');
+                exportButtons.forEach(btn => btn.remove());
                 
                 // Re-execute scripts
                 const scripts = container.querySelectorAll("script");

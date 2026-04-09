@@ -489,7 +489,7 @@ $depts_result = mysqli_query($conn, $depts_query);
                             <option value="department" <?php echo $selected_report == 'department' ? 'selected' : ''; ?>>📈 Department Performance Report</option>
                             <option value="trend" <?php echo $selected_report == 'trend' ? 'selected' : ''; ?>>📉 Performance Trend Report</option>
                             <option value="low" <?php echo $selected_report == 'low' ? 'selected' : ''; ?>>⚠️ At-Risk Staff Report</option>
-                            <option value="top" <?php echo $selected_report == 'top' ? 'selected' : ''; ?>>🏆 Top Performers Report</option>
+                            <option value="top" <?php echo $selected_report == 'top' ? 'selected' : ''; ?>>🏆 High Impact Contributors Report</option>
                             <option value="training" <?php echo $selected_report == 'training' ? 'selected' : ''; ?>>🧠 Training Needs Summary</option>
                             <option value="builder" <?php echo $selected_report == 'builder' ? 'selected' : ''; ?>>🔧 Custom Report Builder</option>
                         </select>
@@ -584,9 +584,15 @@ $depts_result = mysqli_query($conn, $depts_query);
     }
 
     function exportToExcel() {
-        // Get all current filter values
+        // Get all current filter values including the selected employee
         const formData = new FormData(document.getElementById('filterForm'));
         const params = new URLSearchParams(formData);
+        
+        // Also check if there's an employee selected in the individual report dropdown
+        const employeeSelect = document.querySelector('.employee-select');
+        if (employeeSelect && employeeSelect.value) {
+            params.set('employee', employeeSelect.value);
+        }
         
         // Build the preview URL with all parameters
         const previewUrl = 'excel_preview.php?' + params.toString();
