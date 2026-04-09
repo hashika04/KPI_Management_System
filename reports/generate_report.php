@@ -105,8 +105,9 @@ function getEmployeeScores($conn, $year, $department = '') {
     return $employees;
 }
 
-// 1. OVERALL PERFORMANCE REPORT
+// 1. OVERALL PERFORMANCE REPORT - FIXED (Mixed Logic)
 if ($report_type == 'overall') {
+    // Get employees using weighted scores (existing logic for charts and tables)
     $employees = getEmployeeScores($conn, $year, $department);
     $total_staff = count($employees);
     
@@ -115,8 +116,55 @@ if ($report_type == 'overall') {
         exit;
     }
     
-    $avg_score = array_sum(array_column($employees, 'score')) / $total_staff;
+    // --- NEW LOGIC FOR SUMMARY STATISTICS ONLY (matching Trend Report) ---
+    // Get department filter condition for direct DB query
+    $dept_condition = "";
+    $params = [];
+    $types = "";
     
+    if ($department) {
+        $dept_condition = " AND s.department = ?";
+        $params[] = $department;
+        $types .= "s";
+    }
+    
+    // Calculate average score directly from database (same as Trend Report)
+    $overall_query = "SELECT AVG(kd.Score) as avg_raw_score
+                      FROM kpi_data kd
+                      JOIN staff s ON kd.Name = s.full_name
+                      WHERE YEAR(kd.Date) = ?" . $dept_condition;
+    
+    $stmt = mysqli_prepare($conn, $overall_query);
+    if ($params) {
+        mysqli_stmt_bind_param($stmt, "i" . $types, $year, ...$params);
+    } else {
+        mysqli_stmt_bind_param($stmt, "i", $year);
+    }
+    mysqli_stmt_execute($stmt);
+    $overall_result = mysqli_stmt_get_result($stmt);
+    $overall_row = mysqli_fetch_assoc($overall_result);
+    $avg_raw_score = $overall_row['avg_raw_score'] ?? 0;
+    $avg_score_direct = round(($avg_raw_score / 5) * 100, 1);
+    
+    // Get top performers count directly from database
+    $top_query = "SELECT COUNT(DISTINCT kd.Name) as top_count
+                  FROM kpi_data kd
+                  JOIN staff s ON kd.Name = s.full_name
+                  WHERE YEAR(kd.Date) = ?" . $dept_condition . "
+                  GROUP BY kd.Name
+                  HAVING AVG(kd.Score) >= 4.25"; // 4.25/5 = 85%
+    
+    $stmt = mysqli_prepare($conn, $top_query);
+    if ($params) {
+        mysqli_stmt_bind_param($stmt, "i" . $types, $year, ...$params);
+    } else {
+        mysqli_stmt_bind_param($stmt, "i", $year);
+    }
+    mysqli_stmt_execute($stmt);
+    $top_result = mysqli_stmt_get_result($stmt);
+    $top_count_direct = mysqli_num_rows($top_result);
+    
+    // --- EXISTING LOGIC FOR DISTRIBUTION (using weighted scores from $employees) ---
     $distribution = ['top' => 0, 'good' => 0, 'average' => 0, 'critical' => 0, 'at-risk' => 0];
     foreach ($employees as $emp) {
         $distribution[$emp['classification']]++;
@@ -146,7 +194,7 @@ if ($report_type == 'overall') {
                 <strong>Report Generated:</strong> <?php echo date('F j, Y'); ?></p>
             </div>
             
-            <!-- Summary Statistics -->
+            <!-- Summary Statistics (UPDATED with direct DB calculation) -->
             <div class="row mb-4">
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="stat-card">
@@ -156,25 +204,25 @@ if ($report_type == 'overall') {
                 </div>
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="stat-card">
-                        <div class="stat-value"><?php echo round($avg_score, 1); ?>%</div>
+                        <div class="stat-value"><?php echo $avg_score_direct; ?>%</div>
                         <div>Average KPI Score</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="stat-card">
-                        <div class="stat-value"><?php echo round($avg_score, 1); ?>/100</div>
+                        <div class="stat-value"><?php echo $avg_score_direct; ?>/100</div>
                         <div>Overall Rating</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="stat-card">
-                        <div class="stat-value"><?php echo $distribution['top']; ?></div>
+                        <div class="stat-value"><?php echo $top_count_direct; ?></div>
                         <div>Top Performers 🏆</div>
                     </div>
                 </div>
             </div>
             
-            <!-- Performance Distribution Chart -->
+            <!-- Performance Distribution Chart (using existing $distribution) -->
             <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="chart-container">
@@ -200,11 +248,11 @@ if ($report_type == 'overall') {
                     <div class="chart-insight mt-2 text-muted small">
                         <i class="fas fa-lightbulb"></i> <strong>Insight:</strong> 
                         <?php 
-                        if ($avg_score >= 85) {
-                            echo "🏆 Outstanding organizational performance! Current average of " . round($avg_score, 1) . "% exceeds industry benchmarks.";
-                        } elseif ($avg_score >= 70) {
-                            echo "✅ Solid performance with " . round($avg_score, 1) . "% average. " . round(100 - $avg_score, 1) . "% gap to excellence target.";
-                        } elseif ($avg_score >= 50) {
+                        if ($avg_score_direct >= 85) {
+                            echo "🏆 Outstanding organizational performance! Current average of " . $avg_score_direct . "% exceeds industry benchmarks.";
+                        } elseif ($avg_score_direct >= 70) {
+                            echo "✅ Solid performance with " . $avg_score_direct . "% average. " . round(100 - $avg_score_direct, 1) . "% gap to excellence target.";
+                        } elseif ($avg_score_direct >= 50) {
                             echo "⚠️ Room for significant improvement. Focus on identifying and addressing systemic barriers to performance.";
                         } else {
                             echo "🔴 Critical situation requiring immediate strategic intervention. Consider leadership review and organizational assessment.";
@@ -214,7 +262,7 @@ if ($report_type == 'overall') {
                 </div>
             </div>
             
-            <!-- Performance Distribution Table -->
+            <!-- Performance Distribution Table (using existing $distribution) -->
             <div class="mb-4">
                 <h5>Performance Distribution</h5>
                 <table class="performance-table">
@@ -222,16 +270,16 @@ if ($report_type == 'overall') {
                         <tr><th>Category</th><th>Count</th><th>Percentage</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Top Performers 🟢</td><td><?php echo isset($distribution['top']) ? $distribution['top'] : 0; ?></td><td><?php echo isset($distribution['top']) ? round(($distribution['top']/$total_staff)*100,1) : 0; ?>%</td></tr>
-                        <tr><td>Good 👍</td><td><?php echo isset($distribution['good']) ? $distribution['good'] : 0; ?></td><td><?php echo isset($distribution['good']) ? round(($distribution['good']/$total_staff)*100,1) : 0; ?>%</td></tr>
-                        <tr><td>Average 🟡</td><td><?php echo isset($distribution['average']) ? $distribution['average'] : 0; ?></td><td><?php echo isset($distribution['average']) ? round(($distribution['average']/$total_staff)*100,1) : 0; ?>%</td></tr>
-                        <tr><td>Critical ⚠️</td><td><?php echo isset($distribution['critical']) ? $distribution['critical'] : 0; ?></td><td><?php echo isset($distribution['critical']) ? round(($distribution['critical']/$total_staff)*100,1) : 0; ?>%</td></tr>
-                        <tr><td>At Risk 🔴</td><td><?php echo isset($distribution['at-risk']) ? $distribution['at-risk'] : 0; ?></td><td><?php echo isset($distribution['at-risk']) ? round(($distribution['at-risk']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>Top Performers 🟢</td><td><?php echo $distribution['top']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['top']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>Good 👍</td><td><?php echo $distribution['good']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['good']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>Average 🟡</td><td><?php echo $distribution['average']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['average']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>Critical ⚠️</td><td><?php echo $distribution['critical']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['critical']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>At Risk 🔴</td><td><?php echo $distribution['at-risk']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['at-risk']/$total_staff)*100,1) : 0; ?>%</td></tr>
                     </tbody>
                 </table>
             </div>
             
-            <!-- Detailed Staff Table -->
+            <!-- Detailed Staff Table (using existing $employees with weighted scores) -->
             <div>
                 <h5>Staff Performance Details</h5>
                 <div class="table-responsive">
@@ -242,9 +290,9 @@ if ($report_type == 'overall') {
                         <tbody>
                             <?php foreach ($employees as $emp): ?>
                             <tr>
-                                <td><?php echo $emp['name']; ?></td>
-                                <td><?php echo $emp['department']; ?></td>
-                                <td><?php echo $emp['position']; ?></td>
+                                <td><?php echo htmlspecialchars($emp['name']); ?></td>
+                                <td><?php echo htmlspecialchars($emp['department']); ?></td>
+                                <td><?php echo htmlspecialchars($emp['position']); ?></td>
                                 <td><strong><?php echo $emp['score']; ?>%</strong></td>
                                 <td><span class="rating-badge <?php echo $emp['rating']['class']; ?>"><?php echo $emp['rating']['label']; ?></span></td>
                             </tr>
@@ -274,7 +322,7 @@ if ($report_type == 'overall') {
         data: {
             labels: ['Achieved', 'Remaining'],
             datasets: [{
-                data: [<?php echo $avg_score; ?>, <?php echo 100 - $avg_score; ?>],
+                data: [<?php echo $avg_score_direct; ?>, <?php echo 100 - $avg_score_direct; ?>],
                 backgroundColor: ['#4361ee', '#e9ecef']
             }]
         },
