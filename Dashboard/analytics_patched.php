@@ -37,6 +37,14 @@ require_once __DIR__ . '/../includes/auth.php';
 .comparison-select-box label{display:block;margin:0 0 8px;font-size:.9rem;font-weight:700;color:#6f6376;}
 .comparison-select-box select{width:100%;border:1.5px solid #eed4e3;border-radius:14px;background:#fff;padding:10px 14px;min-height:46px;color:#3a2948;font-size:.95rem;box-shadow:0 4px 10px rgba(232,48,140,.04);}
 .compare-main-btn{max-width:none;}
+.comparison-tool-expanded{min-height:360px;padding:28px 28px 24px!important;}
+.comparison-tool-expanded .comparison-title-wrap{margin-bottom:20px;}
+.comparison-tool-expanded .comparison-toolbar{margin-bottom:20px!important;}
+.comparison-tool-expanded .comparison-select-grid{gap:18px;}
+.comparison-tool-expanded .comparison-select-box select{min-height:54px;font-size:1rem;}
+.comparison-tool-expanded .compare-main-btn{min-height:56px;font-size:1rem;}
+.comparison-tool-expanded .comparison-action-row{margin-top:14px;}
+#heatmapInsight,#riskHistogramInsight{min-height:68px;display:flex;align-items:flex-start;}
 @media (max-width: 900px){.comparison-select-grid{grid-template-columns:1fr;}}
 /* MINIMAL MODAL - NO DARK BACKDROP */
 .risk-modal {
@@ -289,11 +297,13 @@ require_once __DIR__ . '/../includes/auth.php';
         <article class="card chart-card">
             <div class="chart-head"><h2>Score Movement Heatmap</h2></div>
             <div id="heatmapChart" class="chart heatmap"></div>
+            <p class="interpretation" id="heatmapInsight"></p>
         </article>
 
         <article class="card chart-card">
-            <div class="chart-head"><h2>Staff Performance Risk</h2></div>
+            <div class="chart-head"><h2>Staff Performance Score</h2></div>
             <div id="riskHistogramChart" class="chart"></div>
+            <p class="interpretation" id="riskHistogramInsight"></p>
         </article>
 
         <article class="card table-card chart-span-2">
@@ -314,7 +324,7 @@ require_once __DIR__ . '/../includes/auth.php';
             </div>
         </article>
 
-        <article class="comparison-tool">
+        <article class="comparison-tool chart-span-2 comparison-tool-expanded">
             <div class="comparison-title-wrap">
                 <h2>Staff Comparison</h2>
                 <p>Select two staff from the current filtered dataset.</p>
@@ -1009,9 +1019,24 @@ require_once __DIR__ . '/../includes/auth.php';
             paper_bgcolor: 'transparent'
         }, { responsive: true, displayModeBar: true });
 
+        const heatmapInsightEl = document.getElementById('heatmapInsight');
+        const heatmapFlat = heatmapRows.flatMap(row => heatmapColumns.map(col => ({
+            period: row.period,
+            department: col,
+            value: row[col] ?? null
+        })).filter(item => item.value !== null));
+        if (heatmapFlat.length) {
+            const bestHeat = [...heatmapFlat].sort((a, b) => b.value - a.value)[0];
+            const worstHeat = [...heatmapFlat].sort((a, b) => a.value - b.value)[0];
+            heatmapInsightEl.textContent = `${bestHeat.department} recorded the strongest score at ${bestHeat.value.toFixed(2)}% in ${bestHeat.period}, while ${worstHeat.department} had the weakest point at ${worstHeat.value.toFixed(2)}% in ${worstHeat.period}. This heatmap shows where performance was strongest and where closer follow-up is needed.`;
+        } else {
+            heatmapInsightEl.textContent = 'No score movement data matched the current filters.';
+        }
+
+        const riskHistogramRows = data.risk_histogram || [];
         Plotly.react('riskHistogramChart', [{
-            x: data.risk_histogram.map(item => item.range),
-            y: data.risk_histogram.map(item => item.count),
+            x: riskHistogramRows.map(item => item.range),
+            y: riskHistogramRows.map(item => item.count),
             type: 'bar',
             marker: { color: ['#ef4444', '#fb7185', '#f59e0b', '#3b82f6', '#10b981'] },
             hovertemplate: '%{x}<br>Staff: %{y}<extra></extra>'
@@ -1019,9 +1044,20 @@ require_once __DIR__ . '/../includes/auth.php';
             margin: { t: 10, r: 10, b: 40, l: 40 },
             paper_bgcolor: 'transparent',
             plot_bgcolor: 'transparent',
-            yaxis: { title: 'StaffCount' },
+            yaxis: { title: 'Staff Count' },
             xaxis: { title: 'KPI Score Range' }
         }, { responsive: true, displayModeBar: true });
+
+        const riskHistogramInsightEl = document.getElementById('riskHistogramInsight');
+        if (riskHistogramRows.length) {
+            const highestBand = [...riskHistogramRows].sort((a, b) => b.count - a.count)[0];
+            const lowerBandsTotal = riskHistogramRows
+                .filter(item => ['0-39', '40-49', '50-69'].includes(String(item.range)))
+                .reduce((sum, item) => sum + Number(item.count || 0), 0);
+            riskHistogramInsightEl.textContent = `${highestBand.count} staff fall in the ${highestBand.range} band, making it the most common score range under the current filters. ${lowerBandsTotal} staff are still below 70%, so this group should be prioritised for coaching and closer review.`;
+        } else {
+            riskHistogramInsightEl.textContent = 'No staff performance score data matched the current filters.';
+        }
 
         const riskChart = document.getElementById('riskHistogramChart');
 
