@@ -22,7 +22,6 @@ function classifyPerformance($percentage) {
     if ($percentage >= 85) return 'top';
     if ($percentage >= 70) return 'good';
     if ($percentage >= 50) return 'average';
-    if ($percentage >= 40) return 'critical';
     return 'at-risk';
 }
 
@@ -31,7 +30,6 @@ function getRatingLabel($classification) {
         'top' => ['label' => 'Top Performer', 'class' => 'rating-top', 'icon' => '🏆'],
         'good' => ['label' => 'Good', 'class' => 'rating-good', 'icon' => '👍'],
         'average' => ['label' => 'Average', 'class' => 'rating-average', 'icon' => '👌'],
-        'critical' => ['label' => 'Critical', 'class' => 'rating-critical', 'icon' => '⚠️'],
         'at-risk' => ['label' => 'At Risk', 'class' => 'rating-risk', 'icon' => '🔴']
     ];
     return $labels[$classification] ?? ['label' => 'Unknown', 'class' => '', 'icon' => '❓'];
@@ -165,7 +163,7 @@ if ($report_type == 'overall') {
     $top_count_direct = mysqli_num_rows($top_result);
     
     // --- EXISTING LOGIC FOR DISTRIBUTION (using weighted scores from $employees) ---
-    $distribution = ['top' => 0, 'good' => 0, 'average' => 0, 'critical' => 0, 'at-risk' => 0];
+    $distribution = ['top' => 0, 'good' => 0, 'average' => 0, 'at-risk' => 0];
     foreach ($employees as $emp) {
         $distribution[$emp['classification']]++;
     }
@@ -273,7 +271,6 @@ if ($report_type == 'overall') {
                         <tr><td>Top Performers 🟢</td><td><?php echo $distribution['top']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['top']/$total_staff)*100,1) : 0; ?>%</td></tr>
                         <tr><td>Good 👍</td><td><?php echo $distribution['good']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['good']/$total_staff)*100,1) : 0; ?>%</td></tr>
                         <tr><td>Average 🟡</td><td><?php echo $distribution['average']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['average']/$total_staff)*100,1) : 0; ?>%</td></tr>
-                        <tr><td>Critical ⚠️</td><td><?php echo $distribution['critical']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['critical']/$total_staff)*100,1) : 0; ?>%</td></tr>
                         <tr><td>At Risk 🔴</td><td><?php echo $distribution['at-risk']; ?></td><td><?php echo $total_staff > 0 ? round(($distribution['at-risk']/$total_staff)*100,1) : 0; ?>%</td></tr>
                     </tbody>
                 </table>
@@ -308,10 +305,10 @@ if ($report_type == 'overall') {
     new Chart(document.getElementById('distributionChart'), {
         type: 'doughnut',
         data: {
-            labels: ['Top Performers', 'Good', 'Average', 'Critical', 'At Risk'],
+            labels: ['Top Performers', 'Good', 'Average', 'At Risk'],
             datasets: [{
-                data: [<?php echo $distribution['top'] . ',' . $distribution['good'] . ',' . $distribution['average'] . ',' . $distribution['critical'] . ',' . $distribution['at-risk']; ?>],
-                backgroundColor: ['#06d6a0', '#118ab2', '#ffd166', '#fb8500', '#ef476f']
+                data: [<?php echo $distribution['top'] . ',' . $distribution['good'] . ',' . $distribution['average'] . ',' . $distribution['at-risk']; ?>],
+                backgroundColor: ['#06d6a0', '#118ab2', '#ffd166', '#ef476f']
             }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
@@ -1108,7 +1105,6 @@ elseif ($report_type == 'top') {
                     'top' => 0,
                     'good' => 0,
                     'average' => 0,
-                    'critical' => 0,
                     'at-risk' => 0
                 ];
                 
