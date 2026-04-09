@@ -10,9 +10,9 @@ if (session_status() === PHP_SESSION_NONE) {
 $currentPage = $activePage ?? '';
 $navItems = [
     ['href' => '../Dashboard/overview.php', 'page' => 'dashboard', 'icon' => 'ph ph-chart-line-up',  'label' => 'Overview'],
-    ['href' => '../staff_masterlist/stafflist.php',     'page' => 'staff',     'icon' => 'ph ph-users-three',     'label' => 'Staff List'],
+    ['href' => '../staff_masterlist/stafflist.php',     'page' => 'staff',     'icon' => 'ph ph-users-three',     'label' => 'Staff Masterlist'],
     ['href' => '../Dashboard/analytics_patched.php', 'page' => 'analytics', 'icon' => 'ph ph-chart-bar',       'label' => 'Analytics'],
-    ['href' => '../reports/reporting.php',   'page' => 'reports',   'icon' => 'ph ph-file-text',       'label' => 'Reporting'],
+    ['href' => '../reports/reporting.php',   'page' => 'reports',   'icon' => 'ph ph-file-text',       'label' => 'Reports'],
     ['href' => '../Configuration/kpi_template_management.php',    'page' => 'config',    'icon' => 'ph ph-sliders-horizontal','label' => 'Configuration'],
 ];
 $fullName  = $_SESSION['full_name']  ?? 'Guest';
