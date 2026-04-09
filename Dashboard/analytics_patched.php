@@ -46,105 +46,202 @@ require_once __DIR__ . '/../includes/auth.php';
 .comparison-tool-expanded .comparison-action-row{margin-top:14px;}
 #heatmapInsight,#riskHistogramInsight{min-height:68px;display:flex;align-items:flex-start;}
 @media (max-width: 900px){.comparison-select-grid{grid-template-columns:1fr;}}
-/* MINIMAL MODAL - NO DARK BACKDROP */
-.risk-modal {
+/* FINAL STAFF COMPARISON + MODAL FIXES */
+.comparison-tool.chart-span-2.comparison-tool-expanded{
+    grid-column: span 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 460px !important;
+    padding: 32px 32px 28px !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-title-wrap{
+    margin-bottom: 22px !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-title-wrap h2{
+    font-size: 2rem !important;
+    margin: 0 0 8px !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-title-wrap p{
+    font-size: 1rem !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-toolbar{
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) 140px !important;
+    gap: 16px !important;
+    margin-bottom: 20px !important;
+    width: 100% !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-toolbar select,
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-toolbar .ghost-btn,
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-select-box select{
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 54px !important;
+    font-size: 1rem !important;
+    border-radius: 16px !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-select-grid{
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) !important;
+    gap: 18px !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-select-box{
+    width: 100% !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-select-box label{
+    margin-bottom: 8px !important;
+    font-size: .95rem !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .comparison-action-row{
+    margin-top: 20px !important;
+    width: 100% !important;
+}
+
+.comparison-tool.chart-span-2.comparison-tool-expanded .compare-main-btn{
+    width: 100% !important;
+    min-height: 58px !important;
+    font-size: 1rem !important;
+    border-radius: 18px !important;
+}
+
+.risk-modal{
     position: fixed !important;
     inset: 0 !important;
     display: none !important;
-    align-items: center !important;
-    justify-content: center !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
     z-index: 999999 !important;
-    margin: 0 !important;
-    padding: 20px !important;
-    background: rgba(32, 18, 33, 0.35) !important;
-    backdrop-filter: blur(4px) !important;
+    background: rgba(32,18,33,.38) !important;
+    backdrop-filter: blur(5px) !important;
+    -webkit-backdrop-filter: blur(5px) !important;
+    padding: 24px !important;
+    box-sizing: border-box !important;
 }
 
-.risk-modal.show {
-    display: flex !important;
+.risk-modal.show{
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
-.risk-modal-box {
-    width: min(500px, 90vw) !important;  /* Smaller width */
-    max-height: 70vh !important;
+.risk-modal-box{
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(760px, calc(100vw - 32px)) !important;
+    max-width: 760px !important;
+    max-height: min(82vh, 720px) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
+    margin: 0 !important;
     background: #ffffff !important;
-    border-radius: 20px !important;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
-    border: 1px solid #e8d5e2 !important;
-    position: relative !important;
-    margin: 0 auto !important;
+    border: 1px solid #ecd8e4 !important;
+    border-radius: 24px !important;
+    box-shadow: 0 28px 70px rgba(27,20,35,.28) !important;
 }
 
-.risk-modal-head {
+.risk-modal-head{
+    position: sticky !important;
+    top: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 16px 20px !important;
+    gap: 16px !important;
+    padding: 18px 22px !important;
+    background: #fff !important;
     border-bottom: 1px solid #f0e3ea !important;
-    background: #ffffff !important;
-    border-radius: 20px 20px 0 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+    z-index: 2 !important;
 }
 
-.risk-modal-head h3 {
+.risk-modal-head h3{
     margin: 0 !important;
-    font-size: 1.2rem !important;
-    font-weight: 700 !important;
+    font-size: 1.65rem !important;
+    line-height: 1.2 !important;
+    font-weight: 800 !important;
     color: #231942 !important;
 }
 
-.risk-modal-close {
-    width: 28px !important;
-    height: 28px !important;
+.risk-modal-close{
+    width: 36px !important;
+    height: 36px !important;
+    flex: 0 0 36px !important;
     border: none !important;
-    border-radius: 50% !important;
-    background: #f0e6ec !important;
-    color: #b42361 !important;
-    font-size: 1.1rem !important;
+    border-radius: 999px !important;
+    background: #fdf2f8 !important;
+    color: #be185d !important;
+    font-size: 22px !important;
+    line-height: 1 !important;
     cursor: pointer !important;
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    transition: all 0.2s ease !important;
 }
 
-.risk-modal-close:hover {
-    background: #e0d4dc !important;
-}
-
-.risk-modal-body {
-    padding: 18px 20px 22px !important;
+.risk-modal-body{
+    padding: 22px 22px 24px !important;
     color: #4b3a4c !important;
-    line-height: 1.5 !important;
-    font-size: 0.9rem !important;
+    line-height: 1.65 !important;
+    font-size: .95rem !important;
 }
 
-.modal-table {
+.modal-table{
     width: 100% !important;
     border-collapse: collapse !important;
-    margin-top: 12px !important;
-    font-size: 0.85rem !important;
+    margin-top: 14px !important;
+    font-size: .92rem !important;
 }
 
-.modal-table th,
-.modal-table td {
-    padding: 8px 10px !important;
-    border-bottom: 1px solid #f0e3ea !important;
+.modal-table th,.modal-table td{
+    padding: 10px 12px !important;
     text-align: left !important;
+    border-bottom: 1px solid #f0e3ea !important;
 }
 
-.modal-table th {
+.modal-table th{
     background: #fcf6fa !important;
     color: #6b4d60 !important;
-    font-weight: 700 !important;
-    font-size: 0.8rem !important;
+    font-weight: 800 !important;
 }
 
-.modal-note {
+.modal-note{
     margin-top: 12px !important;
-    font-size: 0.8rem !important;
-    color: #9a8795 !important;
+    font-size: .9rem !important;
+    color: #866f80 !important;
+}
+
+@media (max-width: 900px){
+    .comparison-tool.chart-span-2.comparison-tool-expanded .comparison-toolbar,
+    .comparison-tool.chart-span-2.comparison-tool-expanded .comparison-select-grid{
+        grid-template-columns: 1fr !important;
+    }
+
+    .comparison-tool.chart-span-2.comparison-tool-expanded{
+        min-height: 0 !important;
+        padding: 24px 20px !important;
+    }
+
+    .risk-modal-box{
+        width: min(94vw, 760px) !important;
+    }
 }
 </style>
 </head>
@@ -1243,14 +1340,6 @@ function openDetailsModal(title, html) {
 
     titleEl.textContent = title;
     bodyEl.innerHTML = html;
-
-    modal.style.position = 'fixed';
-    modal.style.inset = '0';
-    modal.style.top = '';
-    modal.style.left = '';
-    modal.style.right = '';
-    modal.style.bottom = '';
-    modal.style.transform = '';
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 }
@@ -1260,13 +1349,6 @@ function closeDetailsModal() {
     if (!modal) return;
 
     modal.classList.remove('show');
-    modal.style.position = '';
-    modal.style.inset = '';
-    modal.style.top = '';
-    modal.style.left = '';
-    modal.style.right = '';
-    modal.style.bottom = '';
-    modal.style.transform = '';
     document.body.style.overflow = '';
 }
 
@@ -1791,6 +1873,11 @@ function closeDetailsModal() {
         document.getElementById('detailsModalClose').addEventListener('click', closeDetailsModal);
         document.getElementById('detailsModal').addEventListener('click', (event) => {
             if (event.target.id === 'detailsModal') closeDetailsModal();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && document.getElementById('detailsModal').classList.contains('show')) {
+                closeDetailsModal();
+            }
         });
         document.getElementById('highRiskDetailsBtn').addEventListener('click', () => {
             if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
