@@ -212,58 +212,168 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $is_active ? 'Edit Active Template' : 'Edit Draft Template'; ?></title>
+    <title><?php echo $is_active ? 'Edit Active Template' : 'Edit Draft Template'; ?> - KPI System</title>
     <link rel="stylesheet" href="../asset/universal.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Match kpi_template_management.css styles */
-        .reports-content {
-            padding: 24px 32px;
-            background: var(--bg-main);
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --success: #06d6a0;
+            --warning: #ffb703;
+            --danger: #ef476f;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --text-main: #1a1a2e;
+            --text-muted: #6c757d;
+            --border-soft: #e9ecef;
+            --bg-main: #f0f2f5;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #fcf2fa;
+        }
+        
+        .dashboard {
+            margin-left: 200px;
+            background: #fcf2fa;
+            padding: 76px 20px 40px;
             min-height: 100vh;
         }
         
+        .reports-content {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Header styling - EXACT MATCH with reporting page */
         .reports-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
+            background: #fcf2fa;
+            padding-bottom: 16px;
+            margin-bottom: 0;
         }
-        
+
         .reports-header h1 {
-            font-size: 32px;
-            color: var(--primary);
-            margin-bottom: 8px;
+            font-size: 26px;
             font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-main);
+            letter-spacing: -0.4px;
         }
-        
+
         .reports-subtitle {
+            font-size: 12px;
             color: var(--text-muted);
-            font-size: 14px;
+            margin-bottom: 20px;
         }
         
+        /* Top bar container */
+        .top-bar {
+            margin-bottom: 12px;
+        }
+        
+        /* Back button pill style */
         .btn-back {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-soft);
-            border-radius: 12px;
-            padding: 10px 20px;
-            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: white;
+            color: #e83e8c;
+            font-size: 13px;
             font-weight: 500;
-            color: var(--text-main);
             text-decoration: none;
-            transition: all 0.2s;
+            border: 1px solid #f3e5f5;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
         }
         
         .btn-back:hover {
-            background: var(--surface-soft);
-            border-color: var(--primary);
-            color: var(--primary);
+            background: #fdf2f8;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+            color: #c2185b;
+        }
+        
+        /* Modern Hero Header */
+        .template-hero {
+            background: linear-gradient(135deg, #c070e0 0%, #e83e8c 100%);
+            border-radius: 24px;
+            padding: 28px 32px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 12px 30px rgba(232, 62, 140, 0.18);
+            margin-bottom: 30px;
+        }
+        
+        .template-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            backdrop-filter: blur(6px);
+        }
+        
+        .template-info h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .template-meta {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+        
+        .template-tags {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .tag {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .tag.draft {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .tag.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .tag.config {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+        
+        /* Card wrapper styles */
+        .config-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--border-soft);
+            overflow: hidden;
+            margin-bottom: 32px;
         }
         
         .section-card {
@@ -271,7 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 1px solid var(--border-soft);
             border-radius: 20px;
             padding: 20px;
-            background-color: var(--bg-card);
+            background-color: white;
             transition: box-shadow 0.2s;
         }
         
@@ -291,7 +401,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .group-card {
-            background: var(--bg-main);
+            background: #f8f9fa;
             padding: 15px;
             margin-bottom: 15px;
             border-radius: 16px;
@@ -299,13 +409,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: all 0.2s;
         }
         
-        .group-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-soft);
+        .group-card.existing-group {
+            border-left: 4px solid #ff9800;
+            background-color: #fff8f0;
         }
         
         .target-list {
@@ -317,9 +423,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .target-item {
             padding: 8px;
             margin-bottom: 8px;
-            background: var(--bg-card);
+            background: white;
             border-radius: 12px;
             transition: all 0.2s;
+        }
+        
+        .target-item.existing-target {
+            background-color: #fff3e0;
+            border-left: 3px solid #ff9800;
+        }
+        
+        .existing-badge {
+            background-color: #ff9800;
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
+        }
+        
+        .new-badge {
+            background-color: #2196f3;
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
         }
         
         .weight-summary-card {
@@ -327,15 +456,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             top: 20px;
             border-radius: 20px;
             border: 1px solid var(--border-soft);
-            background: var(--bg-card);
+            background: white;
         }
         
         .weight-summary-card .card-header {
-            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%)
+            background: linear-gradient(135deg, #c070e0 0%, #e83e8c 100%);
             color: white;
             border-radius: 20px 20px 0 0;
             padding: 16px 20px;
             font-weight: 600;
+        }
+        
+        .section-badge {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-left: 10px;
+        }
+        
+        .badge-section1 {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+        
+        .badge-section2 {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+        
+        .group-weight-input {
+            width: 100px;
+        }
+        
+        .individual-weight-input {
+            width: 80px;
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid var(--border-soft);
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #c070e0 0%, #e83e8c 100%);
+            border: none;
+            border-radius: 14px;
+            padding: 12px 28px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary-custom:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(232, 62, 140, 0.3);
+            color: white;
         }
         
         .alert-info-custom {
@@ -350,255 +530,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 12px;
         }
         
-        .section-badge {
-            font-size: 12px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            margin-left: 10px;
-        }
-        
-        .badge-section1 {
-            background-color: #17a2b8;
-            color: white;
-        }
-        
-        .badge-section2 {
-            background-color: #007bff;
-            color: white;
-        }
-        
-        /* ACTIVE TEMPLATE STYLES */
-        .active-mode .group-card.existing-group {
-            border-left: 4px solid #ff9800;
-            background-color: #fff8f0;
-        }
-        
-        .active-mode .target-item.existing-target {
-            background-color: #fff3e0;
-            border-left: 3px solid #ff9800;
-        }
-        
-        .active-mode .existing-badge {
-            background-color: #ff9800;
-            color: white;
-        }
-        
-        /* DRAFT TEMPLATE STYLES */
-        .draft-mode .group-card:not(.existing-group) {
-            border-left: 4px solid #2196f3;
-            background-color: #f0f8ff;
-        }
-        
-        .draft-mode .target-item:not(.existing-target) {
-            background-color: #e3f2fd;
-            border-left: 3px solid #2196f3;
-        }
-        
-        .draft-mode .new-badge {
-            background-color: #2196f3;
-            color: white;
-        }
-        
-        .existing-badge, .new-badge {
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 20px;
-            margin-left: 8px;
-        }
-        
-        .btn-sm-custom {
-            padding: 6px 12px;
-            font-size: 13px;
-            border-radius: 20px;
-        }
-        
-        .weight-summary {
-            background: var(--bg-card);
-            border-radius: 20px;
-        }
-        
-        .progress {
-            height: 8px;
-            border-radius: 10px;
-        }
-        
-        .form-control, .form-select {
-            border-radius: 12px;
-            border: 1px solid var(--border-soft);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%)
-            border: none;
-            border-radius: 12px;
-            padding: 12px 28px;
-            font-weight: 500;
-        }
-        
-        .btn-secondary {
-            border-radius: 12px;
-            padding: 12px 28px;
-            font-weight: 500;
-        }
-        
         .alert {
             border-radius: 16px;
         }
-
-        /* ===== NEW HERO HEADER ===== */
-.template-hero {
-    background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
-    border-radius: 24px;
-    padding: 28px 32px;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    box-shadow: 0 12px 30px rgba(232, 48, 140, 0.18);
-    margin-bottom: 30px;
-}
-
-.template-icon {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 30px;
-    backdrop-filter: blur(6px);
-}
-
-.template-info h2 {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.template-meta {
-    font-size: 14px;
-    opacity: 0.9;
-    margin-bottom: 12px;
-}
-
-.template-tags {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.tag {
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    background: rgba(255,255,255,0.2);
-}
-
-.tag.draft {
-    background: #fff3e0;
-    color: #e65100;
-}
-
-.tag.active {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
-
-.tag.config {
-    background: rgba(255,255,255,0.25);
-    color: white;
-}
-
-/* Back button improve */
-.btn-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-
-    padding: 10px 18px;
-    border-radius: 999px; /* fully pill */
-
-    background: rgba(255, 255, 255, 0.9);
-    color: #e8308c;
-
-    font-size: 14px;
-    font-weight: 500;
-    text-decoration: none;
-
-    backdrop-filter: blur(8px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-
-    transition: all 0.25s ease;
-}
-
-/* hover effect */
-.btn-back:hover {
-    background: white;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 22px rgba(0,0,0,0.12);
-    color: #c2185b;
-}
-
-/* icon spacing nicer */
-.btn-back i {
-    font-size: 13px;
-}
-
-.btn-back:hover {
-    background: #fdf2f8;
-    transform: translateY(-1px);
-}
-
-/* ===== UPDATE BUTTON PRIMARY ===== */
-.btn-primary {
-    background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
-    border: none;
-    border-radius: 12px;
-    padding: 12px 28px;
-    font-weight: 500;
-}
-
-/* ===== UPDATE SUMMARY HEADER ===== */
-.weight-summary-card .card-header {
-    background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
-    color: white;
-    border-radius: 20px 20px 0 0;
-}
-
-/* Top bar container */
-.top-bar {
-    margin-bottom: 12px;
-}
-
-/* Back button (pill style) */
-.btn-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-
-    padding: 8px 16px;
-    border-radius: 999px;
-
-    background: white;
-    color: #e8308c;
-
-    font-size: 13px;
-    font-weight: 500;
-    text-decoration: none;
-
-    border: 1px solid #f3e5f5;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-
-    transition: all 0.2s ease;
-}
-
-.btn-back:hover {
-    background: #fdf2f8;
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
-}
+        
+        .template-info-card {
+            border-radius: 20px;
+            border: 1px solid var(--border-soft);
+            margin-bottom: 24px;
+            background: white;
+        }
+        
+        .template-info-card .card-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid var(--border-soft);
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #1e293b;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                margin-left: 0;
+                padding: 20px 15px;
+            }
+            
+            .template-hero {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body class="<?php echo $is_active ? 'active-mode' : 'draft-mode'; ?>">
@@ -612,43 +574,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     Back to Templates
                 </a>
             </div>
-            <!-- Header - matching kpi_template_management -->
-            <!-- ✨ MODERN KPI HEADER -->
+            
+            <!-- Modern Hero Header -->
             <div class="template-hero">
-                
                 <div class="template-icon">
                     <i class="fas fa-file-alt"></i>
                 </div>
-
                 <div class="template-info">
                     <h2><?php echo htmlspecialchars($template['template_name']); ?></h2>
-
                     <div class="template-meta">
                         KPI Template • Year <?php echo $template['year']; ?>
                         &nbsp; | &nbsp;
                         <i class="far fa-calendar-alt me-1"></i>
-                        Created: <?php echo date('M d, Y'); ?>
+                        Created: <?php echo date('M d, Y', strtotime($template['created_at'])); ?>
                     </div>
-
                     <div class="template-tags">
                         <?php if($is_draft): ?>
                             <span class="tag draft">
                                 <i class="fas fa-pen me-1"></i> Draft Mode
                             </span>
                         <?php endif; ?>
-
                         <?php if($is_active): ?>
                             <span class="tag active">
                                 <i class="fas fa-check-circle me-1"></i> Active Template
                             </span>
                         <?php endif; ?>
-
                         <span class="tag config">
                             <i class="fas fa-chart-line me-1"></i> KPI Configuration
                         </span>
                     </div>
                 </div>
-
             </div>
             
             <!-- Status Alerts -->
@@ -690,9 +645,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="col-lg-8">
                     <form method="POST" id="templateForm" onsubmit="return validateGroups()">
                         <!-- Template Info Card -->
-                        <div class="card mb-4" style="border-radius: 20px; border: 1px solid var(--border-soft);">
+                        <div class="card template-info-card">
+                            <div class="card-header">
+                                <i class="fas fa-info-circle me-2" style="color: #e83e8c;"></i> Template Information
+                            </div>
                             <div class="card-body">
-                                <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i> Template Information</h5>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label fw-semibold">Template Name <span class="text-danger">*</span></label>
@@ -763,10 +720,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="hidden" name="kpi_groups" id="kpi_groups">
                         
                         <div class="mt-4 mb-5 d-flex gap-3">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary-custom">
                                 <i class="fas fa-save me-2"></i> Save Changes
                             </button>
-                            <a href="kpi_template_management.php" class="btn btn-secondary">
+                            <a href="kpi_template_management.php" class="btn btn-secondary-custom btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i> Cancel
                             </a>
                         </div>

@@ -31,7 +31,6 @@ require_once __DIR__ . '/../includes/auth.php';
 <main class="analytics-layout">
     <section class="page-header">
         <div class="header-top">
-            <a href="./dashboard.php" class="back-link">← Back to Dashboard</a>
             <h1>Analytics</h1>
             <p>Interactive KPI analytics with database-driven filtering, drill-down, and staff comparison.</p>
         </div>

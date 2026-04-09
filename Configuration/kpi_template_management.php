@@ -155,7 +155,113 @@ while ($row = $depts_result->fetch_assoc()) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Original KPI Template styles - kept unchanged */
+        /* Root variables - matching reporting page */
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --success: #06d6a0;
+            --warning: #ffb703;
+            --danger: #ef476f;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --text-main: #1a1a2e;
+            --text-muted: #6c757d;
+            --border-soft: #e9ecef;
+            --bg-main: #f0f2f5;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #fcf2fa;
+        }
+        
+        .dashboard {
+            margin-left: 200px;
+            background: #fcf2fa;        /* ← PINK BACKGROUND (matching reporting) */
+            padding: 76px 20px 40px;
+            min-height: 100vh;
+        }
+        
+        /* Main content area matching reporting page */
+        .reports-content {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Header styling - EXACT MATCH with reporting page */
+        .reports-header {
+            background: #fcf2fa;
+            padding-bottom: 16px;
+            margin-bottom: 0;
+        }
+
+        .reports-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-main);
+            letter-spacing: -0.4px;
+        }
+
+        .reports-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+        
+        /* Card wrapper styles - matching reporting page */
+        .config-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--border-soft);
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+        
+        .card-header-custom {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-soft);
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .card-header-custom h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-main);
+        }
+        
+        .card-body-custom {
+            padding: 24px;
+        }
+        
+        /* Button styling - matching reporting page */
+        .btn-primary-custom {
+            background: #e83e8c;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 18px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary-custom:hover {
+            background: var(--primary-dark);
+            color: white;
+        }
+        
+        /* Templates Grid - preserved but with refined styling */
         .templates-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -240,52 +346,7 @@ while ($row = $depts_result->fetch_assoc()) {
             font-size: 14px;
         }
         
-        .text-muted {
-            font-size: 14px;
-        }
-
-        /* Card wrapper styles */
-        .config-card {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid var(--border-soft);
-            overflow: hidden;
-            margin-bottom: 32px;
-        }
-        
-        .card-header-custom {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-soft);
-            background: #fafafa;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .card-header-custom h3 {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0;
-            color: var(--text-main);
-        }
-        
-        .card-body-custom {
-            padding: 24px;
-        }
-        
-        .btn-primary-custom {
-            background: var(--primary);
-            border: none;
-            border-radius: 10px;
-            padding: 8px 18px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .btn-primary-custom:hover {
-            background: var(--primary-dark);
-        }
-        
+        /* Employee table styling */
         .employee-table th, .employee-table td {
             vertical-align: middle;
             padding: 12px 16px;
@@ -301,29 +362,31 @@ while ($row = $depts_result->fetch_assoc()) {
             margin-right: 4px;
         }
         
-        .reports-content {
-            padding: 24px 32px;
-            background: var(--bg-main);
-            min-height: 100vh;
+        /* Modal styling */
+        .modal-content {
+            border-radius: 16px;
         }
         
-        .reports-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
+        .modal-header {
+            border-bottom: 1px solid var(--border-soft);
+            background: #fafafa;
         }
         
-        .reports-header h1 {
-            font-size: 32px;
-            color: var(--primary);
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-        
-        .reports-subtitle {
-            color: var(--text-muted);
-            font-size: 14px;
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .dashboard {
+                margin-left: 0;
+                padding: 20px 15px;
+            }
+            
+            .templates-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card-header-custom {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
@@ -332,7 +395,7 @@ while ($row = $depts_result->fetch_assoc()) {
         <?php include("../includes/sidebar.php"); ?>
 
         <div class="reports-content">
-            <!-- Header -->
+            <!-- Header - EXACT MATCH with reporting page -->
             <div class="reports-header">
                 <div>
                     <h1>Configuration</h1>
@@ -355,18 +418,18 @@ while ($row = $depts_result->fetch_assoc()) {
                 </div>
             <?php endif; ?>
             
-            <!-- ==================== SECTION 1: KPI TEMPLATE MANAGEMENT (IN WHITE CARD) ==================== -->
+            <!-- ==================== SECTION 1: KPI TEMPLATE MANAGEMENT ==================== -->
             <div class="config-card">
                 <div class="card-header-custom">
-                    <h3><i class="fas fa-file-alt me-2" style="color: var(--primary);"></i> KPI Template Management</h3>
-                    <a href="create_kpi_template.php" class="btn-primary-custom" style="text-decoration: none; color: white;">
+                    <h3><i class="fas fa-file-alt me-2" style="color: #e83e8c;"></i> KPI Template Management</h3>
+                    <a href="create_kpi_template.php" class="btn-primary-custom">
                         <i class="fas fa-plus"></i> Create New Template
                     </a>
                 </div>
                 <div class="card-body-custom">
                     <p class="reports-subtitle" style="margin-bottom: 20px;">Create and manage KPI templates for different years</p>
                     
-                    <!-- Templates Grid (COMPLETELY UNCHANGED INTERNALLY) -->
+                    <!-- Templates Grid -->
                     <div class="templates-grid">
                         <?php while($template = $templates_result->fetch_assoc()): 
                             $is_active = ($template['status'] == 'active');
@@ -478,8 +541,8 @@ while ($row = $depts_result->fetch_assoc()) {
             <!-- ==================== SECTION 2: EMPLOYEE MANAGEMENT ==================== -->
             <div class="config-card">
                 <div class="card-header-custom">
-                    <h3><i class="fas fa-users me-2" style="color: var(--primary);"></i> Employee Management</h3>
-                    <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                    <h3><i class="fas fa-users me-2" style="color: #e83e8c;"></i> Employee Management</h3>
+                    <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
                         <i class="fas fa-user-plus"></i> Add New Employee
                     </button>
                 </div>

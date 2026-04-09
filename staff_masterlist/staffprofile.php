@@ -1181,7 +1181,7 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
 <main class="staff-profile-page">
     <section class="staff-profile-header">
     <a href="./stafflist.php" class="back-link">← Back to Staff List</a>
-    <h1>Staff Performance Profile</h1>
+    <h1>Sales Assistant Profile</h1>
     <p>View profile information, review KPI performance, and manage supervisor-facing staff details.</p>
 
     <div class="profile-top-filter-row">
@@ -1284,9 +1284,6 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
 
 </section>
 
-        <section class="profile-main-card">
-            <h2>Edit Staff Information</h2>
-
             <?php if ($success): ?>
                 <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
             <?php endif; ?>
@@ -1325,14 +1322,8 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
                         <input type="date" name="join_date" value="<?= htmlspecialchars($staff['join_date'] ?? '') ?>">
                     </div>
                 </div>
-
-            <div class="profile-action-row" id="profileEditActions" style="display:flex;">
-                <button type="button" class="profile-cancel-btn" id="cancelEditBtn">Cancel</button>
-                <button type="submit" class="profile-save-btn">Save Changes</button>
-            </div>
         </form>
 
-    </section>
 
         <?php if (empty($records)): ?>
             <section class="profile-wide-panel">

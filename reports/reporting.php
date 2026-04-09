@@ -54,7 +54,7 @@ $depts_result = mysqli_query($conn, $depts_query);
             --dark: #2b2d42;
             --light: #f8f9fa;
             --text-main: #1a1a2e;
-            --text-muted: #6c757d;
+            --text-muted: #b08090;
             --border-soft: #e9ecef;
             --bg-main: #f0f2f5;
         }
@@ -62,33 +62,38 @@ $depts_result = mysqli_query($conn, $depts_query);
         body {
             font-family: 'Inter', sans-serif;
         }
-        
-        /* Main content area matching config page */
-        .reports-content {
-            padding: 24px 32px;
+        .dashboard {
+            margin-left: 200px;
+            background: #fcf2fa;        /* ← PINK BACKGROUND */
+            padding: 76px 20px 40px;
             min-height: 100vh;
+        }
+                /* Main content area matching config page */
+        .reports-content {
+            width: 100%;
+            padding: 0;   /* 🔥 THIS FIXES BACKGROUND SIZE */
+            margin: 0;
         }
         
         .reports-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
+            background: #fcf2fa;
+            padding-bottom: 16px;
+            margin-bottom: 0;
         }
-        
+
         .reports-header h1 {
-            font-size: 32px;
-            color: #e83e8c; 
-            margin-bottom: 8px;
+            font-size: 26px;
             font-weight: 700;
-            
+            margin-bottom: 4px;
+            color: var(--text-main);
+            letter-spacing: -0.4px;
         }
-        
+
         .reports-subtitle {
+            font-size: 12px;
             color: var(--text-muted);
-            font-size: 14px;
+            margin-bottom: 20px;
         }
-        
         /* Card wrapper styles - matching config page */
         .report-card-wrapper {
             background: white;
