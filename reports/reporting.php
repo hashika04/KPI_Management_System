@@ -44,310 +44,426 @@ $depts_result = mysqli_query($conn, $depts_query);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
-    <style>
-        :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --success: #06d6a0;
-            --warning: #ffb703;
-            --danger: #ef476f;
-            --dark: #2b2d42;
-            --light: #f8f9fa;
-            --text-main: #1a1a2e;
-            --text-muted: #b08090;
-            --border-soft: #e9ecef;
-            --bg-main: #f0f2f5;
+<style>
+    :root {
+        --primary: #4361ee;
+        --primary-dark: #3a56d4;
+        --success: #06d6a0;
+        --warning: #ffb703;
+        --danger: #ef476f;
+        --dark: #2b2d42;
+        --light: #f8f9fa;
+        --text-main: #1a1a2e;
+        --text-muted: #b08090;
+        --border-soft: #e9ecef;
+        --bg-main: #f0f2f5;
+    }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+    .dashboard {
+        margin-left: 200px;
+        background: #fcf2fa;
+        padding: 85px 45px 40px;
+        min-height: 100vh;
+    }
+    
+    .reports-content {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .reports-header {
+        background: #fcf2fa;
+        padding-bottom: 16px;
+        margin-bottom: 0;
+    }
+
+    .reports-header h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--text-main);
+        letter-spacing: -0.3px;
+    }
+
+    .reports-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 15px;
+    }
+    
+    .report-card-wrapper {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--border-soft);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    
+    .card-header-custom {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border-soft);
+        background: #fafafa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .card-header-custom h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-main);
+    }
+    
+    .card-body-custom {
+        padding: 20px;
+    }
+    
+    /* Filter bar styling */
+    .filter-bar {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--border-soft);
+        padding: 16px 20px;
+        margin-bottom: 24px;
+    }
+    
+    .filter-bar .form-label {
+        font-weight: 500;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+    }
+    
+    .filter-bar .form-select,
+    .filter-bar .form-control {
+        border-radius: 8px;
+        border: 1px solid var(--border-soft);
+        font-size: 13px;
+        padding: 6px 10px;
+    }
+    
+    .btn-primary-custom {
+        background: #e83e8c;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: white;
+    }
+    
+    .btn-primary-custom:hover {
+        background: var(--primary-dark);
+    }
+    
+    /* Export buttons */
+    .export-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .btn-export-pdf {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 12px;
+        font-size: 12px;
+    }
+    
+    .btn-export-excel {
+        background: #198754;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 12px;
+        font-size: 12px;
+    }
+    
+    .btn-print {
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 12px;
+        font-size: 12px;
+    }
+    
+    /* Rating badges */
+    .rating-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+    }
+    
+    .rating-top { background: #06d6a0; color: white; }
+    .rating-good { background: #118ab2; color: white; }
+    .rating-average { background: #ffd166; color: #333; }
+    .rating-critical { background: #fb8500; color: white; }
+    .rating-risk { background: #ef476f; color: white; }
+    
+    /* Stat cards */
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 14px;
+        text-align: center;
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .stat-value {
+        font-size: 26px;
+        font-weight: 700;
+    }
+    
+    .stat-card div:last-child {
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    
+    /* Tables */
+    .performance-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .performance-table th,
+    .performance-table td {
+        padding: 8px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-soft);
+        font-size: 12px;
+    }
+    
+    .performance-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    
+    .performance-table tr:hover {
+        background: #f8f9fa;
+    }
+    
+    /* Chart containers */
+    .chart-container {
+        position: relative;
+        height: 250px;
+        width: 100%;
+        margin: 12px 0;
+    }
+    
+    /* Alert styling */
+    .alert-custom-success {
+        background: #d1e7dd;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 12px;
+    }
+    
+    .alert-custom-warning {
+        background: #fff3cd;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 12px;
+    }
+    
+    /* Info box */
+    .info-box {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 12px 16px;
+        border-left: 3px solid var(--primary);
+        font-size: 12px;
+    }
+    
+    .info-box h5 {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+    
+    .info-box p {
+        margin-bottom: 4px;
+        font-size: 12px;
+    }
+    
+    /* Podium styling */
+    .podium-gold {
+        background: linear-gradient(135deg, #ffd700, #ffb347);
+        color: #333;
+        border-radius: 12px;
+        padding: 14px;
+    }
+    
+    .podium-silver {
+        background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
+        color: white;
+        border-radius: 12px;
+        padding: 14px;
+    }
+    
+    .podium-bronze {
+        background: linear-gradient(135deg, #cd7f32, #b87333);
+        color: white;
+        border-radius: 12px;
+        padding: 14px;
+    }
+    
+    .podium-gold h3, .podium-silver h4, .podium-bronze h4 {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+    
+    .podium-gold p, .podium-silver p, .podium-bronze p {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+    
+    /* Print styles */
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        .report-card-wrapper {
+            box-shadow: none;
+            border: 1px solid #ddd;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin-bottom: 15px;
         }
         
         body {
-            font-family: 'Inter', sans-serif;
-        }
-        .dashboard {
-            margin-left: 200px;
-            background: #fcf2fa;        /* ← PINK BACKGROUND */
-            padding: 85px 45px 40px;
-            min-height: 100vh;
-        }
-                /* Main content area matching config page */
-        .reports-content {
-            width: 100%;
-            padding: 0;   /* 🔥 THIS FIXES BACKGROUND SIZE */
+            background: white;
+            padding: 0;
             margin: 0;
         }
         
-        .reports-header {
-            background: #fcf2fa;
-            padding-bottom: 16px;
-            margin-bottom: 0;
-        }
-
-        .reports-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: var(--text-main);
-            letter-spacing: -0.4px;
-        }
-
-        .reports-subtitle {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 20px;
-        }
-        /* Card wrapper styles - matching config page */
-        .report-card-wrapper {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid var(--border-soft);
-            overflow: hidden;
-            margin-bottom: 32px;
+        .reports-content {
+            padding: 0;
         }
         
         .card-header-custom {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-soft);
-            background: #fafafa;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .card-header-custom h3 {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0;
-            color: var(--text-main);
+            padding: 10px 15px;
         }
         
         .card-body-custom {
-            padding: 24px;
-        }
-        
-        /* Filter bar styling */
-        .filter-bar {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid var(--border-soft);
-            padding: 20px 24px;
-            margin-bottom: 32px;
-        }
-        
-        .filter-bar .form-label {
-            font-weight: 500;
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-        
-        .filter-bar .form-select,
-        .filter-bar .form-control {
-            border-radius: 10px;
-            border: 1px solid var(--border-soft);
-            font-size: 14px;
-        }
-        
-        .btn-primary-custom {
-            background: #e83e8c; 
-            border: none;
-            border-radius: 10px;
-            padding: 8px 18px;
-            font-size: 14px;
-            font-weight: 500;
-            color: white;
-            
-        }
-        
-        .btn-primary-custom:hover {
-            background: var(--primary-dark);
-        }
-        
-        /* Export buttons */
-        .export-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn-export-pdf {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 14px;
-            font-size: 13px;
-        }
-        
-        .btn-export-excel {
-            background: #198754;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 14px;
-            font-size: 13px;
-        }
-        
-        .btn-print {
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 14px;
-            font-size: 13px;
-        }
-        
-        /* Rating badges */
-        .rating-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-align: center;
-        }
-        
-        .rating-top { background: #06d6a0; color: white; }
-        .rating-good { background: #118ab2; color: white; }
-        .rating-average { background: #ffd166; color: #333; }
-        .rating-critical { background: #fb8500; color: white; }
-        .rating-risk { background: #ef476f; color: white; }
-        
-        /* Stat cards */
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            transition: transform 0.3s;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-3px);
-        }
-        
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-        }
-        
-        /* Tables */
-        .performance-table {
-            width: 100%;
-            border-collapse: collapse;
+            padding: 15px;
         }
         
         .performance-table th,
         .performance-table td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-soft);
+            padding: 6px 10px;
+            font-size: 10px;
         }
         
-        .performance-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-        
-        .performance-table tr:hover {
-            background: #f8f9fa;
-        }
-        
-        /* Chart containers */
         .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-            margin: 16px 0;
+            height: 200px;
         }
-        
-        /* Alert styling */
-        .alert-custom-success {
-            background: #d1e7dd;
-            border: none;
-            border-radius: 12px;
-            padding: 16px 20px;
-        }
-        
-        .alert-custom-warning {
-            background: #fff3cd;
-            border: none;
-            border-radius: 12px;
-            padding: 16px 20px;
-        }
-        
-        /* Info box */
-        .info-box {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 16px 20px;
-            border-left: 4px solid var(--primary);
-        }
-        
-        /* Podium styling */
-        .podium-gold {
-            background: linear-gradient(135deg, #ffd700, #ffb347);
-            color: #333;
-            border-radius: 16px;
-            padding: 20px;
-        }
-        
-        .podium-silver {
-            background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
-            color: white;
-            border-radius: 16px;
-            padding: 20px;
-        }
-        
-        .podium-bronze {
-            background: linear-gradient(135deg, #cd7f32, #b87333);
-            color: white;
-            border-radius: 16px;
-            padding: 20px;
-        }
-        
-        /* Print styles */
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-            
-            .report-card-wrapper {
-                box-shadow: none;
-                border: 1px solid #ddd;
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
-            
-            body {
-                background: white;
-                padding: 0;
-                margin: 0;
-            }
-            
-            .reports-content {
-                padding: 0;
-            }
-        }
-        
-        /* Dropdown for employee select */
-        .employee-select {
-            border-radius: 10px;
-            border: 1px solid var(--border-soft);
-            padding: 8px 12px;
-            font-size: 14px;
-        }
-        
-        /* Threshold filter */
-        .threshold-select {
-            border-radius: 10px;
-            border: 1px solid var(--border-soft);
-            padding: 8px 12px;
-            font-size: 14px;
-        }
-    </style>
+    }
+    
+    /* Dropdown for employee select */
+    .employee-select {
+        border-radius: 8px;
+        border: 1px solid var(--border-soft);
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    /* Threshold filter */
+    .threshold-select {
+        border-radius: 8px;
+        border: 1px solid var(--border-soft);
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+    
+    /* Additional compact styles for headings */
+    h4 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+    
+    h5 {
+        font-size: 14px;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+    
+    h6 {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+    
+    .mb-4 {
+        margin-bottom: 20px !important;
+    }
+    
+    .mb-3 {
+        margin-bottom: 12px !important;
+    }
+    
+    .mt-3 {
+        margin-top: 12px !important;
+    }
+    
+    .mt-4 {
+        margin-top: 20px !important;
+    }
+    
+    .badge {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    .table-responsive {
+        font-size: 12px;
+    }
+    
+    /* Make buttons more compact */
+    button, .btn {
+        font-size: 12px !important;
+        padding: 5px 12px !important;
+    }
+    
+    /* Compact form elements */
+    .form-select, .form-control {
+        font-size: 13px;
+        padding: 5px 10px;
+    }
+    
+    /* Smaller icons */
+    .fas, .far {
+        font-size: 12px;
+    }
+    
+    /* Compact spacing for rows */
+    .row {
+        margin-bottom: 0;
+    }
+    
+    .col-md-3, .col-md-4, .col-md-6 {
+        margin-bottom: 12px;
+    }
+</style>
 </head>
 <body>
     <div class="dashboard">
@@ -357,7 +473,7 @@ $depts_result = mysqli_query($conn, $depts_query);
             <!-- Header -->
             <div class="reports-header">
                 <div>
-                    <h1>KPI Reports</h1>
+                    <h1>Reports</h1>
                     <p class="reports-subtitle">Comprehensive performance analytics and reporting</p>
                 </div>
             </div>
@@ -373,7 +489,7 @@ $depts_result = mysqli_query($conn, $depts_query);
                             <option value="department" <?php echo $selected_report == 'department' ? 'selected' : ''; ?>>📈 Department Performance Report</option>
                             <option value="trend" <?php echo $selected_report == 'trend' ? 'selected' : ''; ?>>📉 Performance Trend Report</option>
                             <option value="low" <?php echo $selected_report == 'low' ? 'selected' : ''; ?>>⚠️ At-Risk Staff Report</option>
-                            <option value="top" <?php echo $selected_report == 'top' ? 'selected' : ''; ?>>🏆 Top Performers Report</option>
+                            <option value="top" <?php echo $selected_report == 'top' ? 'selected' : ''; ?>>🏆 High Impact Contributors Report</option>
                             <option value="training" <?php echo $selected_report == 'training' ? 'selected' : ''; ?>>🧠 Training Needs Summary</option>
                             <option value="builder" <?php echo $selected_report == 'builder' ? 'selected' : ''; ?>>🔧 Custom Report Builder</option>
                         </select>
@@ -455,21 +571,34 @@ $depts_result = mysqli_query($conn, $depts_query);
             });
     }
 
-    function exportToPDF() {
-        const element = document.getElementById('reportCard');
-        const opt = {
-            margin: [0.5, 0.5, 0.5, 0.5],
-            filename: 'kpi_report.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, letterRendering: true },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
+   function exportToPDF() {
+        // Get all current filter values
+        const formData = new FormData(document.getElementById('filterForm'));
+        const params = new URLSearchParams(formData);
+        
+        // Build the preview URL with all parameters
+        const previewUrl = 'pdf_preview.php?' + params.toString();
+        
+        // Open preview in new tab
+        window.open(previewUrl, '_blank');
     }
 
     function exportToExcel() {
-        const params = new URLSearchParams(window.location.search);
-        window.location.href = 'export_excel.php?' + params.toString();
+        // Get all current filter values including the selected employee
+        const formData = new FormData(document.getElementById('filterForm'));
+        const params = new URLSearchParams(formData);
+        
+        // Also check if there's an employee selected in the individual report dropdown
+        const employeeSelect = document.querySelector('.employee-select');
+        if (employeeSelect && employeeSelect.value) {
+            params.set('employee', employeeSelect.value);
+        }
+        
+        // Build the preview URL with all parameters
+        const previewUrl = 'excel_preview.php?' + params.toString();
+        
+        // Open preview in new tab
+        window.open(previewUrl, '_blank');
     }
     </script>
 </body>

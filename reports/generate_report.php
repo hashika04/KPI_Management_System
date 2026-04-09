@@ -124,7 +124,6 @@ if ($report_type == 'overall') {
             <div class="export-buttons no-print">
                 <button class="btn-export-pdf" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
                 <button class="btn-export-excel" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
-                <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
             </div>
         </div>
         <div class="card-body-custom">
@@ -326,7 +325,7 @@ elseif ($report_type == 'individual') {
                 <h3><i class="fas fa-user-circle me-2" style="color: var(--primary);"></i> Individual Employee KPI Report</h3>
                 <div class="export-buttons no-print">
                     <button class="btn-export-pdf" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                    <button class="btn-export-excel" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
                 </div>
             </div>
             <div class="card-body-custom">
@@ -407,7 +406,7 @@ elseif ($report_type == 'individual') {
                 <!-- Summary -->
                 <div class="row mb-4">
                     <div class="col-md-12">
-                        <div class="stat-card" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                             <h5>Final Score Calculation</h5>
                             <p class="mb-1"><strong>Total Weighted Score:</strong> <?php echo round($total_weighted, 1); ?>% out of <?php echo $total_weight; ?>% total weight</p>
                             <p class="mb-1"><strong>Final Percentage:</strong> <?php echo round($final_percentage, 1); ?>%</p>
@@ -480,7 +479,6 @@ elseif ($report_type == 'department') {
             <div class="export-buttons no-print">
                 <button class="btn-export-pdf" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
                 <button class="btn-export-excel" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
-                <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
             </div>
         </div>
         <div class="card-body-custom">
@@ -612,7 +610,6 @@ elseif ($report_type == 'trend') {
             <div class="export-buttons no-print">
                 <button class="btn-export-pdf" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
                 <button class="btn-export-excel" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
-                <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
             </div>
         </div>
         <div class="card-body-custom">
@@ -835,10 +832,16 @@ elseif ($report_type == 'low') {
 
 <?php
 }
-// 6. TOP PERFORMERS REPORT
+
+// 6. HIGH IMPACT CONTRIBUTORS REPORT (formerly Top Performers)
 elseif ($report_type == 'top') {
     $top_count = isset($_GET['top_count']) ? intval($_GET['top_count']) : 10;
     $employees = getEmployeeScores($conn, $year, $department);
+    
+    // Add classification based on the function
+    foreach ($employees as &$emp) {
+        $emp['classification'] = classifyPerformance($emp['score']);
+    }
     
     usort($employees, function($a, $b) {
         return $b['score'] <=> $a['score'];
@@ -849,7 +852,7 @@ elseif ($report_type == 'top') {
     
     <div class="report-card-wrapper" id="reportCard">
         <div class="card-header-custom">
-            <h3><i class="fas fa-trophy me-2" style="color: var(--primary);"></i> Top Performers Recognition Report</h3>
+            <h3><i class="fas fa-chart-line me-2" style="color: var(--primary);"></i> High Impact Contributors Report</h3>
             <div class="export-buttons no-print">
                 <button class="btn-export-pdf" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
                 <button class="btn-export-excel" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
@@ -857,61 +860,99 @@ elseif ($report_type == 'top') {
         </div>
         <div class="card-body-custom">
             <div class="text-center mb-4">
-                <h4><?php echo $year; ?> - Top <?php echo $top_count; ?> Employees</h4>
+                <h4><?php echo $year; ?> - Top <?php echo $top_count; ?> Contributors</h4>
+                <p class="text-muted">
+                    <span class="badge" style="background: #06d6a0;">🎯 Top (85%+)</span>
+                    <span class="badge" style="background: #4d9de0;">✅ Good (70-84%)</span>
+                    <span class="badge" style="background: #ffa500;">📊 Average (50-69%)</span>
+                </p>
             </div>
             
             <div class="row mb-4 no-print">
-                <div class="col-md-3">
-                    <label class="form-label">Number of Top Performers</label>
+                <div class="col-md-4">
+                    <label class="form-label">Number of Top Contributors</label>
                     <select class="threshold-select form-select" onchange="location.href='?report_type=top&year=<?php echo $year; ?>&top_count=' + this.value">
                         <option value="5" <?php echo $top_count == 5 ? 'selected' : ''; ?>>Top 5</option>
                         <option value="10" <?php echo $top_count == 10 ? 'selected' : ''; ?>>Top 10</option>
                         <option value="15" <?php echo $top_count == 15 ? 'selected' : ''; ?>>Top 15</option>
+                        <option value="25" <?php echo $top_count == 25 ? 'selected' : ''; ?>>Top 25</option>
                     </select>
+                </div>
+                <div class="col-md-8 text-end">
+                    <div class="alert alert-info mb-0">
+                        <small><i class="fas fa-info-circle"></i> Threshold: 85%+ = Top Performer | 70-84% = Good Standing | 50-69% = Average</small>
+                    </div>
                 </div>
             </div>
             
+            <!-- Podium Section - Only show if we have top performers at 85%+ -->
+            <?php 
+            $actual_top_performers = array_filter($top_performers, function($emp) {
+                return $emp['classification'] == 'top';
+            });
+            $actual_top_performers = array_values($actual_top_performers);
+            ?>
+            
+            <?php if (count($actual_top_performers) > 0): ?>
             <div class="row mb-4 text-center">
-                <?php if (isset($top_performers[0])): ?>
+                <?php if (isset($actual_top_performers[0])): ?>
                 <div class="col-md-4 offset-md-4">
                     <div class="podium-gold">
                         <div style="font-size: 3rem;">🥇</div>
-                        <h3><?php echo $top_performers[0]['name']; ?></h3>
-                        <p><?php echo $top_performers[0]['department']; ?></p>
-                        <div class="display-4 fw-bold"><?php echo $top_performers[0]['score']; ?>%</div>
+                        <h3><?php echo $actual_top_performers[0]['name']; ?></h3>
+                        <p><?php echo $actual_top_performers[0]['department']; ?></p>
+                        <div class="display-4 fw-bold"><?php echo $actual_top_performers[0]['score']; ?>%</div>
+                        <span class="badge" style="background: #06d6a0;">Top Performer</span>
                     </div>
                 </div>
                 <?php endif; ?>
             </div>
             
             <div class="row mb-4">
-                <?php if (isset($top_performers[1])): ?>
+                <?php if (isset($actual_top_performers[1])): ?>
                 <div class="col-md-6 mb-3">
                     <div class="podium-silver text-center">
                         <div style="font-size: 2rem;">🥈</div>
-                        <h4><?php echo $top_performers[1]['name']; ?></h4>
-                        <p><?php echo $top_performers[1]['department']; ?></p>
-                        <div class="h2"><?php echo $top_performers[1]['score']; ?>%</div>
+                        <h4><?php echo $actual_top_performers[1]['name']; ?></h4>
+                        <p><?php echo $actual_top_performers[1]['department']; ?></p>
+                        <div class="h2"><?php echo $actual_top_performers[1]['score']; ?>%</div>
+                        <span class="badge" style="background: #06d6a0;">Top Performer</span>
                     </div>
                 </div>
                 <?php endif; ?>
-                <?php if (isset($top_performers[2])): ?>
+                <?php if (isset($actual_top_performers[2])): ?>
                 <div class="col-md-6 mb-3">
                     <div class="podium-bronze text-center">
                         <div style="font-size: 2rem;">🥉</div>
-                        <h4><?php echo $top_performers[2]['name']; ?></h4>
-                        <p><?php echo $top_performers[2]['department']; ?></p>
-                        <div class="h2"><?php echo $top_performers[2]['score']; ?>%</div>
+                        <h4><?php echo $actual_top_performers[2]['name']; ?></h4>
+                        <p><?php echo $actual_top_performers[2]['department']; ?></p>
+                        <div class="h2"><?php echo $actual_top_performers[2]['score']; ?>%</div>
+                        <span class="badge" style="background: #06d6a0;">Top Performer</span>
                     </div>
                 </div>
                 <?php endif; ?>
             </div>
+            <?php else: ?>
+            <div class="alert alert-warning text-center mb-4">
+                <i class="fas fa-exclamation-triangle"></i> No employees achieved Top Performer status (85%+) in this selection.
+            </div>
+            <?php endif; ?>
             
             <div class="mb-4">
-                <h5>Top <?php echo $top_count; ?> Performers List</h5>
+                <h5>Top <?php echo $top_count; ?> Contributors List</h5>
                 <div class="table-responsive">
                     <table class="performance-table">
-                        <thead><tr><th>Rank</th><th>Staff Name</th><th>Department</th><th>Position</th><th>KPI Score</th><th>Award Type</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Staff Name</th>
+                                <th>Department</th>
+                                <th>Position</th>
+                                <th>KPI Score</th>
+                                <th>Performance Level</th>
+                                <th>Award Type</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             <?php foreach ($top_performers as $index => $emp): ?>
                             <tr>
@@ -919,8 +960,37 @@ elseif ($report_type == 'top') {
                                 <td><strong><?php echo $emp['name']; ?></strong></td>
                                 <td><?php echo $emp['department']; ?></td>
                                 <td><?php echo $emp['position']; ?></td>
-                                <td><strong><?php echo $emp['score']; ?>%</strong></td>
-                                <td><?php if ($index == 0): ?><span class="badge bg-warning text-dark">🏆 Excellence Award</span><?php elseif ($index == 1): ?><span class="badge bg-secondary">⭐ Silver Award</span><?php elseif ($index == 2): ?><span class="badge" style="background: #cd7f32;">🌟 Bronze Award</span><?php else: ?><span class="badge bg-info">📝 Recognition Letter</span><?php endif; ?></td>
+                                <td>
+                                    <strong><?php echo $emp['score']; ?>%</strong>
+                                    <?php if ($emp['score'] >= 85): ?>
+                                    <i class="fas fa-crown" style="color: #ffd700;"></i>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php 
+                                    $class = $emp['classification'];
+                                    $badge_color = $class == 'top' ? '#06d6a0' : ($class == 'good' ? '#4d9de0' : '#ffa500');
+                                    $label = $class == 'top' ? '🏆 Top Performer' : ($class == 'good' ? '✅ Good Standing' : '📊 Average');
+                                    ?>
+                                    <span class="badge" style="background: <?php echo $badge_color; ?>"><?php echo $label; ?></span>
+                                </td>
+                                <td>
+                                    <?php if ($emp['classification'] == 'top'): ?>
+                                        <?php if ($index == 0): ?>
+                                        <span class="badge bg-warning text-dark">🏆 Excellence Award</span>
+                                        <?php elseif ($index == 1): ?>
+                                        <span class="badge bg-secondary">⭐ Silver Award</span>
+                                        <?php elseif ($index == 2): ?>
+                                        <span class="badge" style="background: #cd7f32;">🌟 Bronze Award</span>
+                                        <?php else: ?>
+                                        <span class="badge bg-success">🎯 Top Performer Certificate</span>
+                                        <?php endif; ?>
+                                    <?php elseif ($emp['classification'] == 'good'): ?>
+                                        <span class="badge bg-info">📝 Recognition Letter</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">📈 Development Plan</span>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -929,30 +999,100 @@ elseif ($report_type == 'top') {
             </div>
             
             <div class="mb-4">
-                <h5>Top Performers by Department</h5>
+                <h5>Performance Level Distribution</h5>
                 <?php
                 $dept_dist = [];
+                $level_dist = ['top' => 0, 'good' => 0, 'average' => 0];
+                
                 foreach ($top_performers as $emp) {
                     $dept = $emp['department'];
                     if (!isset($dept_dist[$dept])) $dept_dist[$dept] = 0;
                     $dept_dist[$dept]++;
+                    
+                    $level_dist[$emp['classification']]++;
                 }
                 ?>
-                <div class="chart-container" style="height: 300px;">
+                
+                <!-- Department Distribution Chart -->
+                <div class="chart-container" style="height: 300px; margin-bottom: 30px;">
                     <canvas id="deptDistribution"></canvas>
+                </div>
+                
+                <!-- Performance Level Pie Chart -->
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="levelDistribution"></canvas>
                 </div>
             </div>
         </div>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+    // Department Distribution Bar Chart
     new Chart(document.getElementById('deptDistribution'), {
         type: 'bar',
         data: {
             labels: <?php echo json_encode(array_keys($dept_dist)); ?>,
-            datasets: [{ label: 'Number of Top Performers', data: <?php echo json_encode(array_values($dept_dist)); ?>, backgroundColor: '#06d6a0', borderRadius: 10 }]
+            datasets: [{
+                label: 'Number of Contributors',
+                data: <?php echo json_encode(array_values($dept_dist)); ?>,
+                backgroundColor: '#06d6a0',
+                borderRadius: 10
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, stepSize: 1, title: { display: true, text: 'Count' } } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    stepSize: 1,
+                    title: {
+                        display: true,
+                        text: 'Number of Employees'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Department'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Performance Level Distribution Pie Chart
+    new Chart(document.getElementById('levelDistribution'), {
+        type: 'pie',
+        data: {
+            labels: ['Top Performers (85%+)', 'Good Standing (70-84%)', 'Average (50-69%)'],
+            datasets: [{
+                data: <?php echo json_encode([$level_dist['top'], $level_dist['good'], $level_dist['average']]); ?>,
+                backgroundColor: ['#06d6a0', '#4d9de0', '#ffa500'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
     });
     </script>
 
@@ -1293,6 +1433,10 @@ elseif ($report_type == 'training') {
 <div class="report-card-wrapper" id="reportCard">
     <div class="card-header-custom">
         <h3>🧠 Enhanced Training Needs Summary - <?php echo $year; ?></h3>
+        <div class="export-buttons no-print">
+                <button class="btn-export-pdf" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn-export-excel" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+        </div>
         <p class="text-muted mb-0">
             Auto-generated from AVERAGE KPI group scores and supervisor feedback | 
             <strong>Total Staff Evaluated: <?php echo $total_staff_count; ?></strong>

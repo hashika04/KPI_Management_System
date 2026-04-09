@@ -10,8 +10,10 @@ if ($_SESSION['position'] !== 'Supervisor') {
     exit();
 }
 
-$success_message = '';
-$error_message = '';
+$employee_success = '';
+$employee_error = '';
+$template_success = '';
+$template_error = '';
 
 // ==================== KPI TEMPLATE ACTIONS (UNCHANGED) ====================
 if (isset($_GET['action']) && isset($_GET['id'])) {
@@ -25,7 +27,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $template_id);
         if ($stmt->execute()) {
-            $success_message = "Template activated successfully!";
+            $template_success = "Template activated successfully!";
         }
     } elseif ($action == 'delete') {
         // Check if template has associated KPI data
@@ -37,13 +39,13 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
         $count = $check_result->fetch_assoc()['count'];
         
         if ($count > 0) {
-            $error_message = "Cannot delete template as it has $count KPI records associated.";
+            $template_error = "Cannot delete template as it has $count KPI records associated.";
         } else {
             $sql = "DELETE FROM kpi_templates WHERE id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $template_id);
             if ($stmt->execute()) {
-                $success_message = "Template deleted successfully!";
+                $template_success = "Template deleted successfully!";
             }
         }
     }
@@ -72,10 +74,10 @@ if (isset($_POST['employee_action'])) {
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("sssss", $full_name, $email, $staff_code, $department, $position);
             if ($stmt->execute()) {
-                $success_message = "Employee added successfully!";
+                $employee_success = "Employee added successfully!";
                 $_SESSION['departments_updated'] = true;
             } else {
-                $error_message = "Error adding employee: " . $conn->error;
+                $employee_error = "Error adding employee: " . $conn->error;
             }
         }
     } elseif ($action == 'edit') {
@@ -90,10 +92,10 @@ if (isset($_POST['employee_action'])) {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("sssssi", $full_name, $email, $staff_code, $department, $position, $id);
         if ($stmt->execute()) {
-            $success_message = "Employee updated successfully!";
+            $employee_success = "Employee updated successfully!";
             $_SESSION['departments_updated'] = true;
         } else {
-            $error_message = "Error updating employee: " . $conn->error;
+            $employee_error = "Error updating employee: " . $conn->error;
         }
     } elseif ($action == 'delete') {
         $id = intval($_POST['employee_id']);
@@ -112,10 +114,10 @@ if (isset($_POST['employee_action'])) {
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $id);
             if ($stmt->execute()) {
-                $success_message = "Employee removed successfully!";
+                $employee_success = "Employee removed successfully!";
                 $_SESSION['departments_updated'] = true;
             } else {
-                $error_message = "Error deleting employee: " . $conn->error;
+                $employee_error = "Error deleting employee: " . $conn->error;
             }
         }
     }
@@ -155,240 +157,384 @@ while ($row = $depts_result->fetch_assoc()) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Root variables - matching reporting page */
-        :root {
-            --primary: #4361ee;
-            --primary-dark: #3a56d4;
-            --success: #06d6a0;
-            --warning: #ffb703;
-            --danger: #ef476f;
-            --dark: #2b2d42;
-            --light: #f8f9fa;
-            --text-main: #1a1a2e;
-            --text-muted: #b08090;
-            --border-soft: #e9ecef;
-            --bg-main: #f0f2f5;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #fcf2fa;
-        }
-        
+    /* Root variables - matching reporting page */
+    :root {
+        --primary: #4361ee;
+        --primary-dark: #3a56d4;
+        --success: #06d6a0;
+        --warning: #ffb703;
+        --danger: #ef476f;
+        --dark: #2b2d42;
+        --light: #f8f9fa;
+        --text-main: #1a1a2e;
+        --text-muted: #b08090;
+        --border-soft: #e9ecef;
+        --bg-main: #f0f2f5;
+    }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #fcf2fa;
+    }
+    
+    .dashboard {
+        margin-left: 200px;
+        background: #fcf2fa;
+        padding: 85px 45px 40px;
+        min-height: 100vh;
+    }
+    
+    /* Main content area matching reporting page */
+    .reports-content {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* Header styling - EXACT MATCH with reporting page */
+    .reports-header {
+        background: #fcf2fa;
+        padding-bottom: 16px;
+        margin-bottom: 0;
+    }
+
+    .reports-header h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--text-main);
+        letter-spacing: -0.3px;
+    }
+
+    .reports-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 15px;
+    }
+    
+    /* Card wrapper styles - matching reporting page */
+    .config-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--border-soft);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    
+    .card-header-custom {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border-soft);
+        background: #fafafa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .card-header-custom h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-main);
+    }
+    
+    .card-body-custom {
+        padding: 20px;
+    }
+    
+    /* Button styling - matching reporting page */
+    .btn-primary-custom {
+        background: #e83e8c;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: white;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-primary-custom:hover {
+        background: var(--primary-dark);
+        color: white;
+    }
+    
+    /* Templates Grid - preserved but with refined styling */
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+    
+    .template-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 16px;
+        border: 1px solid var(--border-soft);
+        position: relative;
+        padding: 16px;
+    }
+    
+    .template-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(75, 21, 53, 0.08);
+    }
+    
+    .active-template {
+        border-left: 3px solid #28a745;
+        background-color: #f8fff8;
+    }
+    
+    .draft-template {
+        border-left: 3px solid #ffc107;
+        background-color: #fffbf0;
+    }
+    
+    .previous-template {
+        border-left: 3px solid #6c757d;
+        background-color: #f8f9fa;
+    }
+    
+    .status-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+    }
+    
+    .status-badge .badge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    .weight-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 16px;
+        display: inline-block;
+    }
+    
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+    }
+    
+    .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+        border-radius: 16px;
+    }
+    
+    .info-message {
+        margin-top: 10px;
+        padding-top: 6px;
+        border-top: 1px solid var(--border-soft);
+        font-size: 11px;
+    }
+    
+    .alert {
+        border-radius: 10px;
+        margin-bottom: 16px;
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+    
+    .card-title {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text-main);
+        margin-bottom: 6px;
+    }
+    
+    .card-subtitle {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    /* Employee table styling */
+    .employee-table th, 
+    .employee-table td {
+        vertical-align: middle;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .employee-table th {
+        font-size: 12px;
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+    
+    .department-hint {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 4px;
+    }
+    
+    .department-hint i {
+        margin-right: 3px;
+        font-size: 10px;
+    }
+    
+    /* Modal styling */
+    .modal-content {
+        border-radius: 12px;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid var(--border-soft);
+        background: #fafafa;
+        padding: 12px 16px;
+    }
+    
+    .modal-header h5 {
+        font-size: 15px;
+        margin: 0;
+    }
+    
+    .modal-body {
+        padding: 16px;
+        font-size: 13px;
+    }
+    
+    .modal-footer {
+        padding: 12px 16px;
+    }
+    
+    /* Form styling - compact */
+    .form-label {
+        font-size: 12px;
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+    
+    .form-control, .form-select {
+        font-size: 13px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border-soft);
+    }
+    
+    .form-control:focus, .form-select:focus {
+        box-shadow: none;
+        border-color: var(--primary);
+    }
+    
+    /* Table styling */
+    .table {
+        font-size: 12px;
+    }
+    
+    .table th, .table td {
+        padding: 8px 12px;
+        vertical-align: middle;
+    }
+    
+    /* Button group styling */
+    .btn-group-sm > .btn, .btn-sm {
+        padding: 4px 10px;
+        font-size: 11px;
+        border-radius: 6px;
+    }
+    
+    /* Badge styling */
+    .badge {
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
+    
+    /* Icon sizing */
+    .fas, .far {
+        font-size: 12px;
+    }
+    
+    /* Margin and spacing adjustments */
+    .mb-4 {
+        margin-bottom: 20px !important;
+    }
+    
+    .mb-3 {
+        margin-bottom: 12px !important;
+    }
+    
+    .mt-3 {
+        margin-top: 12px !important;
+    }
+    
+    .mt-4 {
+        margin-top: 20px !important;
+    }
+    
+    .gap-2 {
+        gap: 6px !important;
+    }
+    
+    /* Progress bar styling */
+    .progress {
+        height: 6px;
+        border-radius: 3px;
+    }
+    
+    /* List group styling */
+    .list-group-item {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
         .dashboard {
-            margin-left: 200px;
-            background: #fcf2fa;        /* ← PINK BACKGROUND */
-            padding: 85px 45px 40px;
-            min-height: 100vh;
+            margin-left: 0;
+            padding: 20px 15px;
         }
         
-        /* Main content area matching reporting page */
-        .reports-content {
-            width: 100%;
-            padding: 0;
-            margin: 0;
-        }
-        
-        /* Header styling - EXACT MATCH with reporting page */
-        .reports-header {
-            background: #fcf2fa;
-            padding-bottom: 16px;
-            margin-bottom: 0;
-        }
-
-        .reports-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: var(--text-main);
-            letter-spacing: -0.4px;
-        }
-
-        .reports-subtitle {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 20px;
-        }
-        
-        /* Card wrapper styles - matching reporting page */
-        .config-card {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid var(--border-soft);
-            overflow: hidden;
-            margin-bottom: 32px;
+        .templates-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
         }
         
         .card-header-custom {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-soft);
-            background: #fafafa;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .card-header-custom h3 {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0;
-            color: var(--text-main);
-        }
-        
-        .card-body-custom {
-            padding: 24px;
-        }
-        
-        /* Button styling - matching reporting page */
-        .btn-primary-custom {
-            background: #e83e8c;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 18px;
-            font-size: 14px;
-            font-weight: 500;
-            color: white;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .btn-primary-custom:hover {
-            background: var(--primary-dark);
-            color: white;
-        }
-        
-        /* Templates Grid - preserved but with refined styling */
-        .templates-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .template-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-            border-radius: 20px;
-            border: 1px solid var(--border-soft);
-            position: relative;
-        }
-        
-        .template-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(75, 21, 53, 0.08);
-        }
-        
-        .active-template {
-            border-left: 4px solid #28a745;
-            background-color: #f8fff8;
-        }
-        
-        .draft-template {
-            border-left: 4px solid #ffc107;
-            background-color: #fffbf0;
-        }
-        
-        .previous-template {
-            border-left: 4px solid #6c757d;
-            background-color: #f8f9fa;
-        }
-        
-        .status-badge {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-        }
-        
-        .weight-badge {
-            font-size: 0.9em;
-            padding: 5px 10px;
-            border-radius: 20px;
-            display: inline-block;
-        }
-        
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 16px;
-        }
-        
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 14px;
-            border-radius: 20px;
-        }
-        
-        .info-message {
-            margin-top: 12px;
-            padding-top: 8px;
-            border-top: 1px solid var(--border-soft);
-            font-size: 14px;
-        }
-        
-        .alert {
-            border-radius: 12px;
-            margin-bottom: 20px;
-            padding: 12px 20px;
-        }
-        
-        .card-title {
-            font-weight: 600;
-            font-size: 18px;
-            color: var(--text-main);
-            margin-bottom: 8px;
-        }
-        
-        .card-subtitle {
-            font-size: 14px;
-        }
-        
-        /* Employee table styling */
-        .employee-table th, .employee-table td {
-            vertical-align: middle;
+            flex-direction: column;
+            align-items: flex-start;
             padding: 12px 16px;
         }
         
-        .department-hint {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 5px;
+        .card-body-custom {
+            padding: 16px;
         }
         
-        .department-hint i {
-            margin-right: 4px;
+        .reports-header h1 {
+            font-size: 20px;
+        }
+    }
+    
+    /* Print styles */
+    @media print {
+        .no-print {
+            display: none !important;
         }
         
-        /* Modal styling */
-        .modal-content {
-            border-radius: 16px;
+        .config-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin-bottom: 15px;
         }
         
-        .modal-header {
-            border-bottom: 1px solid var(--border-soft);
-            background: #fafafa;
+        .card-header-custom {
+            padding: 10px 15px;
         }
         
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .dashboard {
-                margin-left: 0;
-                padding: 20px 15px;
-            }
-            
-            .templates-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .card-header-custom {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        .card-body-custom {
+            padding: 15px;
         }
-    </style>
+    }
+</style>
 </head>
 <body>
     <div class="dashboard">
@@ -404,16 +550,16 @@ while ($row = $depts_result->fetch_assoc()) {
             </div>
             
             <!-- Success/Error Messages -->
-            <?php if ($success_message): ?>
+            <?php if ($template_success): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle"></i> <?php echo $success_message; ?>
+                    <i class="fas fa-check-circle"></i> <?php echo $template_success; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
             
-            <?php if ($error_message): ?>
+            <?php if ($template_error): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i> <?php echo $error_message; ?>
+                    <i class="fas fa-exclamation-triangle"></i> <?php echo $template_error; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
@@ -537,7 +683,20 @@ while ($row = $depts_result->fetch_assoc()) {
                     </div>
                 </div>
             </div>
-
+            <!-- Success/Error Messages -->
+            <?php if ($employee_success): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> <?php echo $employee_success; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($employee_error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> <?php echo $employee_error; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
             <!-- ==================== SECTION 2: EMPLOYEE MANAGEMENT ==================== -->
             <div class="config-card">
                 <div class="card-header-custom">
@@ -723,7 +882,6 @@ while ($row = $depts_result->fetch_assoc()) {
                         <input type="hidden" name="employee_action" value="delete">
                         <input type="hidden" name="employee_id" id="delete_employee_id">
                         <p>Are you sure you want to remove <strong id="delete_employee_name"></strong>?</p>
-                        <p class="text-danger small">This action cannot be undone. Employees with existing KPI records cannot be deleted.</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

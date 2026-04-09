@@ -1286,6 +1286,50 @@ $currentTrendBadgeClass =
     border: 1px solid #bbf7d0;
     box-shadow: 0 6px 18px rgba(34, 197, 94, 0.12);
 }
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    position: relative;
+    overflow-y: auto;
+}
+
+.chart-interpretation {
+    margin-top: 14px;
+    background: linear-gradient(180deg, #f6f8ff 0%, #fdfcff 100%);
+    border: 1px solid #dfe4ff;
+    border-radius: 16px;
+    padding: 14px 16px;
+    color: #4b3a4c;
+    line-height: 1.6;
+    font-size: 0.92rem;
+}
+
+.chart-interpretation strong {
+    color: #231942;
+}
+
+.chart-interpretation ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+.chart-interpretation li + li {
+    margin-top: 6px;
+}
 </style>
 </head>
 <body>
@@ -1375,8 +1419,8 @@ $currentTrendBadgeClass =
 
         <!-- ROW 2 RIGHT: buttons -->
         <div class="profile-hero-action">
-            <button class="profile-action-btn action-kpi">
-                <i class="ph ph-note-pencil"></i> Edit KPI
+            <button class="profile-action-btn action-kpi" onclick="openAddKPIModal(<?= $staff['id'] ?>, '<?= htmlspecialchars($staff['full_name'], ENT_QUOTES) ?>')">
+                Edit KPI
             </button>
 
             <button class="profile-action-btn action-report">
@@ -1533,31 +1577,113 @@ $currentTrendBadgeClass =
             <article class="profile-panel">
                 <h2>Performance Trend</h2>
                 <div id="staffTrendChart" style="height:320px;"></div>
+
                 <?php if (!$hasTrendData): ?>
                     <p class="empty-chart-note">No KPI trend data available for this staff.</p>
+                <?php else: ?>
+                    <div class="chart-interpretation">
+                        <strong>Interpretation:</strong>
+                        The latest KPI performance is <strong><?= number_format((float)$latest['percentage'], 2) ?>%</strong>,
+                        which is classified as <strong><?= htmlspecialchars($performanceLevel) ?></strong>.
+                        The recent performance pattern is <strong><?= htmlspecialchars($trendLabel) ?></strong>
+                        with a stability score of <strong><?= (int)$stabilityScore ?>%</strong>.
+                        <?php if ($trendLabel === 'Improving'): ?>
+                            This suggests the staff member has shown positive movement in recent evaluation periods.
+                        <?php elseif ($trendLabel === 'Declining'): ?>
+                            This suggests the staff member’s KPI performance has weakened in recent periods and should be monitored closely.
+                        <?php else: ?>
+                            This suggests the staff member’s KPI performance has remained relatively consistent across recent periods.
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
             </article>
 
             <article class="profile-panel">
                 <h2>Performance Radar</h2>
                 <div id="staffRadarChart" style="height:320px;"></div>
+
                 <?php if (!$hasCategoryData): ?>
                     <p class="empty-chart-note">No KPI category data available for this staff.</p>
+                <?php else: ?>
+                    <div class="chart-interpretation">
+                        <strong>Interpretation:</strong>
+                        The radar chart shows how the staff member performs across KPI categories in the latest evaluation period.
+                        <?php if (!empty($strengths) && !empty($improvements)): ?>
+                            The strongest area is <strong><?= htmlspecialchars($strengths[0]['category']) ?></strong>
+                            at <strong><?= number_format((float)$strengths[0]['percentage'], 2) ?>%</strong>,
+                            while the weakest area is <strong><?= htmlspecialchars($improvements[0]['category']) ?></strong>
+                            at <strong><?= number_format((float)$improvements[0]['percentage'], 2) ?>%</strong>.
+                            This indicates that performance is stronger in selected KPI categories but still uneven across the full KPI profile.
+                        <?php else: ?>
+                            This chart helps identify which KPI categories are relatively stronger and which require more improvement.
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
             </article>
         </section>
 
         <section class="profile-chart-row">
             <article class="profile-panel">
-                <h2>Core Competencies</h2>
-                <div class="core-chart-shell">
-                    <div id="coreCompetencyChart" style="height:470px;"></div>
-                </div>
+            <h2>Core Competencies</h2>
+            <div class="core-chart-shell">
+                <div id="coreCompetencyChart" style="height:470px;"></div>
+            </div>
 
-                <?php if (empty($coreCompetencies)): ?>
-                    <p class="empty-chart-note">No core competency data available for this staff.</p>
-                <?php endif; ?>
-            </article>
+            <?php if (empty($coreCompetencies)): ?>
+                <p class="empty-chart-note">No core competency data available for this staff.</p>
+            <?php else: ?>
+                
+            <?php
+                $bestCores = [];
+                $weakCores = [];
+
+                if (!empty($coreCompetencies)) {
+                    $percentages = array_column($coreCompetencies, 'percentage');
+                    $maxCorePercent = max($percentages);
+                    $minCorePercent = min($percentages);
+
+                    $bestCores = array_values(array_filter($coreCompetencies, function ($item) use ($maxCorePercent) {
+                        return (float)$item['percentage'] === (float)$maxCorePercent;
+                    }));
+
+                    $weakCores = array_values(array_filter($coreCompetencies, function ($item) use ($minCorePercent) {
+                        return (float)$item['percentage'] === (float)$minCorePercent;
+                    }));
+                }
+
+                $bestCoreNames = array_map(fn($item) => $item['label'], $bestCores);
+                $weakCoreNames = array_map(fn($item) => $item['label'], $weakCores);
+
+                $bestCoreText = implode(', ', $bestCoreNames);
+                $weakCoreText = implode(', ', $weakCoreNames);
+            ?>
+                            
+                <div class="chart-interpretation">
+                    <strong>Interpretation:</strong>
+                    This chart highlights the staff member’s latest core competency performance.
+                    
+                    <?php if (!empty($bestCores) && !empty($weakCores)): ?>
+                        <?php if ((float)$maxCorePercent === (float)$minCorePercent): ?>
+                            All core competencies are currently at the same level, with
+                            <strong><?= htmlspecialchars($bestCoreText) ?></strong>
+                            each scoring <strong><?= number_format((float)$maxCorePercent, 2) ?>%</strong>.
+                            This suggests the staff member’s competency profile is balanced, with no single area standing out as significantly stronger or weaker.
+                        <?php else: ?>
+                            The strongest core competenc<?= count($bestCores) > 1 ? 'ies are' : 'y is' ?>
+                            <strong><?= htmlspecialchars($bestCoreText) ?></strong>
+                            at <strong><?= number_format((float)$maxCorePercent, 2) ?>%</strong>,
+                            while the weakest core competenc<?= count($weakCores) > 1 ? 'ies are' : 'y is' ?>
+                            <strong><?= htmlspecialchars($weakCoreText) ?></strong>
+                            at <strong><?= number_format((float)$minCorePercent, 2) ?>%</strong>.
+                            This suggests that supervisory support should focus more on the lowest-scoring competenc<?= count($weakCores) > 1 ? 'ies' : 'y' ?>
+                            while maintaining the stronger area<?= count($bestCores) > 1 ? 's' : '' ?>.
+                        <?php endif; ?>
+                    <?php else: ?>
+                        This chart helps compare the staff member’s capability across the core competency dimensions.
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </article>
 
             <section class="profile-panel">
                 <h2>Detailed KPI Breakdown</h2>
@@ -1646,6 +1772,15 @@ $currentTrendBadgeClass =
 
     </section>
 </main>
+
+<div id="addKPIModal" class="modal">
+    <div class="modal-content"
+         style="max-width:900px; width:95%; max-height:92vh; padding:0; border-radius:20px;">
+        <div id="modalContentTarget">
+            Loading...
+        </div>
+    </div>
+</div>
 
 <script>
 const editBtn = document.getElementById('editProfileBtn');
@@ -1823,5 +1958,8 @@ if (categoryLabels.length > 0 && categoryValues.length > 0) {
         });
     });
 </script>
+
+<script src="staff.js"></script>
+
 </body>
 </html>
