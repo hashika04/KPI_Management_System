@@ -375,8 +375,7 @@ require_once __DIR__ . '/../includes/auth.php';
         </section>
     </main>
 
-    <!-- Modal moved outside main for proper positioning -->
-    <div class="risk-modal" id="detailsModal">
+            <div class="risk-modal" id="detailsModal">
         <div class="risk-modal-box">
             <div class="risk-modal-head">
                 <h3 id="detailsModalTitle"></h3>
@@ -384,8 +383,7 @@ require_once __DIR__ . '/../includes/auth.php';
             </div>
             <div class="risk-modal-body" id="detailsModalBody"></div>
         </div>
-    </div>
-
+        </div>
     <script>
     const state = {
         year: '',
@@ -1197,204 +1195,52 @@ require_once __DIR__ . '/../includes/auth.php';
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
     }
-<<<<<<< HEAD
-    function openDetailsModal(title, html, triggerElement) {
-        const modal = document.getElementById('detailsModal');
-        const titleEl = document.getElementById('detailsModalTitle');
-        const bodyEl = document.getElementById('detailsModalBody');
-=======
-
-function openDetailsModal(title, html) {
+function openDetailsModal(title, html, triggerElement) {
     const modal = document.getElementById('detailsModal');
     const titleEl = document.getElementById('detailsModalTitle');
     const bodyEl = document.getElementById('detailsModalBody');
->>>>>>> 76789b130da070a856d864c6bd7be9c2bc6020a7
 
-        if (!modal || !titleEl || !bodyEl) return;
+    if (!modal || !titleEl || !bodyEl) return;
 
-<<<<<<< HEAD
-        titleEl.textContent = title;
-        bodyEl.innerHTML = html;
-        
-        // Position modal near the clicked button
-        if (triggerElement) {
-            const rect = triggerElement.getBoundingClientRect();
-            const modalWidth = 500; // Max width of modal
-            const modalHeight = 400; // Approximate height
-            
-            let top = rect.bottom + window.scrollY + 8;
-            let left = rect.left + window.scrollX;
-            
-            // Adjust if modal would go off-screen
-            if (left + modalWidth > window.innerWidth) {
-                left = window.innerWidth - modalWidth - 20;
-            }
-            if (left < 20) {
-                left = 20;
-            }
-            
-            // If not enough space below, show above
-            if (top + modalHeight > window.innerHeight + window.scrollY) {
-                top = rect.top + window.scrollY - modalHeight - 8;
-            }
-            
-            modal.style.position = 'absolute';
-            modal.style.top = top + 'px';
-            modal.style.left = left + 'px';
-            modal.style.right = 'auto';
-            modal.style.bottom = 'auto';
-        } else {
-            // Fallback to center
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-        }
-        
-        modal.classList.add('show');
-    }
-
-    function closeDetailsModal() {
-        const modal = document.getElementById('detailsModal');
-        if (!modal) return;
-
-        modal.classList.remove('show');
-        modal.style.position = '';
-        modal.style.top = '';
-        modal.style.left = '';
-        modal.style.transform = '';
-    }
-
-    // Update event listeners to pass the trigger element
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('detailsModal');
-        const closeBtn = document.getElementById('detailsModalClose');
-        
-        if (modal) {
-            modal.classList.remove('show');
-        }
-        
-        if (closeBtn) {
-            // Remove existing listeners to avoid duplicates
-            const newCloseBtn = closeBtn.cloneNode(true);
-            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-            newCloseBtn.addEventListener('click', closeDetailsModal);
-        }
-        
-        if (modal) {
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) closeDetailsModal();
-            });
-        }
-        
-        // Update all detail buttons to pass the trigger element
-        const highRiskBtn = document.getElementById('highRiskDetailsBtn');
-        const moderateRiskBtn = document.getElementById('moderateRiskDetailsBtn');
-        const totalStaffBtn = document.getElementById('totalStaffBtn');
-        const avgKpiBtn = document.getElementById('avgKpiBtn');
-        const improvingBtn = document.getElementById('improvingBtn');
-        const departmentsCountBtn = document.getElementById('departmentsCountBtn');
-        const topPerformersCountBtn = document.getElementById('topPerformersCountBtn');
-        const atRiskCountBtn = document.getElementById('atRiskCountBtn');
-        
-        if (highRiskBtn) {
-            const newBtn = highRiskBtn.cloneNode(true);
-            highRiskBtn.parentNode.replaceChild(newBtn, highRiskBtn);
-            newBtn.addEventListener('click', (event) => {
-                if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
-                    openDetailsModal('High Risk Alert Details', '<p>No high-risk department under the current filters.</p>', newBtn);
-                    return;
-                }
-                const dept = latestDashboardData.high_risk_departments[0];
-                openDetailsModal('High Risk Alert Details', buildDepartmentDetailsHtml(dept.department), newBtn);
-            });
-        }
-        
-        if (moderateRiskBtn) {
-            const newBtn = moderateRiskBtn.cloneNode(true);
-            moderateRiskBtn.parentNode.replaceChild(newBtn, moderateRiskBtn);
-            newBtn.addEventListener('click', (event) => {
-                if (!latestDashboardData || !latestDashboardData.moderate_risk_departments || latestDashboardData.moderate_risk_departments.length === 0) {
-                    openDetailsModal('Moderate Risk Alert Details', '<p>No moderate-risk department under the current filters.</p>', newBtn);
-                    return;
-                }
-                const dept = latestDashboardData.moderate_risk_departments[0];
-                openDetailsModal('Moderate Risk Alert Details', buildDepartmentDetailsHtml(dept.department), newBtn);
-            });
-        }
-        
-        if (totalStaffBtn) {
-            const newBtn = totalStaffBtn.cloneNode(true);
-            totalStaffBtn.parentNode.replaceChild(newBtn, totalStaffBtn);
-            newBtn.addEventListener('click', () => openDetailsModal('Total Staff Details', buildTotalStaffHtml(), newBtn));
-        }
-        
-        if (avgKpiBtn) {
-            const newBtn = avgKpiBtn.cloneNode(true);
-            avgKpiBtn.parentNode.replaceChild(newBtn, avgKpiBtn);
-            newBtn.addEventListener('click', () => openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml(), newBtn));
-        }
-        
-        if (improvingBtn) {
-            const newBtn = improvingBtn.cloneNode(true);
-            improvingBtn.parentNode.replaceChild(newBtn, improvingBtn);
-            newBtn.addEventListener('click', () => openDetailsModal('Improving Performance Details', buildImprovingStaffHtml(), newBtn));
-        }
-        
-        if (departmentsCountBtn) {
-            const newBtn = departmentsCountBtn.cloneNode(true);
-            departmentsCountBtn.parentNode.replaceChild(newBtn, departmentsCountBtn);
-            newBtn.addEventListener('click', () => openDetailsModal('Departments Monitored', buildDepartmentsMonitoredHtml(), newBtn));
-        }
-        
-        if (topPerformersCountBtn) {
-            const newBtn = topPerformersCountBtn.cloneNode(true);
-            topPerformersCountBtn.parentNode.replaceChild(newBtn, topPerformersCountBtn);
-            newBtn.addEventListener('click', () => openDetailsModal('Top Performers Details', buildTopPerformersHtml(), newBtn));
-        }
-        
-        if (atRiskCountBtn) {
-            const newBtn = atRiskCountBtn.cloneNode(true);
-            atRiskCountBtn.parentNode.replaceChild(newBtn, atRiskCountBtn);
-            newBtn.addEventListener('click', () => openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml(), newBtn));
-        }
-        
-        // Also handle chart click events
-        const riskChart = document.getElementById('riskHistogramChart');
-        if (riskChart) {
-            riskChart.removeAllListeners?.('plotly_click');
-            riskChart.on('plotly_click', function(eventData) {
-                if (!eventData || !eventData.points || !eventData.points.length) return;
-                const clickedBand = eventData.points[0].x;
-                openDetailsModal(`${clickedBand} Details`, buildRiskBandDetailsHtml(clickedBand), riskChart);
-            });
-        }
-        
-        const performanceChart = document.getElementById('performanceDistributionChart');
-        if (performanceChart) {
-            performanceChart.removeAllListeners?.('plotly_click');
-            performanceChart.on('plotly_click', function(eventData) {
-                const label = eventData.points?.[0]?.label;
-                if (!label) return;
-                openDetailsModal(`${label} Performance Details`, buildPerformanceSliceHtml(label), performanceChart);
-            });
-        }
-        
-        const trendChart = document.getElementById('trendDistributionChart');
-        if (trendChart) {
-            trendChart.removeAllListeners?.('plotly_click');
-            trendChart.on('plotly_click', function(eventData) {
-                const label = eventData.points?.[0]?.label;
-                if (!label) return;
-                openDetailsModal(`${label} Trend Details`, buildTrendSliceHtml(label), trendChart);
-            });
-        }
-    });
-=======
     titleEl.textContent = title;
     bodyEl.innerHTML = html;
+    
+    // Position modal near the clicked button
+    if (triggerElement) {
+        const rect = triggerElement.getBoundingClientRect();
+        const modalWidth = 500; // Max width of modal
+        const modalHeight = 400; // Approximate height
+        
+        let top = rect.bottom + window.scrollY + 8;
+        let left = rect.left + window.scrollX;
+        
+        // Adjust if modal would go off-screen
+        if (left + modalWidth > window.innerWidth) {
+            left = window.innerWidth - modalWidth - 20;
+        }
+        if (left < 20) {
+            left = 20;
+        }
+        
+        // If not enough space below, show above
+        if (top + modalHeight > window.innerHeight + window.scrollY) {
+            top = rect.top + window.scrollY - modalHeight - 8;
+        }
+        
+        modal.style.position = 'absolute';
+        modal.style.top = top + 'px';
+        modal.style.left = left + 'px';
+        modal.style.right = 'auto';
+        modal.style.bottom = 'auto';
+    } else {
+        // Fallback to center
+        modal.style.position = 'fixed';
+        modal.style.top = '50%';
+        modal.style.left = '50%';
+        modal.style.transform = 'translate(-50%, -50%)';
+    }
+    
     modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
 }
 
 function closeDetailsModal() {
@@ -1402,10 +1248,137 @@ function closeDetailsModal() {
     if (!modal) return;
 
     modal.classList.remove('show');
-    document.body.style.overflow = '';
+    modal.style.position = '';
+    modal.style.top = '';
+    modal.style.left = '';
+    modal.style.transform = '';
 }
 
->>>>>>> 76789b130da070a856d864c6bd7be9c2bc6020a7
+// Update event listeners to pass the trigger element
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('detailsModal');
+    const closeBtn = document.getElementById('detailsModalClose');
+    
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    
+    if (closeBtn) {
+        // Remove existing listeners to avoid duplicates
+        const newCloseBtn = closeBtn.cloneNode(true);
+        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+        newCloseBtn.addEventListener('click', closeDetailsModal);
+    }
+    
+    if (modal) {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) closeDetailsModal();
+        });
+    }
+    
+    // Update all detail buttons to pass the trigger element
+    const highRiskBtn = document.getElementById('highRiskDetailsBtn');
+    const moderateRiskBtn = document.getElementById('moderateRiskDetailsBtn');
+    const totalStaffBtn = document.getElementById('totalStaffBtn');
+    const avgKpiBtn = document.getElementById('avgKpiBtn');
+    const improvingBtn = document.getElementById('improvingBtn');
+    const departmentsCountBtn = document.getElementById('departmentsCountBtn');
+    const topPerformersCountBtn = document.getElementById('topPerformersCountBtn');
+    const atRiskCountBtn = document.getElementById('atRiskCountBtn');
+    
+    if (highRiskBtn) {
+        const newBtn = highRiskBtn.cloneNode(true);
+        highRiskBtn.parentNode.replaceChild(newBtn, highRiskBtn);
+        newBtn.addEventListener('click', (event) => {
+            if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
+                openDetailsModal('High Risk Alert Details', '<p>No high-risk department under the current filters.</p>', newBtn);
+                return;
+            }
+            const dept = latestDashboardData.high_risk_departments[0];
+            openDetailsModal('High Risk Alert Details', buildDepartmentDetailsHtml(dept.department), newBtn);
+        });
+    }
+    
+    if (moderateRiskBtn) {
+        const newBtn = moderateRiskBtn.cloneNode(true);
+        moderateRiskBtn.parentNode.replaceChild(newBtn, moderateRiskBtn);
+        newBtn.addEventListener('click', (event) => {
+            if (!latestDashboardData || !latestDashboardData.moderate_risk_departments || latestDashboardData.moderate_risk_departments.length === 0) {
+                openDetailsModal('Moderate Risk Alert Details', '<p>No moderate-risk department under the current filters.</p>', newBtn);
+                return;
+            }
+            const dept = latestDashboardData.moderate_risk_departments[0];
+            openDetailsModal('Moderate Risk Alert Details', buildDepartmentDetailsHtml(dept.department), newBtn);
+        });
+    }
+    
+    if (totalStaffBtn) {
+        const newBtn = totalStaffBtn.cloneNode(true);
+        totalStaffBtn.parentNode.replaceChild(newBtn, totalStaffBtn);
+        newBtn.addEventListener('click', () => openDetailsModal('Total Staff Details', buildTotalStaffHtml(), newBtn));
+    }
+    
+    if (avgKpiBtn) {
+        const newBtn = avgKpiBtn.cloneNode(true);
+        avgKpiBtn.parentNode.replaceChild(newBtn, avgKpiBtn);
+        newBtn.addEventListener('click', () => openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml(), newBtn));
+    }
+    
+    if (improvingBtn) {
+        const newBtn = improvingBtn.cloneNode(true);
+        improvingBtn.parentNode.replaceChild(newBtn, improvingBtn);
+        newBtn.addEventListener('click', () => openDetailsModal('Improving Performance Details', buildImprovingStaffHtml(), newBtn));
+    }
+    
+    if (departmentsCountBtn) {
+        const newBtn = departmentsCountBtn.cloneNode(true);
+        departmentsCountBtn.parentNode.replaceChild(newBtn, departmentsCountBtn);
+        newBtn.addEventListener('click', () => openDetailsModal('Departments Monitored', buildDepartmentsMonitoredHtml(), newBtn));
+    }
+    
+    if (topPerformersCountBtn) {
+        const newBtn = topPerformersCountBtn.cloneNode(true);
+        topPerformersCountBtn.parentNode.replaceChild(newBtn, topPerformersCountBtn);
+        newBtn.addEventListener('click', () => openDetailsModal('Top Performers Details', buildTopPerformersHtml(), newBtn));
+    }
+    
+    if (atRiskCountBtn) {
+        const newBtn = atRiskCountBtn.cloneNode(true);
+        atRiskCountBtn.parentNode.replaceChild(newBtn, atRiskCountBtn);
+        newBtn.addEventListener('click', () => openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml(), newBtn));
+    }
+    
+    // Also handle chart click events
+    const riskChart = document.getElementById('riskHistogramChart');
+    if (riskChart) {
+        riskChart.removeAllListeners?.('plotly_click');
+        riskChart.on('plotly_click', function(eventData) {
+            if (!eventData || !eventData.points || !eventData.points.length) return;
+            const clickedBand = eventData.points[0].x;
+            openDetailsModal(`${clickedBand} Details`, buildRiskBandDetailsHtml(clickedBand), riskChart);
+        });
+    }
+    
+    const performanceChart = document.getElementById('performanceDistributionChart');
+    if (performanceChart) {
+        performanceChart.removeAllListeners?.('plotly_click');
+        performanceChart.on('plotly_click', function(eventData) {
+            const label = eventData.points?.[0]?.label;
+            if (!label) return;
+            openDetailsModal(`${label} Performance Details`, buildPerformanceSliceHtml(label), performanceChart);
+        });
+    }
+    
+    const trendChart = document.getElementById('trendDistributionChart');
+    if (trendChart) {
+        trendChart.removeAllListeners?.('plotly_click');
+        trendChart.on('plotly_click', function(eventData) {
+            const label = eventData.points?.[0]?.label;
+            if (!label) return;
+            openDetailsModal(`${label} Trend Details`, buildTrendSliceHtml(label), trendChart);
+        });
+    }
+});
     function buildDepartmentDetailsHtml(departmentName) {
         if (!latestDashboardData) return '<p>No data available.</p>';
 
@@ -1836,97 +1809,64 @@ function closeDetailsModal() {
     }
 
     function attachEvents() {
-        // Main filter events
-        document.getElementById('yearFilter').addEventListener('change', (event) => {
-            state.year = event.target.value;
-            loadDashboard();
-        });
-
-        document.getElementById('departmentFilter').addEventListener('change', (event) => {
-            state.department = event.target.value;
-            loadDashboard();
-        });
-
-        document.getElementById('periodFilter').addEventListener('change', (event) => {
-            state.period = event.target.value;
-            loadDashboard();
-        });
-
-        document.getElementById('resetTopFilters').addEventListener('click', () => {
-            state.year = '';
-            state.department = 'All Departments';
-            state.period = 'Monthly';
-            
-            document.getElementById('yearFilter').value = '';
-            document.getElementById('departmentFilter').value = 'All Departments';
-            document.getElementById('periodFilter').value = 'Monthly';
-            
-            loadDashboard();
-        });
-
-        // Comparison filter events
         document.getElementById('compareDepartmentFilter').addEventListener('change', event => {
-            state.compareDepartment = event.target.value;
-            if (latestDashboardData) {
-                populateStaffDropdown(latestDashboardData);
-            }
+        state.compareDepartment = event.target.value;
+        if (latestDashboardData) {
+            populateStaffDropdown(latestDashboardData);
+        }
+    });
+
+    document.getElementById('performanceFilter').addEventListener('change', event => {
+        state.performance = event.target.value;
+        if (latestDashboardData) {
+            populateStaffDropdown(latestDashboardData);
+        }
+    });
+
+    document.getElementById('staff1Select').addEventListener('change', event => {
+        const selected = event.target.selectedOptions[0];
+        state.staff1 = selected ? selected.value : '';
+        state.staff1Name = selected ? selected.dataset.name || '' : '';
+        document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
+    });
+
+    document.getElementById('staff2Select').addEventListener('change', event => {
+        const selected = event.target.selectedOptions[0];
+        state.staff2 = selected ? selected.value : '';
+        state.staff2Name = selected ? selected.dataset.name || '' : '';
+        document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
+    });
+
+    document.getElementById('resetCompareFilters').addEventListener('click', () => {
+        state.compareDepartment = 'All Departments';
+        state.performance = 'All Performance';
+        state.staff1 = '';
+        state.staff2 = '';
+        state.staff1Name = '';
+        state.staff2Name = '';
+
+        document.getElementById('compareDepartmentFilter').value = 'All Departments';
+        document.getElementById('performanceFilter').value = 'All Performance';
+
+        if (latestDashboardData) {
+            populateStaffDropdown(latestDashboardData);
+        }
+    });
+
+    document.getElementById('compareBtn').addEventListener('click', () => {
+        if (!state.staff1 || !state.staff2 || state.staff1 === state.staff2) return;
+
+        const params = new URLSearchParams({
+            staff1: state.staff1,
+            staff2: state.staff2
         });
 
-        document.getElementById('performanceFilter').addEventListener('change', event => {
-            state.performance = event.target.value;
-            if (latestDashboardData) {
-                populateStaffDropdown(latestDashboardData);
-            }
-        });
-
-        document.getElementById('staff1Select').addEventListener('change', event => {
-            const selected = event.target.selectedOptions[0];
-            state.staff1 = selected ? selected.value : '';
-            state.staff1Name = selected ? selected.dataset.name || '' : '';
-            document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
-        });
-
-        document.getElementById('staff2Select').addEventListener('change', event => {
-            const selected = event.target.selectedOptions[0];
-            state.staff2 = selected ? selected.value : '';
-            state.staff2Name = selected ? selected.dataset.name || '' : '';
-            document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
-        });
-
-        document.getElementById('resetCompareFilters').addEventListener('click', () => {
-            state.compareDepartment = 'All Departments';
-            state.performance = 'All Performance';
-            state.staff1 = '';
-            state.staff2 = '';
-            state.staff1Name = '';
-            state.staff2Name = '';
-
-            document.getElementById('compareDepartmentFilter').value = 'All Departments';
-            document.getElementById('performanceFilter').value = 'All Performance';
-
-            if (latestDashboardData) {
-                populateStaffDropdown(latestDashboardData);
-            }
-        });
-
-        document.getElementById('compareBtn').addEventListener('click', () => {
-            if (!state.staff1 || !state.staff2 || state.staff1 === state.staff2) return;
-
-            const params = new URLSearchParams({
-                staff1: state.staff1,
-                staff2: state.staff2
-            });
-
-            window.location.href = './staff_comparison_patched.php?' + params.toString();
-        });
-
-        // Modal events
+        window.location.href = './staff_comparison_patched.php?' + params.toString();
+    });
         document.getElementById('detailsModalClose').addEventListener('click', closeDetailsModal);
         document.getElementById('detailsModal').addEventListener('click', (event) => {
             if (event.target.id === 'detailsModal') closeDetailsModal();
         });
-
-        // Card detail buttons
         document.getElementById('highRiskDetailsBtn').addEventListener('click', () => {
             if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
                 openDetailsModal('High Risk Alert Details', '<p>No high-risk department under the current filters.</p>');
@@ -1935,7 +1875,6 @@ function closeDetailsModal() {
             const dept = latestDashboardData.high_risk_departments[0];
             openDetailsModal('High Risk Alert Details', buildDepartmentDetailsHtml(dept.department));
         });
-
         document.getElementById('moderateRiskDetailsBtn').addEventListener('click', () => {
             if (!latestDashboardData || !latestDashboardData.moderate_risk_departments || latestDashboardData.moderate_risk_departments.length === 0) {
                 openDetailsModal('Moderate Risk Alert Details', '<p>No moderate-risk department under the current filters.</p>');
@@ -1944,7 +1883,6 @@ function closeDetailsModal() {
             const dept = latestDashboardData.moderate_risk_departments[0];
             openDetailsModal('Moderate Risk Alert Details', buildDepartmentDetailsHtml(dept.department));
         });
-
         document.getElementById('totalStaffBtn').addEventListener('click', () => openDetailsModal('Total Staff Details', buildTotalStaffHtml()));
         document.getElementById('avgKpiBtn').addEventListener('click', () => openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml()));
         document.getElementById('improvingBtn').addEventListener('click', () => openDetailsModal('Improving Performance Details', buildImprovingStaffHtml()));
@@ -1953,13 +1891,10 @@ function closeDetailsModal() {
         document.getElementById('atRiskCountBtn').addEventListener('click', () => openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml()));
     }
 
-    // Initialize everything when DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
-        attachEvents();
-        loadDashboard().catch(error => {
-            console.error(error);
-            document.getElementById('performanceTrendInsight').textContent = 'Unable to load analytics data. Check analytics_data_patched.php and your database connection.';
-        });
+    attachEvents();
+    loadDashboard().catch(error => {
+        console.error(error);
+        document.getElementById('performanceTrendInsight').textContent = 'Unable to load analytics data. Check analytics_data_patched.php and your database connection.';
     });
 
     </script>
