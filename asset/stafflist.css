@@ -1,119 +1,141 @@
 /* ── 1. LAYOUT & SCROLL CONTROL ── */
-/* These replace the missing logic from dashboard.css */
 .dashboard {
-    height: 100vh;
-    margin-left: 220px; /* Sidebar width */
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* Prevents double scrollbars */
-    background: #fcf2fa; /* Your theme's pinkish background */
+    min-height: 100vh; /* Changed from height: 100vh */
+    margin-left: 200px; /* Match new sidebar width */
+    background: #fcf2fa;
+    padding: 76px 20px 40px; /* Match overview page padding exactly */
 }
 
 /* Container for the staff content area */
 .staff-masterlist-content {
     display: flex;
     flex-direction: column;
-    height: 100%;
     width: 100%;
-    padding: 0 28px; /* Standard dashboard padding */
+    /* Removed padding - now handled by .dashboard */
 }
 
 /* ── 2. STATIC HEADER & FILTERS ── */
 .staff-masterlist-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: #fcf2fa; /* Solid color to hide cards scrolling behind */
-    padding-top: 84px; /* Topbar offset */
-    padding-bottom: 20px;
-    border-bottom: 1.5px solid var(--border-soft);
+    position: relative; /* Changed from sticky */
+    background: #fcf2fa;
+    padding-bottom: 16px;
+    margin-bottom: 0;
+    /* Removed padding-top - now handled by .dashboard */
 }
 
 .staff-masterlist-header h1 {
-    font-size: 32px;
-    font-weight: 800;
-    margin-bottom: 12px;
+    font-size: 26px;
+    font-weight: 700; /* Match overview */
+    margin-bottom: 4px; /* Match overview */
     color: var(--text-main);
+    letter-spacing: -0.4px; /* Match overview */
 }
 
 .subtitle {
-    font-size: 14px;
+    font-size: 12px;
     color: var(--text-muted);
-    margin-bottom: 20px;
+    font-weight: 400; /* Match overview */
+    margin-bottom: 20px; /* Keep some space before filters */
 }
 
 /* ── 3. TOOLBAR (FILTERS) ── */
 .staff-toolbar {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
+    margin-bottom: 0;
 }
 
 .staff-toolbar input,
 .staff-toolbar select {
-    background: #ffffff;
+    background: var(--surface-soft); /* Match overview filter style */
     border: 1.5px solid var(--border-soft);
-    border-radius: 14px;
-    padding: 12px 16px;
-    font-size: 14px;
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 12px;
     color: var(--text-main);
     outline: none;
-    min-width: 110px;
+    min-width: 100px;
     font-family: 'Sora', sans-serif;
+    transition: border-color 0.18s, box-shadow 0.18s;
 }
 
 .staff-toolbar input:focus,
 .staff-toolbar select:focus {
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(232,48,140,0.10);
+    background: var(--bg-card);
 }
 
 /* ── 4. SCROLLABLE GRID ── */
 .staff-list-scroll {
     flex: 1;
-    overflow-y: auto; /* This makes the grid scroll while header stays still */
-    padding: 30px 0 100px; /* Bottom padding so last card isn't cut off */
+    overflow-y: auto;
+    margin-top: 20px; /* Add space after filters */
+    padding-bottom: 20px;
     scrollbar-width: thin;
     scrollbar-color: var(--primary) transparent;
 }
 
+/* Custom scrollbar */
+.staff-list-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.staff-list-scroll::-webkit-scrollbar-track {
+    background: var(--surface-soft);
+    border-radius: 10px;
+}
+
+.staff-list-scroll::-webkit-scrollbar-thumb {
+    background: var(--primary-light);
+    border-radius: 10px;
+}
+
+.staff-list-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
 .staff-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
 }
 
 /* ── 5. STAFF CARDS ── */
 .staff-card {
     background: #ffffff;
     border: 1.5px solid var(--border-soft);
-    border-radius: 24px;
-    padding: 24px;
-    box-shadow: 0 10px 30px rgba(200, 80, 140, 0.05);
-    transition: transform 0.2s ease;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .staff-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-soft);
 }
 
 .staff-header-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .staff-left {
     display: flex;
-    gap: 16px;
+    gap: 12px;
 }
 
 .staff-avatar {
-    width: 65px;
-    height: 65px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     overflow: hidden;
-    border: 3px solid var(--surface-soft);
+    border: 2px solid var(--surface-soft);
+    background: var(--surface-soft);
 }
 
 .staff-avatar img {
@@ -122,75 +144,123 @@
     object-fit: cover;
 }
 
+/* Avatar initials fallback */
+.avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    background: var(--primary-gradient);
+}
+
+.staff-info h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
 .staff-info h3 a {
     text-decoration: none;
     color: var(--text-main);
-    font-weight: 700;
+}
+
+.staff-info h3 a:hover {
+    color: var(--primary);
 }
 
 .staff-info p {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
 }
 
 .staff-kpi h2 {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
-    color: #22c55e;
+    color: #16a34a; /* Match overview green */
     text-align: right;
+    letter-spacing: -0.3px;
 }
 
 .edit-btn {
     background: var(--surface-soft);
-    border: none;
-    padding: 6px 12px;
+    border: 1.5px solid var(--border-soft);
+    padding: 5px 10px;
     border-radius: 8px;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 10px;
+    font-weight: 600;
     color: var(--primary);
     cursor: pointer;
-    margin-top: 5px;
+    margin-top: 4px;
+    transition: all 0.2s ease;
+    font-family: 'Sora', sans-serif;
+}
+
+.edit-btn:hover {
+    background: var(--surface-hover);
+    color: var(--primary-dark);
 }
 
 .staff-bottom {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    padding-top: 15px;
+    padding-top: 12px;
+    margin-top: 4px;
     border-top: 1px solid var(--border-soft);
 }
 
 .stars {
     color: #fbbf24;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 12px;
+    letter-spacing: 1px;
 }
 
 .trend {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .trend span {
     font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 4px; /* Space between icon and text */
+    gap: 3px;
 }
 
-/* Color Coding */
-.trend-up span { color: #22c55e; }      /* Green */
-.trend-down span { color: #ef4444; }    /* Red */
-.trend-stable span { color: #94a3b8; }  /* Slate Gray */
+/* Trend Color Coding */
+.trend-up span { color: #16a34a; }  /* Match overview green */
+.trend-down span { color: #dc2626; } /* Match overview red */
+.trend-stable span { color: #94a3b8; }
 
 .trend i {
-    font-size: 14px; /* Make the icon slightly larger than text */
+    font-size: 12px;
 }
 
-/* Modal */
+/* Level badge for staff cards (optional, if you add it) */
+.level-badge-sm {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.level-badge-sm.top { background: #dcfce7; color: #16a34a; }
+.level-badge-sm.good { background: #dbeafe; color: #2563eb; }
+.level-badge-sm.average { background: #fef9c3; color: #d97706; }
+.level-badge-sm.at-risk { background: #fff7ed; color: #ea580c; }
+.level-badge-sm.critical { background: #fff1f6; color: var(--primary); }
+
+/* ── MODAL (COMPACT) ── */
 .modal {
     display: none;
     position: fixed;
@@ -206,14 +276,15 @@
 
 .modal-content {
     background: var(--bg-card);
-    border-radius: 24px;
+    border-radius: 20px;
     width: 90%;
-    max-width: 500px;
+    max-width: 460px;
     animation: modalSlideIn 0.3s ease;
     height: auto;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
+    box-shadow: var(--shadow-card);
 }
 
 @keyframes modalSlideIn {
@@ -231,21 +302,23 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border-soft);
+    padding: 16px 20px;
+    border-bottom: 1.5px solid var(--border-soft);
 }
 
 .modal-header h3 {
-    font-size: 20px;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--primary);
 }
 
 .modal-close {
     background: none;
     border: none;
-    font-size: 28px;
+    font-size: 24px;
     cursor: pointer;
     color: var(--text-muted);
+    transition: color 0.2s ease;
 }
 
 .modal-close:hover {
@@ -254,78 +327,152 @@
 
 .form-group {
     margin-bottom: 12px;
-    padding: 0 24px;
+    padding: 0 20px;
 }
 
 .form-group label {
     display: block;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--primary);
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--border-soft);
-    border-radius: 12px;
-    font-size: 14px;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 10px;
+    font-size: 12px;
     background: var(--bg-card);
     color: var(--text-main);
+    font-family: 'Sora', sans-serif;
+    transition: border-color 0.18s, box-shadow 0.18s;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(232,48,140,0.10);
 }
 
 #addKPIForm {
-    padding-top: 15px;
+    padding-top: 12px;
     display: flex;
     flex-direction: column;
 }
 
 .modal-actions {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     justify-content: flex-end;
-    padding: 20px 24px;
-    border-top: 1px solid var(--border-soft);
+    padding: 16px 20px;
+    border-top: 1.5px solid var(--border-soft);
 }
 
 .btn-cancel {
-    padding: 10px 20px;
+    padding: 8px 16px;
     background: transparent;
-    border: 1px solid var(--border-soft);
-    border-radius: 12px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
+    font-weight: 600;
     color: var(--text-main);
+    font-family: 'Sora', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background: var(--surface-soft);
 }
 
 .btn-submit {
-    padding: 10px 24px;
-    background: var(--primary);
+    padding: 8px 20px;
+    background: var(--primary-gradient);
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
+    font-weight: 600;
     color: white;
+    font-family: 'Sora', sans-serif;
+    transition: opacity 0.2s ease;
 }
 
 .btn-submit:hover {
-    background: var(--primary-soft);
+    opacity: 0.9;
 }
 
-/* ── 6. RESPONSIVE ── */
+/* ── EMPTY STATE ── */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ── LOADING STATE ── */
+.loading-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.loading-state i {
+    font-size: 32px;
+    margin-bottom: 12px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ── 6. RESPONSIVE (UPDATED) ── */
 @media (max-width: 1200px) {
-    .dashboard { margin-left: 0; }
+    .dashboard { 
+        margin-left: 0; 
+        padding: 76px 20px 40px;
+    }
 }
 
 @media (max-width: 768px) {
-    .staff-grid { grid-template-columns: 1fr; }
-    .staff-masterlist-header { padding-top: 20px; }
+    .staff-grid { 
+        grid-template-columns: 1fr; 
+        gap: 14px;
+    }
+    .staff-toolbar input,
+    .staff-toolbar select {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard {
+        padding: 76px 12px 40px;
+    }
+    .staff-card {
+        padding: 14px;
+    }
+    .staff-avatar {
+        width: 44px;
+        height: 44px;
+    }
+    .staff-kpi h2 {
+        font-size: 18px;
+    }
 }

@@ -41,18 +41,18 @@ body {
 }
 
 /* ══════════════════════════════
-   TOP BAR
+   TOP BAR - COMPACT VERSION
 ══════════════════════════════ */
 .topbar {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 64px;
+  height: 56px; /* Reduced from 64px */
   background: #ffffff;
   border-bottom: 1.5px solid var(--border-soft);
   display: flex;
   align-items: center;
-  padding: 0 28px;
-  gap: 16px;
+  padding: 0 20px; /* Reduced from 28px */
+  gap: 12px; /* Reduced from 16px */
   z-index: 200;
   box-shadow: 0 2px 16px rgba(200,80,140,0.06);
 }
@@ -60,17 +60,17 @@ body {
 .topbar-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px; /* Reduced from 12px */
   flex: 1;
 }
 .topbar-brand .brand-name {
-  font-size: 16px;
+  font-size: 15px; /* Reduced from 16px */
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.3px;
 }
 .topbar-brand .brand-sub {
-  font-size: 11px;
+  font-size: 10px; /* Reduced from 11px */
   color: var(--text-muted);
   font-weight: 400;
 }
@@ -78,16 +78,16 @@ body {
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px; /* Reduced from 12px */
 }
 .topbar-user { text-align: right; }
 .topbar-user .user-email {
-  font-size: 13px;
+  font-size: 12px; /* Reduced from 13px */
   font-weight: 600;
   color: var(--text-main);
 }
 .topbar-user .user-role {
-  font-size: 11px;
+  font-size: 10px; /* Reduced from 11px */
   color: var(--text-muted);
   font-weight: 400;
 }
@@ -95,14 +95,14 @@ body {
 .topbar-logout {
   background: var(--surface-soft);
   border: 1.5px solid var(--border-soft);
-  width: 36px; height: 36px;
+  width: 32px; height: 32px; /* Reduced from 36px */
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 15px;
+  font-size: 14px; /* Reduced from 15px */
   transition: 0.2s;
   text-decoration: none;
 }
@@ -112,25 +112,24 @@ body {
 }
 
 /* ══════════════════════════════
-   LOGO
+   LOGO - COMPACT VERSION
 ══════════════════════════════ */
 .logo {
-  width: 40px; height: 40px;
-  border-radius: 12px;
+  width: 34px; height: 34px; /* Reduced from 40px */
+  border-radius: 10px; /* Reduced from 12px */
   background: var(--primary-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   color: #fff;
-  font-size: 12px;
-  letter-spacing: 0.5px;
+  font-size: 14px; /* Reduced from 12px, increased for better icon visibility */
   box-shadow: 0 4px 12px rgba(232,48,140,0.30);
   flex-shrink: 0;
 }
 
 .avatar-main {
-  width: 36px; height: 36px;
+  width: 32px; height: 32px; /* Reduced from 36px */
   border-radius: 50%;
   background: var(--primary-gradient);
   color: #fff;
@@ -138,46 +137,43 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px; /* Reduced from 13px */
   box-shadow: 0 2px 8px rgba(232,48,140,0.25);
 }
 
 /* ══════════════════════════════
-   SIDEBAR — pink-to-rose gradient,
-   flush left, matches login gradient
+   SIDEBAR — COMPACT VERSION
 ══════════════════════════════ */
 .sidebar-menu {
   position: fixed;
   left: 0;
-  top: 64px;
-  height: calc(100vh - 64px);
-  width: 220px;
-  /* Updated Background to #f1dcfb */
+  top: 56px; /* Matches new topbar height */
+  height: calc(100vh - 56px);
+  width: 200px; /* Reduced from 220px */
   background: #f1dcfb; 
-  padding: 28px 14px 24px;
+  padding: 20px 12px 20px; /* Reduced from 28px 14px 24px */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   z-index: 100;
-  /* Added a subtle border to separate it from the main content */
   border-right: 1px solid var(--border-soft); 
 }
 
 .sidebar-top {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px; /* Reduced from 4px */
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px; /* Reduced from 10px */
   padding: 4px 6px 4px 4px;
-  margin-bottom: 28px;
+  margin-bottom: 20px; /* Reduced from 28px */
 }
 .sidebar-logo span {
-  font-size: 15px;
+  font-size: 14px; /* Reduced from 15px */
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.3px;
@@ -186,14 +182,13 @@ body {
 .nav-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px; /* Reduced from 10px */
   width: 100%;
   background: transparent;
-  /* Changed text color to dark for readability on light background */
   color: var(--text-muted); 
-  padding: 11px 16px;
-  border-radius: 12px;
-  font-size: 13px;
+  padding: 8px 12px; /* Reduced from 11px 16px */
+  border-radius: 10px; /* Reduced from 12px */
+  font-size: 12px; /* Reduced from 13px */
   font-weight: 500;
   transition: 0.18s ease;
   text-decoration: none;
@@ -206,21 +201,20 @@ body {
   color: var(--primary);
 }
 .nav-pill.active {
-  /* Updated to your requested 3-color linear gradient */
   background: linear-gradient(to right, #c070e0 0%, #d050a0 50%, #e8308c 100%);
-  color: #ffffff; /* White text looks best on this vibrant gradient */
+  color: #ffffff;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(208, 80, 160, 0.3);
 }
 .nav-pill i, .nav-pill .nav-icon {
   width: 18px;
   text-align: center;
-  font-size: 17px;
+  font-size: 16px; /* Reduced from 17px */
   line-height: 1;
   flex-shrink: 0;
 }
 
-.topbar-logout i { font-size: 17px; line-height: 1; }
+.topbar-logout i { font-size: 15px; line-height: 1; } /* Reduced from 17px */
 .sidebar-bottom { display: none; }
 
 /* ── Badge ── */
@@ -237,14 +231,14 @@ body {
 
 /* ── Icon button ── */
 .icon-btn {
-  width: 36px; height: 36px;
+  width: 32px; height: 32px; /* Reduced from 36px */
   border-radius: 50%;
   background: var(--surface-soft);
   color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px; /* Reduced from 14px */
   border: 1.5px solid var(--border-soft);
   outline: 0;
   cursor: pointer;
@@ -263,12 +257,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px; height: 40px;
+  width: 36px; height: 36px; /* Reduced from 40px */
   border-radius: 50%;
   background: var(--surface-soft);
   color: var(--text-main);
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px; /* Reduced from 13px */
   text-decoration: none;
   border: 1.5px solid var(--border-soft);
 }
@@ -277,28 +271,28 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px; height: 40px;
+  width: 36px; height: 36px; /* Reduced from 40px */
   background: var(--primary-gradient);
   border-radius: 50%;
   text-decoration: none;
   border: 0;
   cursor: pointer;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px; /* Reduced from 14px */
   box-shadow: 0 4px 10px rgba(232,48,140,0.30);
 }
 
 .topbar-user-link {
     display: flex;
   align-items: center;
-  text-decoration: none; /* Removes underline */
-  color: inherit; /* Keeps your text-main color */
-  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  gap: 10px; /* Reduced from 12px */
   transition: opacity 0.2s ease;
 }
 
 .topbar-user-link:hover {
-  opacity: 0.8; /* Subtle feedback on hover */
+  opacity: 0.8;
 }
 
 .topbar-user {
