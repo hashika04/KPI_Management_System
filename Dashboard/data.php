@@ -262,3 +262,70 @@ foreach ($hDepts as $d) {
     }
     $heatmapSeries[] = ['name' => $d, 'data' => $pts];
 }
+
+// Find best and worst department-group combinations
+$bestDeptGroup = ['dept' => '', 'group' => '', 'score' => 0];
+$worstDeptGroup = ['dept' => '', 'group' => '', 'score' => 100];
+$deptAvgScores = [];
+$groupAvgScores = [];
+
+foreach ($heatmapRaw as $dept => $groups) {
+    $deptSum = 0;
+    $deptCount = 0;
+    foreach ($groups as $group => $score) {
+        if ($score > $bestDeptGroup['score']) {
+            $bestDeptGroup = ['dept' => $dept, 'group' => $group, 'score' => $score];
+        }
+        if ($score < $worstDeptGroup['score'] && $score > 0) {
+            $worstDeptGroup = ['dept' => $dept, 'group' => $group, 'score' => $score];
+        }
+        $deptSum += $score;
+        $deptCount++;
+        
+        // For group average across departments
+        $groupAvgScores[$group][] = $score;
+    }
+    $deptAvgScores[$dept] = $deptCount > 0 ? round($deptSum / $deptCount, 1) : 0;
+}
+
+
+// Compute average per KPI group across all departments
+$groupInsights = [];
+foreach ($groupAvgScores as $group => $scores) {
+    $groupInsights[$group] = round(array_sum($scores) / count($scores), 1);
+}
+arsort($groupInsights); // highest first
+
+
+if (empty($groupInsights)) {
+    $heatmapInsight = "Insufficient KPI data for 2025 to generate insights.";
+} else {
+    $heatmapInsight = "Best: <strong>{$bestDeptGroup['dept']}</strong> → {$bestDeptGroup['group']} ({$bestDeptGroup['score']}%)<br>";
+    $heatmapInsight .= "Worst: <strong>{$worstDeptGroup['dept']}</strong> → {$worstDeptGroup['group']} ({$worstDeptGroup['score']}%)<br>";
+    $heatmapInsight .= "Top group: <strong>" . array_key_first($groupInsights) . "</strong> (" . reset($groupInsights) . "%)<br>";
+    $heatmapInsight .= "Bottom group: <strong>" . array_key_last($groupInsights) . "</strong> (" . end($groupInsights) . "%)";
+
+}
+
+// ========== TARGET ACHIEVEMENT INSIGHT ==========
+$speedoYear = isset($_GET['speedo_year']) ? (int)$_GET['speedo_year'] : 2025;
+$speedoTarget = isset($_GET['speedo_target']) ? (int)$_GET['speedo_target'] : 80;
+
+// $yearlyData is already defined in overview.php before include, but to be safe:
+if (!isset($yearlyData)) {
+    // fallback – compute yearlyData again or set default
+    $yearlyData = ['2022'=>0, '2023'=>0, '2024'=>0, '2025'=>0];
+}
+$actualForYear = $yearlyData[$speedoYear] ?? 0;
+$percentageOfTarget = ($speedoTarget > 0) ? round(($actualForYear / $speedoTarget) * 100) : 0;
+$percentageOfTarget = min($percentageOfTarget, 100);
+
+if ($percentageOfTarget >= 100) {
+    $targetInsight = "Excellent! The actual average KPI for $speedoYear ($actualForYear%) meets or exceeds the target of $speedoTarget%. Keep up the great work.";
+} elseif ($percentageOfTarget >= 80) {
+    $targetInsight = "Good progress. The actual average ($actualForYear%) is $percentageOfTarget% of the target ($speedoTarget%). A small push can help close the gap.";
+} elseif ($percentageOfTarget >= 60) {
+    $targetInsight = "Moderate performance. The team is at $percentageOfTarget% of the target. Focus on the weakest KPI groups shown in the heatmap above.";
+} else {
+    $targetInsight = "Needs attention. The actual average ($actualForYear%) is only $percentageOfTarget% of the target ($speedoTarget%). Consider reviewing department‑level breakdowns and providing additional training.";
+}

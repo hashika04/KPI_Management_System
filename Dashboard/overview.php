@@ -1,23 +1,12 @@
 <?php
-/*
- * overview.php  — KPI Monitor
- * Styles: ../asset/universal.css (shared) + ../asset/overview.css (page-specific)
- */
+//overview.php
+// Set default year to 2025 (not null)
+$selectedYear = isset($_GET['year']) ? intval($_GET['year']) : 2025;
 
-$selectedYear = isset($_GET['year']) ? intval($_GET['year']) : null;
 include("../config/db.php");
 include("../includes/auth.php");
-include("../Dashboard/data.php");
 
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-$lanIp = gethostbyname(gethostname());
-$currentHost = (filter_var($lanIp, FILTER_VALIDATE_IP) && $lanIp !== '127.0.0.1')
-    ? $lanIp
-    : '192.168.0.233';
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host   = $_SERVER['HTTP_HOST']; // THIS is the key
-$dynamicBaseUrl = 'https://kpimonitor.infinityfreeapp.com/KPI_Management_System/staff_masterlist/staffprofile.php?id=';
-
+// ── 1. Compute yearly averages FIRST (needed by data.php for insights) ──
 $chartSql = "
     SELECT 
         YEAR(Date) as kpi_year,
@@ -27,26 +16,28 @@ $chartSql = "
     GROUP BY kpi_year 
     ORDER BY kpi_year ASC
 ";
-
 $chartRes = $conn->query($chartSql);
-$yearlyScores = [];
-
-// Initialize with zeros to ensure exactly 4 points even if data is missing for a year
 $yearlyData = ['2022' => 0, '2023' => 0, '2024' => 0, '2025' => 0];
-
-while($row = $chartRes->fetch_assoc()) {
+while ($row = $chartRes->fetch_assoc()) {
     $yearlyData[$row['kpi_year']] = $row['yearly_avg'];
 }
-
-// This creates a string like "75.5, 80.2, 65.0, 61.2"
-$yearlyDataJs = (object)$yearlyData; 
 $avgKPI = $yearlyData['2025'];
-
 $jsDataString = implode(', ', array_values($yearlyData));
-$yearlyData   = $yearlyData   ?? ['2022' => 0, '2023' => 0, '2024' => 0, '2025' => 0];
+
+// ── 2. Now include data.php (it will use $yearlyData and $selectedYear) ──
+include("../Dashboard/data.php");
+
+// ── 3. The rest of your variables ──
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+$lanIp = gethostbyname(gethostname());
+$currentHost = (filter_var($lanIp, FILTER_VALIDATE_IP) && $lanIp !== '127.0.0.1')
+    ? $lanIp
+    : '192.168.0.233';
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'];
+$dynamicBaseUrl = 'https://kpimonitor.infinityfreeapp.com/KPI_Management_System/staff_masterlist/staffprofile.php?id=';
 
 $activePage = 'dashboard';
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -155,35 +146,50 @@ $activePage = 'dashboard';
           </div>
       </div>
       <div id="kpiHeatmap"></div>
+      <div class="heatmap-insight" style="margin-top: 20px; padding: 12px 16px; background: #f8f9fc; border-radius: 12px; border-left: 4px solid #7e22ce;">
+          <i class="ph ph-lightbulb" style="margin-right: 8px; color: #7e22ce;"></i>
+          <strong>Insight:</strong> <?= $heatmapInsight ?>
+      </div>
     </div>
 
     <div class="heatmap-card speedometer-card">
       <div class="ov-section-head">
-        <div>
-            <h2>Target Achievement</h2>
-            <p>Progress against set KPI goal</p>
-        </div>
-        <div class="speedo-controls">
-            <select id="speedoYear" class="year-filter-form" style="padding: 4px 8px; font-size: 11px;">
-                <?php
-                $speedoYearSelected = isset($_GET['speedo_year']) ? intval($_GET['speedo_year']) : 2025;
-                $speedoYearRes = $conn->query("SELECT DISTINCT YEAR(Date) as yr FROM kpi_data ORDER BY yr DESC");
-                while($syr = $speedoYearRes->fetch_assoc()):
-                    $sel = ($syr['yr'] == $speedoYearSelected) ? 'selected' : '';
-                ?>
-                    <option value="<?= $syr['yr'] ?>" <?= $sel ?>><?= $syr['yr'] ?></option>
-                <?php endwhile; ?>
-            </select>
-            <input type="number" id="speedoTarget" value="80" min="1" max="100"
-                  style="width: 50px; padding: 4px; border-radius: 6px; border: 1.5px solid #efd8e5; font-size: 11px; font-family: 'Sora';">
-            <span style="font-size: 12px; font-weight: 700;">%</span>
-        </div>
+          <div>
+              <h2>Target Achievement</h2>
+              <p>Progress against set KPI goal</p>
+          </div>
+          <form method="GET" id="speedoForm" style="display: flex; gap: 8px; align-items: center;">
+              <!-- Preserve the attention year filter if needed -->
+              <?php if (isset($_GET['year'])): ?>
+                  <input type="hidden" name="year" value="<?= htmlspecialchars($_GET['year']) ?>">
+              <?php endif; ?>
+              
+              <select name="speedo_year" id="speedoYear" class="year-filter-form" onchange="this.form.submit()">
+                  <?php
+                  $speedoYearSelected = isset($_GET['speedo_year']) ? intval($_GET['speedo_year']) : 2025;
+                  $speedoYearRes = $conn->query("SELECT DISTINCT YEAR(Date) as yr FROM kpi_data ORDER BY yr DESC");
+                  while($syr = $speedoYearRes->fetch_assoc()):
+                      $sel = ($syr['yr'] == $speedoYearSelected) ? 'selected' : '';
+                  ?>
+                      <option value="<?= $syr['yr'] ?>" <?= $sel ?>><?= $syr['yr'] ?></option>
+                  <?php endwhile; ?>
+              </select>
+              
+              <input type="number" name="speedo_target" id="speedoTarget" value="<?= isset($_GET['speedo_target']) ? intval($_GET['speedo_target']) : 80 ?>" min="1" max="100" style="width: 60px; padding: 4px; border-radius: 6px; border: 1.5px solid #efd8e5;">
+              <span style="font-size: 12px; font-weight: 700;">%</span>
+              <button type="submit" style="display: none;">Apply</button>
+          </form>
       </div>
 
       <div id="targetSpeedometer"></div>
 
       <div class="speedo-footer">
           Actual Avg: <span id="actualVal">63%</span>
+      </div>
+
+      <div class="target-insight" style="margin: 16px 0 12px 0; padding: 12px 16px; background: #fefce8; border-radius: 12px; border-left: 4px solid #eab308;">
+          <i class="ph ph-chart-line" style="margin-right: 8px; color: #eab308;"></i>
+          <strong>Insight:</strong> <?= $targetInsight ?>
       </div>
     </div><!-- /.speedometer-card -->
   </div>
@@ -372,7 +378,7 @@ $activePage = 'dashboard';
                     </div>
                     <div class="ar-stat-box highlight">
                         <small><?= $selectedYear ?> Avg</small>
-                        <span><?= $s['score'] ?>%</span>
+                        <span><?= $s['podium_score'] ?>%</span> 
                     </div>
                     <div class="ar-trend-box <?= $s['diff'] < 0 ? 'drop' : 'gain' ?>">
                         <i class="ph ph-trend-<?= $s['diff'] < 0 ? 'down' : 'up' ?>"></i>
@@ -395,7 +401,7 @@ $activePage = 'dashboard';
                           : ($s['diff'] < 0 
                               ? "Performance dropped by ".abs($s['diff'])."% since $prevYear. Focus on the lowest bars in the chart."
                               : "Performance improved by ".$s['diff']."% since $prevYear.") ?>
-                        </p>
+                              </p>
                         <a href="../staff_masterlist/staffprofile.php?id=<?= $s['id'] ?>" class="btn-profile">Go to Profile</a>
                     </div>
                 </div>
@@ -764,110 +770,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// Speedometer logic
-document.addEventListener('DOMContentLoaded', function () {
-    // Data from your existing PHP $yearlyData array
-    const yearlyActuals = <?= json_encode((object)($yearlyData ?? [])) ?>;
-    let chart;
-
-    function updateSpeedometer() {
-        const year = document.getElementById('speedoYear').value;
-        const target = parseFloat(document.getElementById('speedoTarget').value) || 80;
-        
-        const actual = parseFloat(yearlyActuals[year]) || 0;
-
-        // The math: (Actual / Target) * 100
-        const percentageOfTarget = Math.round((actual / target) * 100);
-        
-        // Update the footer text
-        document.getElementById('actualVal').textContent = actual.toFixed(1) + '%';
-
-        const options = {
-            series: [Math.min(percentageOfTarget, 100)], // Caps at 100% visually
-            chart: {
-                height: 280,
-                type: 'radialBar',
-                offsetY: -10,
-                width: '100%'
-            },
-            plotOptions: {
-              radialBar: {
-                  startAngle: -135,
-                  endAngle: 135,
-                  track: {
-                      background: '#f3e8ff',
-                      strokeWidth: '97%',
-                      margin: 5,
-                  },
-                  hollow: {
-                      margin: 0,
-                      size: '65%',            /* FIX 3: bigger hollow = % sits more centered */
-                  },
-                  dataLabels: {
-                      name: {
-                          fontSize: '11px',
-                          color: '#6b7280',
-                          offsetY: 70,        /* FIX 4: push label further down from chart */
-                          fontFamily: 'Sora'
-                      },
-                      value: {
-                          offsetY: -10,       /* FIX 3: negative = moves UP into circle center */
-                          fontSize: '28px',
-                          fontWeight: 800,
-                          fontFamily: 'Sora',
-                          formatter: function (val) {
-                              return val + "%";
-                          }
-                      }
-                  }
-              }
-          },
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shade: 'dark',
-                    shadeIntensity: 0.15,
-                    inverseColors: false,
-                    opacityFrom: 1,
-                    opacityTo: 1,
-                    stops: [0, 50, 65, 91],
-                    gradientToColors: ['#7e22ce'] // Purple to match your theme
-                },
-            },
-            stroke: { dashArray: 4 },
-            labels: ['Target Achievement'],
-            colors: ['#e8308c'] // Pink starting color
-        };
-
-        if (chart) {
-            chart.updateOptions({
-                series: [Math.min(percentageOfTarget, 100)]
-            });
-        } else {
-            chart = new ApexCharts(document.querySelector("#targetSpeedometer"), options);
-            chart.render();
-        }
-    }
-
-    // Listeners for filters
-    document.getElementById('speedoYear').addEventListener('change', updateSpeedometer);
-    document.getElementById('speedoTarget').addEventListener('input', updateSpeedometer);
-
-    // Initial render
-    setTimeout(updateSpeedometer, 50);
-});
-
-function toggleAR(index) {
-    const card = document.getElementById('ar-card-' + index);
-    // Toggle the 'active' class to expand/collapse
-    card.classList.toggle('active');
-    
-    // Rotate the chevron
-    const chevron = card.querySelector('.ar-chevron');
-    if(chevron) {
-        chevron.style.transform = card.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
-    }
-}
 
 function initARChart(index, groups, scores, name) {
     const options = {
@@ -881,6 +783,56 @@ function initARChart(index, groups, scores, name) {
     };
     new ApexCharts(document.querySelector("#chart-ar-" + index), options).render();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const yearSelect = document.getElementById('speedoYear');
+    const targetInput = document.getElementById('speedoTarget');
+    const actualSpan = document.getElementById('actualVal');
+
+    function renderSpeedometer() {
+        const year = yearSelect.value;
+        const target = parseFloat(targetInput.value) || 80;
+        // Get yearly data from PHP (passed as JSON)
+        const yearlyActuals = <?= json_encode((object)($yearlyData ?? [])) ?>;
+        const actual = parseFloat(yearlyActuals[year]) || 0;
+        const percentage = Math.min(Math.round((actual / target) * 100), 100);
+        
+        if (actualSpan) actualSpan.textContent = actual.toFixed(1) + '%';
+
+        const options = {
+            series: [percentage],
+            chart: { height: 260, type: 'radialBar', offsetY: -10 },
+            plotOptions: {
+                radialBar: {
+                    startAngle: -135, endAngle: 135,
+                    track: { background: '#f3e8ff', strokeWidth: '97%', margin: 5 },
+                    hollow: { size: '65%' },
+                    dataLabels: {
+                        name: { fontSize: '11px', color: '#6b7280', offsetY: 70, fontFamily: 'Sora' },
+                        value: { offsetY: -10, fontSize: '28px', fontWeight: 800, fontFamily: 'Sora', formatter: v => v + '%' }
+                    }
+                }
+            },
+            fill: {
+                type: 'gradient',
+                gradient: { shade: 'dark', shadeIntensity: 0.15, inverseColors: false, opacityFrom: 1, opacityTo: 1, stops: [0,50,65,91], gradientToColors: ['#7e22ce'] }
+            },
+            stroke: { dashArray: 4 },
+            labels: ['Target Achievement'],
+            colors: ['#e8308c']
+        };
+        
+        const chart = new ApexCharts(document.querySelector("#targetSpeedometer"), options);
+        chart.render();
+    }
+
+    renderSpeedometer();
+    
+    // Optional: re-render if inputs change without page reload
+    // (but since form submits on change, this is not needed – keep for safety)
+    yearSelect?.addEventListener('change', () => setTimeout(renderSpeedometer, 50));
+    targetInput?.addEventListener('input', () => setTimeout(renderSpeedometer, 50));
+});
 
 </script>
 

@@ -283,10 +283,8 @@
     display: grid;
     grid-template-columns: 1.2fr 0.8fr;
     gap: 20px;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin: 20px 0;
     align-items: stretch;
-    width: 100%;
 }
 
 /* ══════════════════════
@@ -296,9 +294,13 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding: 20px;                  
-    width: 108%;                    
+    padding: 12px;
+    width: 100%;           /* was 108% – fixed */
     box-sizing: border-box;
+    background: var(--bg-card);
+    border-radius: 18px;
+    border: 1.5px solid var(--border-soft);
+    box-shadow: var(--shadow-card);
 }
 
 .speedo-controls {
@@ -335,17 +337,17 @@
 
 #targetSpeedometer {
     width: 100%;
-    min-height: 220px;
-    margin-top: 0;
+    height: 260px;         /* explicit height for ApexCharts */
+    margin: 0;
 }
 
 .speedo-footer {
     text-align: center;
-    margin-top: -10px;              
-    margin-bottom: 12px;         
-    font-size: 14px;               
+    margin-top: 8px;      /* reduced from -10px to avoid overlap */
+    margin-bottom: 4px;   /* small space */
+    font-size: 14px;
     font-family: 'Sora';
-    color: #374151;                
+    color: #374151;
     font-weight: 500;
 }
 
@@ -472,71 +474,6 @@
 .view-btn.bronze           { background: var(--bg-card); color: #1a1a2e; border: 2px solid #f97316; }
 .view-btn.bronze:hover     { background: #fff7ed; }
 
-/* ════════════════════
-   ALL STAFF TABLE
-════════════════════ */
-.staff-table-card {
-  background: var(--bg-card);
-  border-radius: 18px;
-  border: 1.5px solid var(--border-soft);
-  box-shadow: var(--shadow-card);
-  padding: 20px 22px;
-  margin-bottom: 20px;
-}
-.staff-table-head {
-  display: flex; align-items: flex-start;
-  justify-content: space-between; margin-bottom: 16px;
-}
-.staff-table-head h2 { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
-.staff-table-head p  { font-size: 12px; color: var(--text-muted); }
-
-.staff-table-wrap { overflow-x: auto; }
-
-.staff-table {
-  width: 100%; border-collapse: collapse;
-  font-size: 13px;
-}
-.staff-table thead th {
-  text-align: left; padding: 10px 14px;
-  font-size: 11px; font-weight: 600;
-  color: var(--text-muted); text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1.5px solid var(--border-soft);
-}
-.staff-table tbody tr {
-  border-bottom: 1px solid var(--border-soft);
-  transition: background 0.15s;
-}
-.staff-table tbody tr:last-child { border-bottom: none; }
-.staff-table tbody tr:hover { background: var(--surface-soft); }
-.staff-table tbody td { padding: 12px 14px; vertical-align: middle; }
-
-/* Staff name cell */
-.staff-cell { display: flex; align-items: center; gap: 10px; }
-.staff-avatar-sm {
-  width: 34px; height: 34px; border-radius: 50%;
-  overflow: hidden; flex-shrink: 0;
-  background: var(--surface-soft);
-  border: 1.5px solid var(--border-soft);
-}
-.staff-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
-.staff-name   { font-weight: 600; color: var(--text-main); }
-.staff-code   { color: var(--text-muted); font-size: 12px; }
-.staff-dept   { color: var(--text-muted); }
-
-/* Score bar in table */
-.score-cell { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
-.score-num  { font-size: 13px; font-weight: 700; color: var(--text-main); }
-.score-bar-bg {
-  height: 5px; border-radius: 999px;
-  background: var(--surface-soft); overflow: hidden;
-}
-.score-bar-fill { height: 100%; border-radius: 999px; }
-.score-bar-fill.level-top     { background: linear-gradient(90deg,#34d399,#16a34a); }
-.score-bar-fill.level-good    { background: linear-gradient(90deg,#60a5fa,#2563eb); }
-.score-bar-fill.level-average { background: linear-gradient(90deg,#fbbf24,#d97706); }
-.score-bar-fill.level-at-risk { background: linear-gradient(90deg,#fb923c,#ea580c); }
-.score-bar-fill.level-critical{ background: linear-gradient(90deg,#f87171,#dc2626); }
 
 /* Level badge (shared with at-risk section) */
 .level-badge {
@@ -718,6 +655,32 @@
 
 .level-badge.critical { background: #1e293b; color: #fff; }
 .level-badge.at-risk { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+
+/* Insight boxes */
+.heatmap-insight, .target-insight {
+    margin-top: 20px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.4;
+    transition: all 0.2s;
+}
+.heatmap-insight {
+    background: #f8f9fc;
+    border-left: 4px solid #7e22ce;
+    color: #1e293b;
+}
+.target-insight {
+    margin: 8px 0 10px 0;  /* top=8px, bottom=10px – just a little space */
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+.heatmap-insight i, .target-insight i {
+    margin-right: 10px;
+    font-size: 18px;
+    vertical-align: middle;
+}
 
 /* ════════════════
    RESPONSIVE
