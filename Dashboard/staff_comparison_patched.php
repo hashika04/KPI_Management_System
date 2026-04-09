@@ -11,7 +11,7 @@ require_once __DIR__ . '/../includes/auth.php';
     <title>Individual Staff Comparison</title>
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <link rel="stylesheet" href="../asset/universal.css?v=2">
-    <link rel="stylesheet" href="../asset/analytics.css?v=">
+    <link rel="stylesheet" href="../asset/analytics.css?v=2">
 </head>
 <body>
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -22,14 +22,6 @@ require_once __DIR__ . '/../includes/auth.php';
             <a href="./analytics_patched.php" class="back-link">← Back to Analytics</a>
             <h1>Individual Staff Comparison</h1>
             <p>Compare two staff members using the latest KPI records, category performance, and trend behaviour.</p>
-        </div>
-
-        <div class="filter-toolbar">
-            <select id="comparePeriodFilter">
-                <option value="Yearly">Yearly</option>
-                <option value="Monthly">Monthly</option>
-            </select>
-            <button class="ghost-btn" id="backToAnalytics" type="button">Choose Different Staff</button>
         </div>
     </section>
 
@@ -96,16 +88,11 @@ const params = new URLSearchParams(window.location.search);
 const selectedStaff1 = params.get('staff1') || '';
 const selectedStaff2 = params.get('staff2') || '';
 
-const compareState = {
-    period: 'Yearly'
-};
-
 async function fetchComparison() {
     const query = new URLSearchParams({
         action: 'compare_staff',
         staff1: selectedStaff1,
-        staff2: selectedStaff2,
-        period: compareState.period
+        staff2: selectedStaff2
     });
 
     const response = await fetch('./analytics_data_patched.php?' + query.toString(), {
@@ -205,7 +192,6 @@ function renderStaffCard(targetId, data, theme) {
         </div>
     `;
 }
-
 
 function wrapCategoryLabel(label) {
     const map = {
@@ -331,6 +317,46 @@ function renderChartInterpretations(payload) {
         `<strong>Interpretation:</strong> ${escapeHtml(buildGapInterpretation(payload))}`;
 }
 
+function normalisePayloadOrder(payload) {
+    const originalStaff1 = payload.staff1;
+    const originalStaff2 = payload.staff2;
+
+    const orderedStaff = [originalStaff1, originalStaff2].sort(
+        (a, b) => Number(b.current_percentage) - Number(a.current_percentage)
+    );
+
+    const leftStaff = orderedStaff[0];
+    const rightStaff = orderedStaff[1];
+    const leftIsOriginalStaff1 = leftStaff.staff.id == originalStaff1.staff.id;
+
+    const trendRows = (payload.trend_series || []).map(row => ({
+        period: row.period,
+        staff1: leftIsOriginalStaff1 ? row.staff1 : row.staff2,
+        staff2: leftIsOriginalStaff1 ? row.staff2 : row.staff1,
+        target: row.target
+    }));
+
+    const radarCategories = (payload.radar_categories || []).map(row => ({
+        category: row.category,
+        staff1: leftIsOriginalStaff1 ? row.staff1 : row.staff2,
+        staff2: leftIsOriginalStaff1 ? row.staff2 : row.staff1,
+        target: row.target
+    }));
+
+    const categoryGap = (payload.category_gap || []).map(row => ({
+        category: row.category,
+        gap: leftIsOriginalStaff1 ? row.gap : (Number(row.gap) * -1)
+    }));
+
+    return {
+        ...payload,
+        staff1: leftStaff,
+        staff2: rightStaff,
+        trend_series: trendRows,
+        radar_categories: radarCategories,
+        category_gap: categoryGap
+    };
+}
 
 function renderCharts(payload) {
     const trendRows = payload.trend_series || [];
@@ -385,7 +411,6 @@ function renderCharts(payload) {
     }, { responsive: true, displayModeBar: true });
 
     const radar = payload.radar_categories || [];
-    const wrappedRadarLabels = radar.map(row => wrapCategoryLabel(row.category));
 
     Plotly.react('compareRadarChart', [
         {
@@ -409,7 +434,7 @@ function renderCharts(payload) {
         {
             type: 'scatterpolar',
             r: radar.map(row => row.target),
-            theta: wrappedRadarLabels,
+            theta: radar.map(row => row.category),
             fill: 'none',
             name: 'Target %',
             line: { color: '#94a3b8', dash: 'dot', width: 2 }
@@ -431,7 +456,6 @@ function renderCharts(payload) {
     }, { responsive: true, displayModeBar: true });
 
     const gapRows = payload.category_gap || [];
-
     const wrappedGapLabels = gapRows.map(row => wrapCategoryLabel(row.category));
 
     Plotly.react('categoryGapChart', [{
@@ -471,29 +495,17 @@ async function loadComparison() {
         return;
     }
 
-    const orderedStaff = [payload.staff1, payload.staff2].sort(
-        (a, b) => Number(b.current_percentage) - Number(a.current_percentage)
-    );
-
-    const leftStaff = orderedStaff[0];
-    const rightStaff = orderedStaff[1];
+    const normalisedPayload = normalisePayloadOrder(payload);
+    const leftStaff = normalisedPayload.staff1;
+    const rightStaff = normalisedPayload.staff2;
 
     renderStaffCard('staffCard1', leftStaff, 'theme-green');
     renderStaffCard('staffCard2', rightStaff, 'theme-pink');
+    renderCharts(normalisedPayload);
+    renderChartInterpretations(normalisedPayload);
 
-    renderCharts({
-        ...payload,
-        staff1: leftStaff,
-        staff2: rightStaff
-    });
-
-    renderChartInterpretations({
-    ...payload,
-    staff1: leftStaff,
-    staff2: rightStaff
-});
     document.getElementById('supervisorInsight').textContent =
-        buildComparisonInsight(leftStaff, rightStaff, payload);
+        buildComparisonInsight(leftStaff, rightStaff, normalisedPayload);
 
     document.getElementById('leftNoteTitle').textContent = `${leftStaff.staff.name} — Supervisor Comment`;
     document.getElementById('leftCommentText').textContent =
@@ -503,15 +515,6 @@ async function loadComparison() {
     document.getElementById('rightTrainingText').textContent =
         rightStaff.training || 'No training recommendation available.';
 }
-
-document.getElementById('comparePeriodFilter').addEventListener('change', event => {
-    compareState.period = event.target.value;
-    loadComparison().catch(console.error);
-});
-
-document.getElementById('backToAnalytics').addEventListener('click', () => {
-    window.location.href = './analytics_patched.php';
-});
 
 loadComparison().catch(error => {
     console.error(error);
