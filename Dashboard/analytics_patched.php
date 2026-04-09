@@ -65,10 +65,6 @@ require_once __DIR__ . '/../includes/auth.php';
                     <option value="All Departments">All Departments</option>
                 </select>
 
-                <select id="kpiCategoryFilter">
-                    <option value="All Categories">All Categories</option>
-                </select>
-
                 <select id="periodFilter">
                     <option value="Monthly">Monthly</option>
                     <option value="Yearly">Yearly</option>
@@ -297,7 +293,6 @@ require_once __DIR__ . '/../includes/auth.php';
     const state = {
         year: '',
         department: 'All Departments',
-        kpi_category: 'All Categories',
         period: 'Monthly',
         compareDepartment: 'All Departments',
         performance: 'All Performance',
@@ -346,28 +341,6 @@ require_once __DIR__ . '/../includes/auth.php';
         });
     }
 
-
-    function setCategoryOptions(categories) {
-        const safeCategories = Array.isArray(categories) ? categories : [];
-        const select = document.getElementById('kpiCategoryFilter');
-        if (!select) return;
-
-        const currentValue = select.value || 'All Categories';
-        select.innerHTML = '<option value="All Categories">All Categories</option>';
-
-        safeCategories.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            if (cat === currentValue) option.selected = true;
-            select.appendChild(option);
-        });
-
-        if (![...select.options].some(opt => opt.value === currentValue)) {
-            select.value = 'All Categories';
-            state.kpi_category = 'All Categories';
-        }
-    }
 
     function setYearOptions(years) {
         const safeYears = Array.isArray(years) ? years : [];
@@ -1101,13 +1074,11 @@ require_once __DIR__ . '/../includes/auth.php';
                 action: 'dashboard',
                 year: state.year,
                 department: state.department,
-                kpi_category: state.kpi_category,
                 period: state.period
             });
 
             latestDashboardData = data;
             setDepartmentOptions(data.filters?.available_departments || []);
-            setCategoryOptions(data.filters?.available_categories || []);
             setYearOptions(data.filters?.available_years || []);
             renderSummary(data);
             renderCharts(data);
@@ -1129,24 +1100,43 @@ require_once __DIR__ . '/../includes/auth.php';
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
     }
-    function openDetailsModal(title, html) {
-        const modal = document.getElementById('detailsModal');
-        const titleEl = document.getElementById('detailsModalTitle');
-        const bodyEl = document.getElementById('detailsModalBody');
-        if (!modal || !titleEl || !bodyEl) return;
+function openDetailsModal(title, html) {
+    const modal = document.getElementById('detailsModal');
+    const titleEl = document.getElementById('detailsModalTitle');
+    const bodyEl = document.getElementById('detailsModalBody');
 
-        titleEl.textContent = title || 'Details';
-        bodyEl.innerHTML = html || '<p>No details available.</p>';
-        modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
+    if (!modal || !titleEl || !bodyEl) return;
+
+    titleEl.textContent = title;
+    bodyEl.innerHTML = html;
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDetailsModal() {
+    const modal = document.getElementById('detailsModal');
+    if (!modal) return;
+
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('detailsModal');
+    const closeBtn = document.getElementById('detailsModalClose');
+
+    if (modal) modal.classList.remove('show');
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeDetailsModal);
     }
 
-    function closeDetailsModal() {
-        const modal = document.getElementById('detailsModal');
-        if (!modal) return;
-        modal.classList.remove('show');
-        document.body.style.overflow = '';
+    if (modal) {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) closeDetailsModal();
+        });
     }
+});
 
     function buildDepartmentDetailsHtml(departmentName) {
         if (!latestDashboardData) return '<p>No data available.</p>';

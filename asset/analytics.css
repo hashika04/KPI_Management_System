@@ -2829,3 +2829,54 @@ td {
     border: 1px solid #f0dce7;
     position: relative;
 }
+
+/* FINAL STAFF COMPARISON POLISH */
+.comparison-tool {
+    max-width: 980px;
+    width: 100%;
+    margin: 28px auto;
+    padding: 28px 30px 24px;
+    border-radius: 26px;
+}
+
+.comparison-title-wrap h2::before {
+    content: "🛠️ ";
+}
+
+.comparison-title-wrap p {
+    font-size: 0.96rem;
+    color: #8a7284;
+}
+
+.comparison-toolbar {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr auto !important;
+    gap: 12px !important;
+    align-items: center !important;
+}
+
+.comparison-search-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.search-block input,
+.comparison-toolbar select {
+    min-height: 50px;
+    border-radius: 16px;
+}
+
+.compare-main-btn {
+    min-height: 54px;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+@media (max-width: 900px) {
+    .comparison-toolbar,
+    .comparison-search-row {
+        grid-template-columns: 1fr !important;
+    }
+}
