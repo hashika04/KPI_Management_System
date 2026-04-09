@@ -488,18 +488,18 @@ $currentTrendBadgeClass =
     }
 
 .staff-profile-header h1 {
-    font-size: 1.8rem !important;
-    font-weight: 800 !important;
+    font-size: 28px; !important;
+    font-weight: 700 !important;
     color: #1d1635 !important;
-    letter-spacing: -0.8px !important;
+    letter-spacing: -0.4px !important;
     margin: 8px 0 0 !important;
 }
 
 .staff-profile-header p {
     margin: 8px 0 0 !important;
     color: #b07d97 !important;
-    font-size: 0.95rem !important;
-    font-weight: 500 !important;
+    font-size: 13px; !important;
+    font-weight: 400 !important;
 }
 
 .staff-profile-header .back-link {
@@ -1439,14 +1439,6 @@ $currentTrendBadgeClass =
         <div class="profile-hero-action">
             <button class="profile-action-btn action-kpi" onclick="openAddKPIModal(<?= $staff['id'] ?>, '<?= htmlspecialchars($staff['full_name'], ENT_QUOTES) ?>')">
                 Edit KPI
-            </button>
-
-            <button class="profile-action-btn action-report">
-                <i class="ph ph-eye"></i> View Report
-            </button>
-
-            <button class="profile-action-btn action-download">
-                <i class="ph ph-download-simple"></i> Download
             </button>
 
             <button class="profile-action-btn action-profile" id="editProfileBtn">
