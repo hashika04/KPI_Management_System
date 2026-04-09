@@ -386,8 +386,19 @@ function getDashboardPayload(mysqli $conn, array $filters): array
 
     $periodStaff = buildPeriodStaffScores($records, $periodType);
     $timeline = buildTimelineRows($periodStaff, $yearFilter, $departmentFilter, $categoryFilter);
+
+    if ($yearFilter !== '') {
+    $periodStaff = array_filter($periodStaff, function ($row) use ($yearFilter) {
+        return (string)($row['year'] ?? '') === (string)$yearFilter;
+    });
+}
+
     $staffLatest = getLatestStaffSnapshots($periodStaff, $yearFilter, $departmentFilter, $categoryFilter);
 
+    $staffLatestForDropdown = array_values(array_filter($staffLatest, function ($row) use ($yearFilter) {
+    if ($yearFilter === '') return true;
+    return (string)($row['year'] ?? '') === (string)$yearFilter;
+}));
     $summary = buildSummary($staffLatest);
     $deptStats = buildDepartmentStats($staffLatest);
     usort($deptStats, fn($a, $b) => $b['score'] <=> $a['score']);
@@ -411,6 +422,7 @@ function getDashboardPayload(mysqli $conn, array $filters): array
             'period' => $periodType,
             'available_departments' => getDepartmentOptions($records),
             'available_categories' => getCategoryOptions($records),
+            'available_years' => getYearOptions($records),
         ],
         'summary' => $summary,
         'insight' => buildTrendNarrative($timeline, $periodType, $categoryFilter),
@@ -441,12 +453,15 @@ function getDashboardPayload(mysqli $conn, array $filters): array
         'at_risk_staff' => buildAtRiskStaff($staffLatest),
         'suggestions' => buildSuggestions($staffLatest),
         'staff_snapshot_list' => array_map(fn($row) => [
+            'id' => $row['staff']['id'],
             'name' => $row['staff']['name'],
+            'staff_code' => $row['staff']['staff_code'] ?? '',
             'department' => $row['staff']['department'],
             'position' => $row['staff']['position'] ?? '',
             'score' => $row['current_percentage'],
             'performance_level' => $row['performance_level'],
             'trend' => $row['trend'],
+            'year' => $row['year'],
         ], $staffLatest),
     ];
 }
@@ -470,6 +485,19 @@ function buildTimelineRows(array $periodStaff, string $yearFilter, string $depar
         $rows[] = ['period' => $period, 'score' => round($avg, 2), 'target' => KPI_TARGET_PERCENT, 'atRisk' => $avg < 60];
     }
     return $rows;
+}
+
+function getYearOptions(array $records): array
+{
+    $years = [];
+    foreach ($records as $row) {
+        if (!empty($row['year'])) {
+            $years[(string)$row['year']] = true;
+        }
+    }
+    $list = array_keys($years);
+    rsort($list);
+    return $list;
 }
 
 function buildForecastTimeline(array $timeline): array
@@ -568,7 +596,12 @@ function buildDepartmentStats(array $staffLatest): array
         foreach ($rows as $r) $trendCounts[$r['trend']]++;
         arsort($trendCounts);
         $dominantTrend = array_key_first($trendCounts);
-        $riskBand = $avg >= 85 ? 'Low' : ($avg >= 70 ? 'Moderate' : 'High');
+        $riskBand = 'Low';
+        if ($avg < 50) {
+            $riskBand = 'High';
+        } elseif ($avg < 75) {
+            $riskBand = 'Moderate';
+        }
         $stats[] = [
             'department' => $dept,
             'score' => round($avg, 2),
