@@ -198,7 +198,7 @@ function wrapCategoryLabel(label) {
         'Customer Service Quality': 'Customer<br>Service<br>Quality',
         'Daily Sales Operations': 'Daily<br>Sales<br>Operations',
         'Inventory & Cost Control': 'Inventory &<br>Cost Control',
-        'Training, Learning & Team Contribution': 'Training,<br>Learning & Team<br>Contribution',
+        'People, Training, Learning & Team Contribution': 'People, <br>Training, <br>Learning & Team<br>Contribution',
         'Sales Target Contribution': 'Sales Target<br>Contribution',
         'Store Operations Support': 'Store Operations<br>Support'
     };
