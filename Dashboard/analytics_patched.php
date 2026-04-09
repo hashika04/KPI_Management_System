@@ -48,8 +48,8 @@ require_once __DIR__ . '/../includes/auth.php';
     z-index: 999999 !important;
     margin: 0 !important;
     padding: 20px !important;
-    background: transparent !important;  /* NO dark background */
-    backdrop-filter: none !important;
+    background: rgba(32, 18, 33, 0.35) !important;
+    backdrop-filter: blur(4px) !important;
 }
 
 .risk-modal.show {
@@ -1195,7 +1195,7 @@ require_once __DIR__ . '/../includes/auth.php';
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
     }
-function openDetailsModal(title, html, triggerElement) {
+function openDetailsModal(title, html) {
     const modal = document.getElementById('detailsModal');
     const titleEl = document.getElementById('detailsModalTitle');
     const bodyEl = document.getElementById('detailsModalBody');
@@ -1204,43 +1204,16 @@ function openDetailsModal(title, html, triggerElement) {
 
     titleEl.textContent = title;
     bodyEl.innerHTML = html;
-    
-    // Position modal near the clicked button
-    if (triggerElement) {
-        const rect = triggerElement.getBoundingClientRect();
-        const modalWidth = 500; // Max width of modal
-        const modalHeight = 400; // Approximate height
-        
-        let top = rect.bottom + window.scrollY + 8;
-        let left = rect.left + window.scrollX;
-        
-        // Adjust if modal would go off-screen
-        if (left + modalWidth > window.innerWidth) {
-            left = window.innerWidth - modalWidth - 20;
-        }
-        if (left < 20) {
-            left = 20;
-        }
-        
-        // If not enough space below, show above
-        if (top + modalHeight > window.innerHeight + window.scrollY) {
-            top = rect.top + window.scrollY - modalHeight - 8;
-        }
-        
-        modal.style.position = 'absolute';
-        modal.style.top = top + 'px';
-        modal.style.left = left + 'px';
-        modal.style.right = 'auto';
-        modal.style.bottom = 'auto';
-    } else {
-        // Fallback to center
-        modal.style.position = 'fixed';
-        modal.style.top = '50%';
-        modal.style.left = '50%';
-        modal.style.transform = 'translate(-50%, -50%)';
-    }
-    
+
+    modal.style.position = 'fixed';
+    modal.style.inset = '0';
+    modal.style.top = '';
+    modal.style.left = '';
+    modal.style.right = '';
+    modal.style.bottom = '';
+    modal.style.transform = '';
     modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeDetailsModal() {
@@ -1249,136 +1222,15 @@ function closeDetailsModal() {
 
     modal.classList.remove('show');
     modal.style.position = '';
+    modal.style.inset = '';
     modal.style.top = '';
     modal.style.left = '';
+    modal.style.right = '';
+    modal.style.bottom = '';
     modal.style.transform = '';
+    document.body.style.overflow = '';
 }
 
-// Update event listeners to pass the trigger element
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('detailsModal');
-    const closeBtn = document.getElementById('detailsModalClose');
-    
-    if (modal) {
-        modal.classList.remove('show');
-    }
-    
-    if (closeBtn) {
-        // Remove existing listeners to avoid duplicates
-        const newCloseBtn = closeBtn.cloneNode(true);
-        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-        newCloseBtn.addEventListener('click', closeDetailsModal);
-    }
-    
-    if (modal) {
-        modal.addEventListener('click', (event) => {
-            if (event.target === modal) closeDetailsModal();
-        });
-    }
-    
-    // Update all detail buttons to pass the trigger element
-    const highRiskBtn = document.getElementById('highRiskDetailsBtn');
-    const moderateRiskBtn = document.getElementById('moderateRiskDetailsBtn');
-    const totalStaffBtn = document.getElementById('totalStaffBtn');
-    const avgKpiBtn = document.getElementById('avgKpiBtn');
-    const improvingBtn = document.getElementById('improvingBtn');
-    const departmentsCountBtn = document.getElementById('departmentsCountBtn');
-    const topPerformersCountBtn = document.getElementById('topPerformersCountBtn');
-    const atRiskCountBtn = document.getElementById('atRiskCountBtn');
-    
-    if (highRiskBtn) {
-        const newBtn = highRiskBtn.cloneNode(true);
-        highRiskBtn.parentNode.replaceChild(newBtn, highRiskBtn);
-        newBtn.addEventListener('click', (event) => {
-            if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
-                openDetailsModal('High Risk Alert Details', '<p>No high-risk department under the current filters.</p>', newBtn);
-                return;
-            }
-            const dept = latestDashboardData.high_risk_departments[0];
-            openDetailsModal('High Risk Alert Details', buildDepartmentDetailsHtml(dept.department), newBtn);
-        });
-    }
-    
-    if (moderateRiskBtn) {
-        const newBtn = moderateRiskBtn.cloneNode(true);
-        moderateRiskBtn.parentNode.replaceChild(newBtn, moderateRiskBtn);
-        newBtn.addEventListener('click', (event) => {
-            if (!latestDashboardData || !latestDashboardData.moderate_risk_departments || latestDashboardData.moderate_risk_departments.length === 0) {
-                openDetailsModal('Moderate Risk Alert Details', '<p>No moderate-risk department under the current filters.</p>', newBtn);
-                return;
-            }
-            const dept = latestDashboardData.moderate_risk_departments[0];
-            openDetailsModal('Moderate Risk Alert Details', buildDepartmentDetailsHtml(dept.department), newBtn);
-        });
-    }
-    
-    if (totalStaffBtn) {
-        const newBtn = totalStaffBtn.cloneNode(true);
-        totalStaffBtn.parentNode.replaceChild(newBtn, totalStaffBtn);
-        newBtn.addEventListener('click', () => openDetailsModal('Total Staff Details', buildTotalStaffHtml(), newBtn));
-    }
-    
-    if (avgKpiBtn) {
-        const newBtn = avgKpiBtn.cloneNode(true);
-        avgKpiBtn.parentNode.replaceChild(newBtn, avgKpiBtn);
-        newBtn.addEventListener('click', () => openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml(), newBtn));
-    }
-    
-    if (improvingBtn) {
-        const newBtn = improvingBtn.cloneNode(true);
-        improvingBtn.parentNode.replaceChild(newBtn, improvingBtn);
-        newBtn.addEventListener('click', () => openDetailsModal('Improving Performance Details', buildImprovingStaffHtml(), newBtn));
-    }
-    
-    if (departmentsCountBtn) {
-        const newBtn = departmentsCountBtn.cloneNode(true);
-        departmentsCountBtn.parentNode.replaceChild(newBtn, departmentsCountBtn);
-        newBtn.addEventListener('click', () => openDetailsModal('Departments Monitored', buildDepartmentsMonitoredHtml(), newBtn));
-    }
-    
-    if (topPerformersCountBtn) {
-        const newBtn = topPerformersCountBtn.cloneNode(true);
-        topPerformersCountBtn.parentNode.replaceChild(newBtn, topPerformersCountBtn);
-        newBtn.addEventListener('click', () => openDetailsModal('Top Performers Details', buildTopPerformersHtml(), newBtn));
-    }
-    
-    if (atRiskCountBtn) {
-        const newBtn = atRiskCountBtn.cloneNode(true);
-        atRiskCountBtn.parentNode.replaceChild(newBtn, atRiskCountBtn);
-        newBtn.addEventListener('click', () => openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml(), newBtn));
-    }
-    
-    // Also handle chart click events
-    const riskChart = document.getElementById('riskHistogramChart');
-    if (riskChart) {
-        riskChart.removeAllListeners?.('plotly_click');
-        riskChart.on('plotly_click', function(eventData) {
-            if (!eventData || !eventData.points || !eventData.points.length) return;
-            const clickedBand = eventData.points[0].x;
-            openDetailsModal(`${clickedBand} Details`, buildRiskBandDetailsHtml(clickedBand), riskChart);
-        });
-    }
-    
-    const performanceChart = document.getElementById('performanceDistributionChart');
-    if (performanceChart) {
-        performanceChart.removeAllListeners?.('plotly_click');
-        performanceChart.on('plotly_click', function(eventData) {
-            const label = eventData.points?.[0]?.label;
-            if (!label) return;
-            openDetailsModal(`${label} Performance Details`, buildPerformanceSliceHtml(label), performanceChart);
-        });
-    }
-    
-    const trendChart = document.getElementById('trendDistributionChart');
-    if (trendChart) {
-        trendChart.removeAllListeners?.('plotly_click');
-        trendChart.on('plotly_click', function(eventData) {
-            const label = eventData.points?.[0]?.label;
-            if (!label) return;
-            openDetailsModal(`${label} Trend Details`, buildTrendSliceHtml(label), trendChart);
-        });
-    }
-});
     function buildDepartmentDetailsHtml(departmentName) {
         if (!latestDashboardData) return '<p>No data available.</p>';
 
@@ -1809,6 +1661,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function attachEvents() {
+        document.getElementById('yearFilter').addEventListener('change', event => {
+            state.year = event.target.value;
+            loadDashboard();
+        });
+
+        document.getElementById('departmentFilter').addEventListener('change', event => {
+            state.department = event.target.value;
+            loadDashboard();
+        });
+
+        document.getElementById('periodFilter').addEventListener('change', event => {
+            state.period = event.target.value;
+            loadDashboard();
+        });
+
+        document.getElementById('resetTopFilters').addEventListener('click', () => {
+            state.year = '';
+            state.department = 'All Departments';
+            state.period = 'Monthly';
+
+            document.getElementById('yearFilter').value = '';
+            document.getElementById('departmentFilter').value = 'All Departments';
+            document.getElementById('periodFilter').value = 'Monthly';
+
+            loadDashboard();
+        });
+
         document.getElementById('compareDepartmentFilter').addEventListener('change', event => {
         state.compareDepartment = event.target.value;
         if (latestDashboardData) {
@@ -1858,7 +1737,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const params = new URLSearchParams({
             staff1: state.staff1,
-            staff2: state.staff2
+            staff2: state.staff2,
+            year: state.year,
+            period: state.period,
+            department: state.department
         });
 
         window.location.href = './staff_comparison_patched.php?' + params.toString();
