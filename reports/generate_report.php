@@ -180,10 +180,36 @@ if ($report_type == 'overall') {
                     <div class="chart-container">
                         <canvas id="distributionChart"></canvas>
                     </div>
+                    <div class="chart-insight mt-2 text-muted small">
+                        <i class="fas fa-lightbulb"></i> <strong>Insight:</strong> 
+                        <?php 
+                        if ($distribution['top'] > $total_staff * 0.3) {
+                            echo "Excellent performance culture - over 30% of staff are top performers. Consider implementing peer-mentoring programs.";
+                        } elseif ($distribution['at-risk'] > $total_staff * 0.2) {
+                            echo "High concentration of at-risk performers. Immediate intervention and performance improvement plans recommended.";
+                        } else {
+                            echo "Distribution shows a healthy mix of performance levels. Focus on moving average performers to good category through targeted coaching.";
+                        }
+                        ?>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <div class="chart-container">
                         <canvas id="gaugeChart"></canvas>
+                    </div>
+                    <div class="chart-insight mt-2 text-muted small">
+                        <i class="fas fa-lightbulb"></i> <strong>Insight:</strong> 
+                        <?php 
+                        if ($avg_score >= 85) {
+                            echo "🏆 Outstanding organizational performance! Current average of " . round($avg_score, 1) . "% exceeds industry benchmarks.";
+                        } elseif ($avg_score >= 70) {
+                            echo "✅ Solid performance with " . round($avg_score, 1) . "% average. " . round(100 - $avg_score, 1) . "% gap to excellence target.";
+                        } elseif ($avg_score >= 50) {
+                            echo "⚠️ Room for significant improvement. Focus on identifying and addressing systemic barriers to performance.";
+                        } else {
+                            echo "🔴 Critical situation requiring immediate strategic intervention. Consider leadership review and organizational assessment.";
+                        }
+                        ?>
                     </div>
                 </div>
             </div>
@@ -196,11 +222,11 @@ if ($report_type == 'overall') {
                         <tr><th>Category</th><th>Count</th><th>Percentage</th><th>Status</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Top Performers 🟢</td><td><?php echo $distribution['top']; ?></td><td><?php echo round(($distribution['top']/$total_staff)*100,1); ?>%</td><td><span class="rating-badge rating-top">Excellent</span></td></tr>
-                        <tr><td>Good 👍</td><td><?php echo $distribution['good']; ?></td><td><?php echo round(($distribution['good']/$total_staff)*100,1); ?>%</td><td><span class="rating-badge rating-good">Good</span></td></tr>
-                        <tr><td>Average 🟡</td><td><?php echo $distribution['average']; ?></td><td><?php echo round(($distribution['average']/$total_staff)*100,1); ?>%</td><td><span class="rating-badge rating-average">Average</span></td></tr>
-                        <tr><td>Critical ⚠️</td><td><?php echo $distribution['critical']; ?></td><td><?php echo round(($distribution['critical']/$total_staff)*100,1); ?>%</td><td><span class="rating-badge rating-critical">Critical</span></td></tr>
-                        <tr><td>At Risk 🔴</td><td><?php echo $distribution['at-risk']; ?></td><td><?php echo round(($distribution['at-risk']/$total_staff)*100,1); ?>%</td><td><span class="rating-badge rating-risk">At Risk</span></td></tr>
+                        <tr><td>Top Performers 🟢</td><td><?php echo isset($distribution['top']) ? $distribution['top'] : 0; ?></td><td><?php echo isset($distribution['top']) ? round(($distribution['top']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-top">Excellent</span></td></tr>
+                        <tr><td>Good 👍</td><td><?php echo isset($distribution['good']) ? $distribution['good'] : 0; ?></td><td><?php echo isset($distribution['good']) ? round(($distribution['good']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-good">Good</span></td></tr>
+                        <tr><td>Average 🟡</td><td><?php echo isset($distribution['average']) ? $distribution['average'] : 0; ?></td><td><?php echo isset($distribution['average']) ? round(($distribution['average']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-average">Average</span></td></tr>
+                        <tr><td>Critical ⚠️</td><td><?php echo isset($distribution['critical']) ? $distribution['critical'] : 0; ?></td><td><?php echo isset($distribution['critical']) ? round(($distribution['critical']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-critical">Critical</span></td></tr>
+                        <tr><td>At Risk 🔴</td><td><?php echo isset($distribution['at-risk']) ? $distribution['at-risk'] : 0; ?></td><td><?php echo isset($distribution['at-risk']) ? round(($distribution['at-risk']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-risk">At Risk</span></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -494,6 +520,30 @@ elseif ($report_type == 'department') {
             <div class="mb-4">
                 <div class="chart-container" style="height: 400px;">
                     <canvas id="deptChart"></canvas>
+                </div>
+                <div class="chart-insight mt-2 text-muted small">
+                    <i class="fas fa-lightbulb"></i> <strong>Department Analysis:</strong> 
+                    <?php 
+                    $scores_array = array_column($dept_scores, 'avg_score');
+                    $variance = max($scores_array) - min($scores_array);
+                    $avg_all_depts = array_sum($scores_array) / count($scores_array);
+                    
+                    if ($variance < 10) {
+                        echo "📊 Consistent performance across all departments (variance of only " . round($variance, 1) . "%). ";
+                        echo "Share best practices to maintain this equilibrium.";
+                    } elseif ($variance > 25) {
+                        echo "⚠️ Significant performance gap between best and worst departments (" . round($variance, 1) . "% difference). ";
+                        echo "Consider cross-departmental knowledge transfer from {$best_dept['name']} to {$worst_dept['name']}.";
+                    } else {
+                        echo "📈 Moderate performance variation across departments. ";
+                        echo "Overall average: " . round($avg_all_depts, 1) . "%. {$best_dept['name']} leads with {$best_dept['avg_score']}%.";
+                    }
+                    
+                    // Identify department needing attention
+                    if ($worst_dept && $worst_dept['avg_score'] < 60) {
+                        echo " {$worst_dept['name']} requires immediate leadership review.";
+                    }
+                    ?>
                 </div>
             </div>
             
@@ -1022,10 +1072,64 @@ elseif ($report_type == 'top') {
                 <div class="chart-container" style="height: 300px; margin-bottom: 30px;">
                     <canvas id="deptDistribution"></canvas>
                 </div>
+
+                <div class="chart-insight mt-2 text-muted small">
+                    <i class="fas fa-lightbulb"></i> <strong>Talent Distribution Insight:</strong> 
+                    <?php 
+                    if (!empty($dept_dist)) {
+                        // Sort departments by contributor count (highest first)
+                        arsort($dept_dist);
+                        $top_dept = array_key_first($dept_dist);
+                        $top_dept_count = $dept_dist[$top_dept];
+                        $total_contributors = array_sum($dept_dist);
+                        echo "🏆 <strong>{$top_dept}</strong> has the most representatives in the Top {$top_count} Contributors list ({$top_dept_count} out of {$total_contributors}). ";
+                        echo "This department demonstrates strong overall talent density. Study their practices for organization-wide adoption.";
+                        
+                        // Identify departments with zero representatives in top list
+                        $zero_depts = [];
+                        $all_depts = array_unique(array_column($employees, 'department'));
+                        foreach ($all_depts as $dept) {
+                            if (!isset($dept_dist[$dept]) && $dept) {
+                                $zero_depts[] = $dept;
+                            }
+                        }
+                        if (!empty($zero_depts)) {
+                            echo " Departments without any representatives in Top {$top_count}: " . implode(', ', array_slice($zero_depts, 0, 3)) . ".";
+                        }
+                        
+                        // Add insight about department representation balance
+                        $dept_count = count($dept_dist);
+                        if ($dept_count == 1 && $total_contributors > 0) {
+                            echo " ⚠️ All top contributors come from a single department. Consider cross-departmental development opportunities.";
+                        } elseif ($top_dept_count / $total_contributors > 0.5) {
+                            echo " 📊 Majority ({$top_dept_count}/{$total_contributors}) of top contributors are concentrated in {$top_dept}.";
+                        } else {
+                            echo " 🌟 Good distribution of talent across {$dept_count} departments.";
+                        }
+                    }
+                    ?>
+                </div>
                 
                 <!-- Performance Level Pie Chart -->
                 <div class="chart-container" style="height: 300px;">
                     <canvas id="levelDistribution"></canvas>
+                </div>
+                <div class="chart-insight mt-2 text-muted small">
+                    <i class="fas fa-lightbulb"></i> <strong>Quality Insight:</strong> 
+                    <?php 
+                    $top_pct = ($level_dist['top'] / max(1, $top_count)) * 100;
+                    $good_pct = ($level_dist['good'] / max(1, $top_count)) * 100;
+                    
+                    if ($top_pct > 50) {
+                        echo "🌟 Exceptional quality! Over 50% of top contributors are in the 'Top Performer' category (85%+). ";
+                        echo "Consider creating a 'High Potential' program for these individuals.";
+                    } elseif ($good_pct > 60) {
+                        echo "📊 Solid contributor base with {$good_pct}% in 'Good Standing' category. ";
+                        echo "Focused coaching could elevate many to Top Performer status.";
+                    } else {
+                        echo "🎯 Opportunity to develop more Top Performers. Current Top Performers represent only {$top_pct}% of this list.";
+                    }
+                    ?>
                 </div>
             </div>
         </div>
