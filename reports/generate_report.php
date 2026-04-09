@@ -219,14 +219,14 @@ if ($report_type == 'overall') {
                 <h5>Performance Distribution</h5>
                 <table class="performance-table">
                     <thead>
-                        <tr><th>Category</th><th>Count</th><th>Percentage</th><th>Status</th></tr>
+                        <tr><th>Category</th><th>Count</th><th>Percentage</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Top Performers 🟢</td><td><?php echo isset($distribution['top']) ? $distribution['top'] : 0; ?></td><td><?php echo isset($distribution['top']) ? round(($distribution['top']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-top">Excellent</span></td></tr>
-                        <tr><td>Good 👍</td><td><?php echo isset($distribution['good']) ? $distribution['good'] : 0; ?></td><td><?php echo isset($distribution['good']) ? round(($distribution['good']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-good">Good</span></td></tr>
-                        <tr><td>Average 🟡</td><td><?php echo isset($distribution['average']) ? $distribution['average'] : 0; ?></td><td><?php echo isset($distribution['average']) ? round(($distribution['average']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-average">Average</span></td></tr>
-                        <tr><td>Critical ⚠️</td><td><?php echo isset($distribution['critical']) ? $distribution['critical'] : 0; ?></td><td><?php echo isset($distribution['critical']) ? round(($distribution['critical']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-critical">Critical</span></td></tr>
-                        <tr><td>At Risk 🔴</td><td><?php echo isset($distribution['at-risk']) ? $distribution['at-risk'] : 0; ?></td><td><?php echo isset($distribution['at-risk']) ? round(($distribution['at-risk']/$total_staff)*100,1) : 0; ?>%</td><td><span class="rating-badge rating-risk">At Risk</span></td></tr>
+                        <tr><td>Top Performers 🟢</td><td><?php echo isset($distribution['top']) ? $distribution['top'] : 0; ?></td><td><?php echo isset($distribution['top']) ? round(($distribution['top']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>Good 👍</td><td><?php echo isset($distribution['good']) ? $distribution['good'] : 0; ?></td><td><?php echo isset($distribution['good']) ? round(($distribution['good']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>Average 🟡</td><td><?php echo isset($distribution['average']) ? $distribution['average'] : 0; ?></td><td><?php echo isset($distribution['average']) ? round(($distribution['average']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>Critical ⚠️</td><td><?php echo isset($distribution['critical']) ? $distribution['critical'] : 0; ?></td><td><?php echo isset($distribution['critical']) ? round(($distribution['critical']/$total_staff)*100,1) : 0; ?>%</td></tr>
+                        <tr><td>At Risk 🔴</td><td><?php echo isset($distribution['at-risk']) ? $distribution['at-risk'] : 0; ?></td><td><?php echo isset($distribution['at-risk']) ? round(($distribution['at-risk']/$total_staff)*100,1) : 0; ?>%</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -237,7 +237,7 @@ if ($report_type == 'overall') {
                 <div class="table-responsive">
                     <table class="performance-table">
                         <thead>
-                            <tr><th>Staff Name</th><th>Department</th><th>Position</th><th>KPI Score (%)</th><th>Rating</th><th>Status</th></tr>
+                            <tr><th>Staff Name</th><th>Department</th><th>Position</th><th>KPI Score (%)</th><th>Rating</th></tr>
                         </thead>
                         <tbody>
                             <?php foreach ($employees as $emp): ?>
@@ -246,7 +246,6 @@ if ($report_type == 'overall') {
                                 <td><?php echo $emp['department']; ?></td>
                                 <td><?php echo $emp['position']; ?></td>
                                 <td><strong><?php echo $emp['score']; ?>%</strong></td>
-                                <td><?php echo $emp['rating']['icon']; ?> <?php echo $emp['rating']['label']; ?></td>
                                 <td><span class="rating-badge <?php echo $emp['rating']['class']; ?>"><?php echo $emp['rating']['label']; ?></span></td>
                             </tr>
                             <?php endforeach; ?>
@@ -1057,7 +1056,13 @@ elseif ($report_type == 'top') {
                 <h5>Performance Level Distribution</h5>
                 <?php
                 $dept_dist = [];
-                $level_dist = ['top' => 0, 'good' => 0, 'average' => 0];
+                $level_dist = [
+                    'top' => 0,
+                    'good' => 0,
+                    'average' => 0,
+                    'critical' => 0,
+                    'at-risk' => 0
+                ];
                 
                 foreach ($top_performers as $emp) {
                     $dept = $emp['department'];
