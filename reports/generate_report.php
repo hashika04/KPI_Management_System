@@ -326,6 +326,7 @@ elseif ($report_type == 'individual') {
                 <h3><i class="fas fa-user-circle me-2" style="color: var(--primary);"></i> Individual Employee KPI Report</h3>
                 <div class="export-buttons no-print">
                     <button class="btn-export-pdf" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="btn-export-excel" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
                 </div>
             </div>
