@@ -137,4 +137,3 @@ $topPerformers = array_filter($staffData, fn($s) => $s['score'] >= 85);
 $topCount = count($topPerformers);
 $displayTops = array_slice($topPerformers, 0, 3);
 ?>
-?>

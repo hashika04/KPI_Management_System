@@ -63,11 +63,13 @@ foreach ($sec2Items as $item) {
 $sec2WeightTotal = 0;
 $groupWeights = [];
 foreach ($sec2Items as $item) {
-    if (!isset($groupWeights[$item['kpi_group']])) {
-        $groupWeights[$item['kpi_group']] = (float)$item['group_weight'];
-        $sec2WeightTotal += (float)$item['group_weight'];
+    $group = $item['kpi_group'];
+    if (!isset($groupWeights[$group])) {
+        $groupWeights[$group] = 0;
     }
+    $groupWeights[$group] += (float)$item['weight'];
 }
+$sec2WeightTotal = array_sum($groupWeights);
 
 
 // Existing Data

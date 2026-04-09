@@ -139,51 +139,11 @@ $activePage = 'dashboard';
   </div><!-- /.stat-cards -->
 
   <!-- ══════════════════════
-       FILTERS
-  ══════════════════════ -->
-  <div class="filters-card">
-    <div class="filters-head">
-      <i class="ph ph-funnel"></i>
-      <h2>Filters</h2>
-    </div>
-    <div class="filters-row">
-
-      <div class="filter-input-wrap">
-        <i class="ph ph-magnifying-glass"></i>
-        <input
-          class="filter-input"
-          type="text"
-          id="searchInput"
-          placeholder="Search staff..."
-          oninput="filterTable()"
-        >
-      </div>
-
-      <select class="filter-select" id="deptFilter" onchange="filterTable()">
-        <option value="">All Departments</option>
-        <?php foreach($departments as $d): ?>
-          <option value="<?= htmlspecialchars($d) ?>"><?= htmlspecialchars($d) ?></option>
-        <?php endforeach; ?>
-      </select>
-
-      <select class="filter-select" id="levelFilter" onchange="filterTable()">
-        <option value="">All Levels</option>
-        <option value="top">Top Performers</option>
-        <option value="good">Good</option>
-        <option value="average">Average</option>
-        <option value="at-risk">At Risk</option>
-        <option value="critical">Critical</option>
-      </select>
-
-    </div>
-  </div><!-- /.filters-card -->
-
-  <!-- ══════════════════════
        TOP PERFORMERS PODIUM
   ══════════════════════ -->
   <?php if (!empty($tops)): ?>
   <div class="performers-card">
-    <h2 class="performers-title">Top Performers</h2>
+    <h2 class="performers-title">Highest KPI Staff</h2>
 
     <div class="podium-grid">
 
