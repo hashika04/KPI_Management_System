@@ -617,14 +617,17 @@ require_once __DIR__ . '/../includes/auth.php';
             document.getElementById('performanceTrendInsight').textContent = data.insight;
         }
 
+        const combinedAtRiskCount =
+            Number(data.performance_distribution?.critical || 0) +
+            Number(data.performance_distribution?.['at-risk'] || 0);
+
         Plotly.react('performanceDistributionChart', [{
-            labels: ['Excellence', 'Good', 'Moderate', 'Critical', 'At Risk'],
+            labels: ['Excellence', 'Good', 'Moderate', 'At Risk'],
             values: [
-                data.performance_distribution.top,
-                data.performance_distribution.good,
-                data.performance_distribution.average,
-                data.performance_distribution.critical,
-                data.performance_distribution['at-risk']
+                Number(data.performance_distribution?.top || 0),
+                Number(data.performance_distribution?.good || 0),
+                Number(data.performance_distribution?.average || 0),
+                combinedAtRiskCount
             ],
             type: 'pie',
             hole: 0.62,
@@ -637,7 +640,7 @@ require_once __DIR__ . '/../includes/auth.php';
                 size: 12
             },
             marker: {
-                colors: ['#10b981', '#3b82f6', '#f59e0b', '#fb7185', '#ef4444']
+                colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
             },
             hovertemplate: '%{label}: %{value} staff (%{percent})<extra></extra>',
             domain: {
@@ -729,7 +732,7 @@ require_once __DIR__ . '/../includes/auth.php';
                 });
             }
         document.getElementById('distributionInsight').textContent =
-        `${data.performance_distribution.top + data.performance_distribution.good} staff are in the stronger performance bands, while ${data.performance_distribution.critical + data.performance_distribution['at-risk']} staff are below the desired level and need closer support.`;
+        `${Number(data.performance_distribution?.top || 0) + Number(data.performance_distribution?.good || 0)} staff are in the stronger performance bands, while ${combinedAtRiskCount} staff are in the at-risk band and need closer support.`;
 
         const trendInsightEl = document.getElementById('trendDistributionInsight');
         if (trendInsightEl) {
@@ -1529,7 +1532,7 @@ function closeDetailsModal() {
 
         const displayBand = {
             '0-39': 'High Risk (0-39)',
-            '40-49': 'Critical (40-49)',
+            '40-49': 'At Risk (40-49)',
             '50-69': 'Moderate (50-69)',
             '70-84': 'Good (70-84)',
             '85-100': 'Top (85-100)'
@@ -1598,7 +1601,7 @@ function closeDetailsModal() {
             'Good': 'good',
             'Moderate': 'average',
             'Average': 'average',
-            'Critical': 'critical',
+            'Critical': 'at-risk',
             'At Risk': 'at-risk'
         };
         return map[label] || '';
@@ -1619,14 +1622,19 @@ function closeDetailsModal() {
         }
 
         const performanceKey = formatPerformanceLabel(sliceLabel);
-        const rows = latestDashboardData.staff_snapshot_list.filter(item => item.performance_level === performanceKey);
+        const rows = latestDashboardData.staff_snapshot_list.filter(item => {
+            if (performanceKey === 'at-risk') {
+                return item.performance_level === 'critical' || item.performance_level === 'at-risk';
+            }
+            return item.performance_level === performanceKey;
+        });
 
         if (rows.length === 0) {
-            return `<p>No staff found in the <strong>${escapeHtml(sliceLabel)}</strong> band under the current filters.</p>`;
+            return `<p>No staff found in the <strong>${escapeHtml(sliceLabel === 'Critical' ? 'At Risk' : sliceLabel)}</strong> band under the current filters.</p>`;
         }
 
         return `
-            <p><strong>${escapeHtml(sliceLabel)} Staff:</strong> ${rows.length}</p>
+            <p><strong>${escapeHtml(sliceLabel === 'Critical' ? 'At Risk' : sliceLabel)} Staff:</strong> ${rows.length}</p>
             <table class="modal-table">
                 <thead>
                     <tr>
@@ -1665,7 +1673,7 @@ function closeDetailsModal() {
         }
 
         return `
-            <p><strong>${escapeHtml(sliceLabel)} Staff:</strong> ${rows.length}</p>
+            <p><strong>${escapeHtml(sliceLabel === 'Critical' ? 'At Risk' : sliceLabel)} Staff:</strong> ${rows.length}</p>
             <table class="modal-table">
                 <thead>
                     <tr>
@@ -1686,8 +1694,7 @@ function closeDetailsModal() {
                             <td>${escapeHtml(
                                 item.performance_level === 'top' ? 'Top' :
                                 item.performance_level === 'good' ? 'Good' :
-                                item.performance_level === 'average' ? 'Average' :
-                                item.performance_level === 'critical' ? 'Critical' : 'At Risk'
+                                item.performance_level === 'average' ? 'Average' : 'At Risk'
                             )}</td>
                         </tr>
                     `).join('')}
