@@ -658,7 +658,8 @@
 
 /* Insight boxes */
 .heatmap-insight, .target-insight {
-    margin-top: 20px;
+    margin-top: 7px;
+    margin-bottom: 10px;
     padding: 14px 18px;
     border-radius: 14px;
     font-size: 13px;
