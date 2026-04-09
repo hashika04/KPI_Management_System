@@ -10,8 +10,10 @@ if ($_SESSION['position'] !== 'Supervisor') {
     exit();
 }
 
-$success_message = '';
-$error_message = '';
+$employee_success = '';
+$employee_error = '';
+$template_success = '';
+$template_error = '';
 
 // ==================== KPI TEMPLATE ACTIONS (UNCHANGED) ====================
 if (isset($_GET['action']) && isset($_GET['id'])) {
@@ -25,7 +27,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $template_id);
         if ($stmt->execute()) {
-            $success_message = "Template activated successfully!";
+            $template_success = "Template activated successfully!";
         }
     } elseif ($action == 'delete') {
         // Check if template has associated KPI data
@@ -37,13 +39,13 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
         $count = $check_result->fetch_assoc()['count'];
         
         if ($count > 0) {
-            $error_message = "Cannot delete template as it has $count KPI records associated.";
+            $template_error = "Cannot delete template as it has $count KPI records associated.";
         } else {
             $sql = "DELETE FROM kpi_templates WHERE id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $template_id);
             if ($stmt->execute()) {
-                $success_message = "Template deleted successfully!";
+                $template_success = "Template deleted successfully!";
             }
         }
     }
@@ -72,10 +74,10 @@ if (isset($_POST['employee_action'])) {
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("sssss", $full_name, $email, $staff_code, $department, $position);
             if ($stmt->execute()) {
-                $success_message = "Employee added successfully!";
+                $employee_success = "Employee added successfully!";
                 $_SESSION['departments_updated'] = true;
             } else {
-                $error_message = "Error adding employee: " . $conn->error;
+                $employee_error = "Error adding employee: " . $conn->error;
             }
         }
     } elseif ($action == 'edit') {
@@ -90,10 +92,10 @@ if (isset($_POST['employee_action'])) {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("sssssi", $full_name, $email, $staff_code, $department, $position, $id);
         if ($stmt->execute()) {
-            $success_message = "Employee updated successfully!";
+            $employee_success = "Employee updated successfully!";
             $_SESSION['departments_updated'] = true;
         } else {
-            $error_message = "Error updating employee: " . $conn->error;
+            $employee_error = "Error updating employee: " . $conn->error;
         }
     } elseif ($action == 'delete') {
         $id = intval($_POST['employee_id']);
@@ -112,10 +114,10 @@ if (isset($_POST['employee_action'])) {
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("i", $id);
             if ($stmt->execute()) {
-                $success_message = "Employee removed successfully!";
+                $employee_success = "Employee removed successfully!";
                 $_SESSION['departments_updated'] = true;
             } else {
-                $error_message = "Error deleting employee: " . $conn->error;
+                $employee_error = "Error deleting employee: " . $conn->error;
             }
         }
     }
@@ -404,16 +406,16 @@ while ($row = $depts_result->fetch_assoc()) {
             </div>
             
             <!-- Success/Error Messages -->
-            <?php if ($success_message): ?>
+            <?php if ($template_success): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle"></i> <?php echo $success_message; ?>
+                    <i class="fas fa-check-circle"></i> <?php echo $template_success; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
             
-            <?php if ($error_message): ?>
+            <?php if ($template_error): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i> <?php echo $error_message; ?>
+                    <i class="fas fa-exclamation-triangle"></i> <?php echo $template_error; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
@@ -537,7 +539,20 @@ while ($row = $depts_result->fetch_assoc()) {
                     </div>
                 </div>
             </div>
-
+            <!-- Success/Error Messages -->
+            <?php if ($employee_success): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> <?php echo $employee_success; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($employee_error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> <?php echo $employee_error; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
             <!-- ==================== SECTION 2: EMPLOYEE MANAGEMENT ==================== -->
             <div class="config-card">
                 <div class="card-header-custom">
@@ -723,7 +738,6 @@ while ($row = $depts_result->fetch_assoc()) {
                         <input type="hidden" name="employee_action" value="delete">
                         <input type="hidden" name="employee_id" id="delete_employee_id">
                         <p>Are you sure you want to remove <strong id="delete_employee_name"></strong>?</p>
-                        <p class="text-danger small">This action cannot be undone. Employees with existing KPI records cannot be deleted.</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
