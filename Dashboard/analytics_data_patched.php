@@ -22,7 +22,7 @@ $SECTION2_GROUP_WEIGHTS = [
     'Daily Sales Operations' => 0.15,
     'Customer Service Quality' => 0.15,
     'Sales Target Contribution' => 0.15,
-    'Training, Learning & Team Contribution' => 0.10,
+    'People, Training, Learning & Team Contribution' => 0.10,
     'Inventory & Cost Control' => 0.05,
     'Store Operations Support' => 0.15
 ];

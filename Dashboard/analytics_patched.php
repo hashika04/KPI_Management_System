@@ -992,112 +992,140 @@ require_once __DIR__ . '/../includes/auth.php';
                 document.getElementById('departmentInsight').textContent = 'No department data matched the current filters.';
             }
 
-        const kpiRows = data.kpi_vs_target || [];
 
-    const shortCategoryLabels = kpiRows.map(item => {
-        const category = item.category || '';
+const rawKpiRows = Array.isArray(data.kpi_vs_target) ? data.kpi_vs_target : [];
+const kpiRows = rawKpiRows.filter(item => item && item.category !== 'Other KPI');
 
-        if (category === 'Customer Service Quality') return 'Customer Service';
-        if (category === 'Sales Target Contribution') return 'Sales Target';
-        if (category === 'Daily Sales Operations') return 'Daily Sales';
-        if (category === 'Store Operations Support') return 'Store Operations';
-        if (category === 'Inventory & Cost Control') return 'Inventory & Cost';
-        if (category === 'Training, Learning & Team Contribution') return 'Training & Team';
+const shortCategoryLabels = kpiRows.map(item => {
+    const category = item.category || '';
 
-        return category;
-    });
+    if (category === 'Customer Service Quality') return 'Customer Service';
+    if (category === 'Sales Target Contribution') return 'Sales Target';
+    if (category === 'Daily Sales Operations') return 'Daily Sales';
+    if (category === 'Store Operations Support') return 'Store Operations';
+    if (category === 'Inventory & Cost Control') return 'Inventory & Cost';
+    if (
+        category === 'Training, Learning & Team Contribution' ||
+        category === 'People, Training & Team Contribution'
+    ) return 'Training & Team';
 
-    const categoryColors = kpiRows.map(item => {
-        const category = item.category || '';
+    return category;
+});
 
-        if (category === 'Customer Service Quality') return '#ef4444';
-        if (category === 'Sales Target Contribution') return '#f97316';
-        if (category === 'Daily Sales Operations') return '#f59e0b';
-        if (category === 'Store Operations Support') return '#3b82f6';
-        if (category === 'Inventory & Cost Control') return '#8b5cf6';
-        if (category === 'Training, Learning & Team Contribution') return '#10b981';
+const stackedCategoryLabels = shortCategoryLabels.map(label => {
+    if (label === 'Customer Service') return 'Customer<br>Service<br>Quality';
+    if (label === 'Sales Target') return 'Sales<br>Target<br>Contribution';
+    if (label === 'Daily Sales') return 'Daily<br>Sales<br>Operations';
+    if (label === 'Store Operations') return 'Store<br>Operations<br>Support';
+    if (label === 'Inventory & Cost') return 'Inventory &<br>Cost Control';
+    if (label === 'Training & Team') return 'People,<br>Training,<br>Learning & Team<br>Contribution';
 
-        return '#6366f1';
-    });
+    return label.replace(/ /g, '<br>');
+});
 
-        Plotly.react('kpiVsTargetChart', [
-            {
-                x: shortCategoryLabels,
-                y: kpiRows.map(item => item.actual),
-                type: 'bar',
-                name: 'Actual %',
-                marker: {
-                    color: categoryColors
-                },
-                text: kpiRows.map(item => item.actual.toFixed(1) + '%'),
-                textposition: 'outside',
-                customdata: kpiRows.map(item => [
-                    item.category,
-                    item.target,
-                    item.gap
-                ]),
-                hovertemplate:
-                    '<b>%{customdata[0]}</b><br>' +
-                    'Actual KPI: %{y:.2f}%<br>' +
-                    'Target KPI: %{customdata[1]:.2f}%<br>' +
-                    'Gap: %{customdata[2]:.2f} points<extra></extra>'
+const categoryColors = kpiRows.map(item => {
+    const category = item.category || '';
+
+    if (category === 'Customer Service Quality') return '#ef4444';
+    if (category === 'Sales Target Contribution') return '#f97316';
+    if (category === 'Daily Sales Operations') return '#f59e0b';
+    if (category === 'Store Operations Support') return '#3b82f6';
+    if (category === 'Inventory & Cost Control') return '#8b5cf6';
+    if (
+        category === 'Training, Learning & Team Contribution' ||
+        category === 'People, Training, Learning & Team Contribution'
+    ) {
+        return '#10b981';
+    }
+
+    return '#6366f1';
+});
+
+    Plotly.react('kpiVsTargetChart', [
+        {
+            x: stackedCategoryLabels,
+            y: kpiRows.map(item => item.actual),
+            type: 'bar',
+            name: 'Actual %',
+            marker: {
+                color: categoryColors
             },
-            {
-                x: shortCategoryLabels,
-                y: kpiRows.map(item => item.target),
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: 'Target %',
-                marker: {
-                    color: '#14b8a6',
-                    size: 7
-                },
-                line: {
-                    color: '#14b8a6',
-                    width: 3,
-                    dash: 'dash'
-                },
-                hovertemplate: 'Target: %{y:.2f}%<extra></extra>'
-            }
-        ], {
-            margin: { t: 20, r: 20, b: 80, l: 55 },
-            paper_bgcolor: 'transparent',
-            plot_bgcolor: 'transparent',
-            yaxis: {
-                range: [0, 100],
-                title: 'Score %',
-                gridcolor: 'rgba(148, 163, 184, 0.18)',
-                zeroline: false
+            text: kpiRows.map(item => item.actual.toFixed(1) + '%'),
+            textposition: 'outside',
+            customdata: kpiRows.map(item => [
+                item.category,
+                item.target,
+                item.gap
+            ]),
+            hovertemplate:
+                '<b>%{customdata[0]}</b><br>' +
+                'Actual KPI: %{y:.2f}%<br>' +
+                'Target KPI: %{customdata[1]:.2f}%<br>' +
+                'Gap: %{customdata[2]:.2f} points<extra></extra>'
+        },
+        {
+            x: stackedCategoryLabels,
+            y: kpiRows.map(item => item.target),
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: 'Target %',
+            marker: {
+                color: '#14b8a6',
+                size: 7
             },
-            xaxis: {
-                tickangle: 0,
-                automargin: true,
-                title: 'KPI Categories',
-                tickfont: {
-                    size: 11
+            line: {
+                color: '#14b8a6',
+                width: 3,
+                dash: 'dash'
+            },
+            hovertemplate: 'Target: %{y:.2f}%<extra></extra>'
+        }
+    ], {
+        margin: { t: 20, r: 20, b: 120, l: 55 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        yaxis: {
+            range: [0, 100],
+            title: 'Score %',
+            gridcolor: 'rgba(148, 163, 184, 0.18)',
+            zeroline: false
+        },
+        xaxis: {
+            tickangle: 0,
+            automargin: true,
+            title: {
+                text: '<b>KPI Categories</b>',
+                standoff: 20,
+                font: {
+                    size: 14,
+                    color: '#111827'
                 }
             },
-            legend: {
-                orientation: 'h',
-                x: 0,
-                y: 1.14
-            },
-            hoverlabel: {
-                bgcolor: '#ffffff',
-                bordercolor: '#e5e7eb',
-                font: { color: '#111827' }
-            }
-        }, {
-            responsive: true,
-            displayModeBar: true
-        });
 
-        if (data.kpi_vs_target.length > 0) {
-            const worstGap = [...data.kpi_vs_target].sort((a, b) => a.gap - b.gap)[0];
-            document.getElementById('kpiGapInsight').textContent = `${worstGap.category} has the largest shortfall at ${Math.abs(worstGap.gap).toFixed(2)} points from target.`;
-        } else {
-            document.getElementById('kpiGapInsight').textContent = 'No KPI category data matched the current filters.';
+            tickvals: stackedCategoryLabels,
+            ticktext: stackedCategoryLabels.map(label => `<b>${label}</b>`)
+        },
+        legend: {
+            orientation: 'h',
+            x: 0,
+            y: 1.14
+        },
+        hoverlabel: {
+            bgcolor: '#ffffff',
+            bordercolor: '#e5e7eb',
+            font: { color: '#111827' }
         }
+    }, {
+        responsive: true,
+        displayModeBar: true
+    });
+
+    if (data.kpi_vs_target.length > 0) {
+        const worstGap = [...data.kpi_vs_target].sort((a, b) => a.gap - b.gap)[0];
+        document.getElementById('kpiGapInsight').textContent = `${worstGap.category} has the largest shortfall at ${Math.abs(worstGap.gap).toFixed(2)} points from target.`;
+    } else {
+        document.getElementById('kpiGapInsight').textContent = 'No KPI category data matched the current filters.';
+    }
 
         const heatmapRows = data.heatmap || [];
         const heatmapColumns = [...new Set(heatmapRows.flatMap(row => Object.keys(row)).filter(key => key !== 'period'))];
