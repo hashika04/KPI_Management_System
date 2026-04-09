@@ -3,6 +3,9 @@
  * overview.php  — KPI Monitor
  * Styles: ../asset/universal.css (shared) + ../asset/overview.css (page-specific)
  */
+
+$selectedYear = isset($_GET['year']) ? intval($_GET['year']) : null;
+
 include("../includes/auth.php");
 include("../Dashboard/data.php");
 include("../config/db.php");
@@ -141,120 +144,145 @@ $activePage = 'dashboard';
   <!-- ══════════════════════
        TOP PERFORMERS PODIUM
   ══════════════════════ -->
-  <?php if (!empty($tops)): ?>
   <div class="performers-card">
-    <h2 class="performers-title">Highest KPI Staff</h2>
+    <div style="display:flex; justify-content:center; align-items:center; margin-bottom:20px; position:relative;">
+      <h2 class="performers-title" style="margin:0;">Highest KPI Staff</h2>
+      <div style="position:absolute; right:0;">
+        <form method="GET">
+            <select name="year" onchange="this.form.submit()" class="year-filter-form">
+                <option value="">Overall (All Years)</option>
+                <?php
+                $yearRes = $conn->query("SELECT DISTINCT YEAR(Date) as yr FROM kpi_data ORDER BY yr DESC");
+                while($yr = $yearRes->fetch_assoc()):
+                    $selected = (isset($_GET['year']) && $_GET['year'] == $yr['yr']) ? 'selected' : '';
+                ?>
+                    <option value="<?= $yr['yr'] ?>" <?= $selected ?>><?= $yr['yr'] ?></option>
+                <?php endwhile; ?>
+            </select>
+        </form>
+      </div>
+    </div>
 
     <div class="podium-grid">
 
       <!-- Bronze — 3rd (left) -->
-      <?php if ($podium['bronze']): $p = $podium['bronze']; ?>
-      <a href="../staff_masterlist/staffprofile.php?id=<?= $p['id'] ?>" class="performer-card bronze">
-        <span class="medal-badge bronze">Bronze</span>
-        <div class="performer-avatar">
-          <?php if (!empty($p['avatar']) && file_exists($p['avatar'])): ?>
-            <img src="<?= htmlspecialchars($p['avatar']) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
-          <?php else: ?>
-            <div class="avatar-initials"><?= strtoupper(substr($p['name'],0,2)) ?></div>
-          <?php endif; ?>
-        </div>
-        <div class="performer-name"><?= htmlspecialchars($p['name']) ?></div>
-        <div class="performer-id">Staff ID: <?= htmlspecialchars($p['staffId']) ?></div>
-        <div class="performer-kpi">
-          <div class="performer-kpi-row">
-            <span class="performer-kpi-label">Overall KPI:</span>
-            <span class="performer-kpi-value"><?= $p['score'] ?>%</span>
+      <?php if ($podium['bronze'] && $podium['bronze']['podium_score'] > 0): $p = $podium['bronze']; ?>
+        <a href="../staff_masterlist/staffprofile.php?id=<?= $p['id'] ?>" class="performer-card bronze">
+            <span class="medal-badge bronze">Bronze</span>
+            <div class="performer-avatar">
+                <?php if (!empty($p['avatar']) && file_exists($p['avatar'])): ?>
+                    <img src="<?= htmlspecialchars($p['avatar']) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
+                <?php else: ?>
+                    <div class="avatar-initials"><?= strtoupper(substr($p['name'],0,2)) ?></div>
+                <?php endif; ?>
+            </div>
+            <div class="performer-name"><?= htmlspecialchars($p['name']) ?></div>
+            <div class="performer-id">Staff ID: <?= htmlspecialchars($p['staffId']) ?></div>
+            <div class="performer-kpi">
+                <div class="performer-kpi-row">
+                    <span class="performer-kpi-label">Overall KPI:</span>
+                    <span class="performer-kpi-value"><?= $p['podium_score'] ?>%</span>
+                </div>
+                <div class="kpi-bar-bg">
+                    <div class="kpi-bar-fill" style="width:<?= min($p['podium_score'],100) ?>%"></div>
+                </div>
+            </div>
+            <div class="qr-wrap">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+                    alt="Scan to view profile" class="qr-image" width="120" height="120">
+            </div>
+            <span class="view-btn bronze">View Details <i class="ph ph-arrow-right"></i></span>
+        </a>
+      <?php else: ?>
+          <div class="performer-card bronze" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:300px; opacity:0.5;">
+              <span class="medal-badge bronze">Bronze</span>
+              <div style="margin-top:20px; text-align:center;">
+                  <div style="font-size:40px;">🏅</div>
+                  <p style="margin-top:10px; font-weight:600; color:#888;">No Staff</p>
+                  <p style="font-size:12px; color:#aaa;">No KPI records for this period</p>
+              </div>
           </div>
-          <div class="kpi-bar-bg">
-            <div class="kpi-bar-fill" style="width:<?= min($p['score'],100) ?>%"></div>
-          </div>
-        </div>
-        <div class="qr-wrap">
-          <img 
-            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
-            alt="Scan to view profile" 
-            class="qr-image" 
-            width="120" 
-            height="120"
-          >
-        </div>
-        <span class="view-btn bronze">View Details <i class="ph ph-arrow-right"></i></span>
-      </a>
       <?php endif; ?>
 
       <!-- Gold — 1st (centre) -->
-      <?php if ($podium['gold']): $p = $podium['gold']; ?>
-      <a href="../staff_masterlist/staffprofile.php?id=<?= $p['id'] ?>" class="performer-card gold">
-        <span class="medal-badge gold">Gold</span>
-        <div class="performer-avatar">
-          <?php if (!empty($p['avatar']) && file_exists($p['avatar'])): ?>
-            <img src="<?= htmlspecialchars($p['avatar']) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
-          <?php else: ?>
-            <div class="avatar-initials"><?= strtoupper(substr($p['name'],0,2)) ?></div>
-          <?php endif; ?>
-        </div>
-        <div class="performer-name"><?= htmlspecialchars($p['name']) ?></div>
-        <div class="performer-id">Staff ID: <?= htmlspecialchars($p['staffId']) ?></div>
-        <div class="performer-kpi">
-          <div class="performer-kpi-row">
-            <span class="performer-kpi-label">Overall KPI:</span>
-            <span class="performer-kpi-value"><?= $p['score'] ?>%</span>
+      <?php if ($podium['gold'] && $podium['gold']['podium_score'] > 0): $p = $podium['gold']; ?>
+        <a href="../staff_masterlist/staffprofile.php?id=<?= $p['id'] ?>" class="performer-card gold">
+            <span class="medal-badge gold">Gold</span>
+            <div class="performer-avatar">
+                <?php if (!empty($p['avatar']) && file_exists($p['avatar'])): ?>
+                    <img src="<?= htmlspecialchars($p['avatar']) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
+                <?php else: ?>
+                    <div class="avatar-initials"><?= strtoupper(substr($p['name'],0,2)) ?></div>
+                <?php endif; ?>
+            </div>
+            <div class="performer-name"><?= htmlspecialchars($p['name']) ?></div>
+            <div class="performer-id">Staff ID: <?= htmlspecialchars($p['staffId']) ?></div>
+            <div class="performer-kpi">
+                <div class="performer-kpi-row">
+                    <span class="performer-kpi-label">Overall KPI:</span>
+                    <span class="performer-kpi-value"><?= $p['podium_score'] ?>%</span>
+                </div>
+                <div class="kpi-bar-bg">
+                    <div class="kpi-bar-fill" style="width:<?= min($p['score'],100) ?>%"></div>
+                </div>
+            </div>
+            <div class="qr-wrap">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+                    alt="Scan to view profile" class="qr-image" width="120" height="120">
+            </div>
+            <span class="view-btn gold">View Details <i class="ph ph-arrow-right"></i></span>
+        </a>
+      <?php else: ?>
+          <div class="performer-card gold" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:300px; opacity:0.5;">
+              <span class="medal-badge gold">Gold</span>
+              <div style="margin-top:20px; text-align:center;">
+                  <div style="font-size:40px;">🥇</div>
+                  <p style="margin-top:10px; font-weight:600; color:#888;">No Staff Data</p>
+                  <p style="font-size:12px; color:#aaa;">No KPI records for this period</p>
+              </div>
           </div>
-          <div class="kpi-bar-bg">
-            <div class="kpi-bar-fill" style="width:<?= min($p['score'],100) ?>%"></div>
-          </div>
-        </div>
-        <div class="qr-wrap">
-          <img 
-            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>"
-            alt="Scan to view profile" 
-            class="qr-image" 
-            width="120" 
-            height="120"
-          >
-        </div>
-        <span class="view-btn gold">View Details <i class="ph ph-arrow-right"></i></span>
-      </a>
       <?php endif; ?>
 
       <!-- Silver — 2nd (right) -->
-      <?php if ($podium['silver']): $p = $podium['silver']; ?>
-      <a href="../staff_masterlist/staffprofile.php?id=<?= $p['id'] ?>" class="performer-card silver">
-        <span class="medal-badge silver">Silver</span>
-        <div class="performer-avatar">
-          <?php if (!empty($p['avatar']) && file_exists($p['avatar'])): ?>
-            <img src="<?= htmlspecialchars($p['avatar']) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
-          <?php else: ?>
-            <div class="avatar-initials"><?= strtoupper(substr($p['name'],0,2)) ?></div>
-          <?php endif; ?>
-        </div>
-        <div class="performer-name"><?= htmlspecialchars($p['name']) ?></div>
-        <div class="performer-id">Staff ID: <?= htmlspecialchars($p['staffId']) ?></div>
-        <div class="performer-kpi">
-          <div class="performer-kpi-row">
-            <span class="performer-kpi-label">Overall KPI:</span>
-            <span class="performer-kpi-value"><?= $p['score'] ?>%</span>
+      <?php if ($podium['silver'] && $podium['silver']['podium_score'] > 0): $p = $podium['silver']; ?>
+        <a href="../staff_masterlist/staffprofile.php?id=<?= $p['id'] ?>" class="performer-card silver">
+            <span class="medal-badge silver">Silver</span>
+            <div class="performer-avatar">
+                <?php if (!empty($p['avatar']) && file_exists($p['avatar'])): ?>
+                    <img src="<?= htmlspecialchars($p['avatar']) ?>" alt="<?= htmlspecialchars($p['name']) ?>">
+                <?php else: ?>
+                    <div class="avatar-initials"><?= strtoupper(substr($p['name'],0,2)) ?></div>
+                <?php endif; ?>
+            </div>
+            <div class="performer-name"><?= htmlspecialchars($p['name']) ?></div>
+            <div class="performer-id">Staff ID: <?= htmlspecialchars($p['staffId']) ?></div>
+            <div class="performer-kpi">
+                <div class="performer-kpi-row">
+                    <span class="performer-kpi-label">Overall KPI:</span>
+                    <span class="performer-kpi-value"><?= $p['podium_score'] ?>%</span>
+                </div>
+                <div class="kpi-bar-bg">
+                    <div class="kpi-bar-fill" style="width:<?= min($p['podium_score'],100) ?>%"></div>
+                </div>
+            </div>
+            <div class="qr-wrap">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
+                    alt="Scan to view profile" class="qr-image" width="120" height="120">
+            </div>
+            <span class="view-btn silver">View Details <i class="ph ph-arrow-right"></i></span>
+        </a>
+      <?php else: ?>
+          <div class="performer-card silver" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:300px; opacity:0.5;">
+              <span class="medal-badge silver">Silver</span>
+              <div style="margin-top:20px; text-align:center;">
+                  <div style="font-size:40px;">🥈</div>
+                  <p style="margin-top:10px; font-weight:600; color:#888;">No Staff Data</p>
+                  <p style="font-size:12px; color:#aaa;">No KPI records for this period</p>
+              </div>
           </div>
-          <div class="kpi-bar-bg">
-            <div class="kpi-bar-fill" style="width:<?= min($p['score'],100) ?>%"></div>
-          </div>
-        </div>
-        <div class="qr-wrap">
-          <img 
-            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?= urlencode($dynamicBaseUrl . $p['id']) ?>" 
-            alt="Scan to view profile" 
-            class="qr-image" 
-            width="120" 
-            height="120"
-          >
-        </div>
-        <span class="view-btn silver">View Details <i class="ph ph-arrow-right"></i></span>
-      </a>
       <?php endif; ?>
-
     </div><!-- /.podium-grid -->
   </div><!-- /.performers-card -->
-  <?php endif; ?>
 
   <!-- ══════════════════════
        ATTENTION REQUIRED
