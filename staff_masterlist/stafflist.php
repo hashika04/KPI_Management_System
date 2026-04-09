@@ -48,7 +48,7 @@ $result = $conn->query($sql);
 <div class="staff-masterlist-content">
     <div class="sticky-header">
         <div class="staff-masterlist-header">
-            <h1>Staff Profiles</h1>
+            <h1>Staff Masterlist</h1>
             <p class="subtitle">View and manage individual performance</p>
 
 
