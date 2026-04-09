@@ -82,7 +82,7 @@ $depts_result = mysqli_query($conn, $depts_query);
     }
 
     .reports-header h1 {
-        font-size: 26px;
+        font-size: 28px;
         font-weight: 700;
         margin-bottom: 4px;
         color: var(--text-main);
@@ -90,7 +90,7 @@ $depts_result = mysqli_query($conn, $depts_query);
     }
 
     .reports-subtitle {
-        font-size: 12px;
+        font-size: 13px;
         color: var(--text-muted);
         margin-bottom: 15px;
     }
