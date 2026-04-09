@@ -12,6 +12,7 @@ if ($staffId <= 0) {
 
 $success = '';
 $error = '';
+$selectedYear = trim((string)($_GET['year'] ?? ''));
 
 define('KPI_TARGET_PERCENT', 80.0);
 define('TREND_STABLE_DELTA', 0.2);
@@ -157,8 +158,8 @@ $staffName = trim((string)$staff['full_name']);
 $stmt->bind_param('s', $staffName);
 $stmt->execute();
 $kpiResult = $stmt->get_result();
+$selectedYear = trim((string)($_GET['year'] ?? ''));
 
-$records = [];
 while ($row = $kpiResult->fetch_assoc()) {
     $date = DateTime::createFromFormat('Y-m-d', trim((string)$row['evaluation_date']));
     if (!$date) {
@@ -178,7 +179,20 @@ while ($row = $kpiResult->fetch_assoc()) {
     ];
 }
 $stmt->close();
+$allRecords = $records;
 
+$availableYears = [];
+foreach ($allRecords as $row) {
+    $availableYears[(string)$row['year']] = true;
+}
+$availableYears = array_keys($availableYears);
+rsort($availableYears);
+
+if ($selectedYear !== '') {
+    $records = array_values(array_filter($records, function ($row) use ($selectedYear) {
+        return (string)$row['year'] === (string)$selectedYear;
+    }));
+}
 /*
 |--------------------------------------------------------------------------
 | BUILD PERIOD SCORES
@@ -246,12 +260,20 @@ foreach ($groupedPeriods as $period => $entry) {
         $weighted = $avg * $weight;
         $section2Weighted += $weighted;
 
-        $categoryScores[] = [
-            'category' => $groupName,
-            'percentage' => round(($avg / 5) * 100, 2),
-            'avg_5_scale' => round($avg, 4),
-            'weighted_score_5' => round($weighted, 4),
-        ];
+    $categoryScores[] = [
+        'category' => $groupName,
+        'percentage' => round(($avg / 5) * 100, 2),
+        'avg_5_scale' => round($avg, 4),
+        'weighted_score_5' => round($weighted, 4),
+        'items' => array_map(function ($item) {
+            return [
+                'code' => $item['code'],
+                'description' => $item['description'],
+                'score_5' => (float)$item['score'],
+                'percentage' => round(((float)$item['score'] / 5) * 100, 2),
+            ];
+        }, $items),
+    ];
     }
 
     usort($categoryScores, fn($a, $b) => strcmp($a['category'], $b['category']));
@@ -285,6 +307,42 @@ $latest = end($periodSummaries) ?: [
 
 $latestComment = $latest['comments'] ?: 'No supervisor comment available.';
 $latestTraining = $latest['training'] ?: 'No training recommendation available.';
+
+$coreCompetencyLabels = [
+    'S1.1' => 'Initiative',
+    'S1.2' => 'Professional Conduct',
+    'S1.3' => 'Reliability & Accountability'
+];
+
+$coreCompetencies = [];
+$latestPeriodKey = $latest['period'] ?? '';
+
+if ($latestPeriodKey !== '' && isset($groupedPeriods[$latestPeriodKey])) {
+    $latestSection1Scores = $groupedPeriods[$latestPeriodKey]['section1_scores'] ?? [];
+
+    foreach ($coreCompetencyLabels as $code => $label) {
+        $score5 = isset($latestSection1Scores[$code]) ? (float)$latestSection1Scores[$code] : 0.0;
+        $percentage = round(($score5 / 5) * 100, 2);
+
+        $coreCompetencies[] = [
+            'code' => $code,
+            'label' => $label,
+            'score_5' => $score5,
+            'percentage' => $percentage,
+        ];
+    }
+}
+
+$coreCompetencyLabelsJs = array_map(fn($item) => $item['label'], $coreCompetencies);
+$coreCompetencyValuesJs = array_map(fn($item) => $item['percentage'], $coreCompetencies);
+$coreCompetencyColorsJs = array_map(function ($item) {
+    $percent = (float)$item['percentage'];
+
+    if ($percent >= 85) return '#16a34a';
+    if ($percent >= 70) return '#3b82f6';
+    if ($percent >= 50) return '#f59e0b';
+    return '#ef4444';
+}, $coreCompetencies);
 
 $recentScores5 = array_column(array_slice($periodSummaries, -3), 'score_5');
 $trendDelta = 0.0;
@@ -343,13 +401,68 @@ if ($riskLevel === 'Low') {
 }
 
 $profilePhoto = htmlspecialchars(normalizeAvatarPath((string)($staff['profile_photo'] ?? '')));
-$trendSeriesLabels = array_map(fn($row) => $row['period'], $periodSummaries);
+
+$trendSeriesLabels = array_map(function ($row) {
+    $raw = (string)$row['period'];
+
+    if (preg_match('/^\d{4}-\d{2}$/', $raw)) {
+        $date = DateTime::createFromFormat('Y-m', $raw);
+        if ($date) {
+            return $date->format('M Y');
+        }
+    }
+
+    if (preg_match('/^\d{4}$/', $raw)) {
+        return $raw;
+    }
+
+    return $raw;
+}, $periodSummaries);
+
 $trendSeriesValues = array_map(fn($row) => $row['percentage'], $periodSummaries);
 $categoryLabels = array_map(fn($row) => $row['category'], $latest['category_scores']);
+$categoryWrappedLabels = array_map(function ($label) {
+    return match ($label) {
+        'Customer Service Quality' => 'Customer<br>Service<br>Quality',
+        'Daily Sales Operations' => 'Daily<br>Sales<br>Operations',
+        'Inventory & Cost Control' => 'Inventory &<br>Cost Control',
+        'Training, Learning & Team Contribution' => 'Training,<br>Learning & Team<br>Contribution',
+        'Sales Target Contribution' => 'Sales Target<br>Contribution',
+        'Store Operations Support' => 'Store Operations<br>Support',
+        default => str_replace(' ', '<br>', $label),
+    };
+}, $categoryLabels);
+$radarLabels = array_map(function ($label) {
+    return match ($label) {
+        'Training, Learning & Team Contribution' => 'Training & Team',
+        'Inventory & Cost Control' => 'Inventory & Cost',
+        'Daily Sales Operations' => 'Daily Sales',
+        'Customer Service Quality' => 'Customer Service',
+        'Sales Target Contribution' => 'Sales Target',
+        'Store Operations Support' => 'Store Support',
+        default => $label,
+    };
+}, $categoryLabels);
+
 $categoryValues = array_map(fn($row) => $row['percentage'], $latest['category_scores']);
 $hasTrendData = !empty($trendSeriesLabels) && !empty($trendSeriesValues);
 $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
+
+$recordCount = count($periodSummaries);
+$hasPreviousComparison = $recordCount >= 2;
+
+$currentPerformanceBadgeClass =
+    $performanceLevel === 'Top' ? 'pill-top' :
+    ($performanceLevel === 'Good' ? 'pill-good' :
+    ($performanceLevel === 'Average' ? 'pill-average' : 'pill-risk'));
+
+$currentTrendBadgeClass =
+    $trendLabel === 'Improving' ? 'pill-low' :
+    ($trendLabel === 'Stable' ? 'pill-good' : 'pill-high');
 ?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1262,7 +1375,7 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
 
         <!-- ROW 2 RIGHT: buttons -->
         <div class="profile-hero-action">
-            <button class="profile-action-btn action-kpi" onclick="openAddKPIModal(<?= $staff['id'] ?>, '<?= htmlspecialchars($staff['full_name'], ENT_QUOTES) ?>')">
+            <button class="profile-action-btn action-kpi">
                 <i class="ph ph-note-pencil"></i> Edit KPI
             </button>
 
@@ -1284,108 +1397,137 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
 
 </section>
 
-            <?php if ($success): ?>
-                <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
-            <?php endif; ?>
+    <section class="profile-edit-drawer profile-main-card" id="profileEditDrawer" style="display:none;">
+        <h2>Edit Profile</h2>
 
-            <?php if ($error): ?>
-                <div class="profile-message message-error"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
-
-            <form method="POST" id="staffProfileForm">
-                <input type="hidden" name="update_profile" value="1">
-                <input type="hidden" name="staff_id" value="<?= (int)$staff['id'] ?>">
-
-                <div class="profile-form-grid" id="profileFormGrid">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" value="<?= htmlspecialchars($staff['email'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Phone Number</label>
-                        <input type="text" name="phone_number" value="<?= htmlspecialchars($staff['phone_number'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Department</label>
-                        <input type="text" name="department" value="<?= htmlspecialchars($staff['department'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Position</label>
-                        <input type="text" name="position" value="<?= htmlspecialchars($staff['position'] ?? '') ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Join Date</label>
-                        <input type="date" name="join_date" value="<?= htmlspecialchars($staff['join_date'] ?? '') ?>">
-                    </div>
-                </div>
-        </form>
-
-
-        <?php if (empty($records)): ?>
-            <section class="profile-wide-panel">
-                <h2>Data Status</h2>
-                <div class="text-panel">
-                    <p>No KPI records were matched for this staff profile. Please check whether the staff name in the <strong>staff</strong> table matches the name used in <strong>kpi_data</strong>.</p>
-                </div>
-            </section>
+        <?php if ($success): ?>
+            <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
 
-        <section class="profile-summary-row">
-            <article class="summary-box profile-card summary-score-card">
-                <h3>Current KPI Score</h3>
-                <div class="kpi-big-score"><?= number_format((float)$latest['percentage'], 2) ?>%</div>
+        <?php if ($error): ?>
+            <div class="profile-message message-error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+
+        <form method="POST" id="staffProfileForm">
+            <input type="hidden" name="update_profile" value="1">
+            <input type="hidden" name="staff_id" value="<?= (int)$staff['id'] ?>">
+
+            <div class="profile-form-grid" id="profileFormGrid" style="display:grid;">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="<?= htmlspecialchars($staff['email'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" name="phone_number" value="<?= htmlspecialchars($staff['phone_number'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" name="department" value="<?= htmlspecialchars($staff['department'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Position</label>
+                    <input type="text" name="position" value="<?= htmlspecialchars($staff['position'] ?? '') ?>">
+                </div>
+
+                <div class="form-group">
+                    <label>Join Date</label>
+                    <input type="date" name="join_date" value="<?= htmlspecialchars($staff['join_date'] ?? '') ?>">
+                </div>
+            </div>
+
+            <div class="profile-action-row" id="profileEditActions" style="display:flex;">
+                <button type="button" class="profile-cancel-btn" id="cancelEditBtn">Cancel</button>
+                <button type="submit" class="profile-save-btn">Save Changes</button>
+            </div>
+        </form>
+
+    </section>
+
+    <?php if (empty($records)): ?>
+        <section class="profile-wide-panel">
+            <h2>Data Status</h2>
+            <div class="text-panel">
+                <p>No KPI records were matched for this staff profile. Please check whether the staff name in the <strong>staff</strong> table matches the name used in <strong>kpi_data</strong>.</p>
+            </div>
+        </section>
+    <?php endif; ?>
+        
+        
+    <section class="profile-summary-row profile-summary-row-refined">
+        <article class="summary-box profile-card summary-score-card summary-score-card-main">
+            <div class="summary-title-row">
+                <h3><i class="ph ph-chart-line-up"></i> Current Performance Score</h3>
+            </div>
+
+            <div class="kpi-big-score"><?= number_format((float)$latest['percentage'], 2) ?>%</div>
+
+            <?php if ($hasPreviousComparison): ?>
                 <div class="summary-subnote">
                     Previous 5-scale score: <?= number_format((float)$latest['score_5'], 2) ?> / 5
                 </div>
-                <div class="badge-row">
-                    <span class="profile-pill <?= $performanceLevel === 'Top' ? 'pill-top' : ($performanceLevel === 'Good' ? 'pill-good' : ($performanceLevel === 'Average' ? 'pill-average' : 'pill-risk')) ?>">
-                        <?= htmlspecialchars($performanceLevel) ?>
-                    </span>
-                    <span class="profile-pill <?= $riskLevel === 'Low' ? 'pill-low' : ($riskLevel === 'Moderate' ? 'pill-moderate' : 'pill-high') ?>">
-                        <?= htmlspecialchars($riskLevel) ?> Risk
-                    </span>
-                    <span class="profile-pill <?= $trendLabel === 'Improving' ? 'pill-low' : ($trendLabel === 'Stable' ? 'pill-good' : 'pill-high') ?>">
-                        <?= htmlspecialchars($trendLabel) ?>
-                    </span>
+            <?php else: ?>
+                <div class="summary-subnote">
+                    Current 5-scale score: <?= number_format((float)$latest['score_5'], 2) ?> / 5
                 </div>
-            </article>
+            <?php endif; ?>
 
-            <article class="summary-box profile-card summary-strength-card">
-                <h3>Strengths</h3>
-                <ul class="summary-list">
-                    <?php if (!empty($strengths)): ?>
-                        <?php foreach ($strengths as $item): ?>
-                            <li>
-                                <strong><?= htmlspecialchars($item['category']) ?></strong>
-                                — <?= number_format((float)$item['percentage'], 2) ?>%
-                            </li>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <li>No strength data available.</li>
-                    <?php endif; ?>
-                </ul>
-            </article>
+            <div class="badge-row">
+                <span class="profile-pill <?= $currentPerformanceBadgeClass ?>">
+                    <?= htmlspecialchars($performanceLevel) ?>
+                </span>
+            </div>
+        </article>
 
-            <article class="summary-box profile-card summary-improve-card">
-                <h3>Areas of Improvement</h3>
-                <ul class="summary-list">
-                    <?php if (!empty($improvements)): ?>
-                        <?php foreach ($improvements as $item): ?>
-                            <li>
-                                <strong><?= htmlspecialchars($item['category']) ?></strong>
-                                — <?= number_format((float)$item['percentage'], 2) ?>%
-                            </li>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <li>No improvement data available.</li>
-                    <?php endif; ?>
-                </ul>
-            </article>
-        </section>
+        <article class="summary-box profile-card summary-strength-card">
+            <div class="summary-title-row summary-title-green">
+                <h3><i class="ph ph-medal"></i> Strengths</h3>
+            </div>
+
+            <ul class="summary-list summary-list-strong">
+                <?php if (!empty($strengths)): ?>
+                    <?php foreach ($strengths as $item): ?>
+                        <li>
+                            <span class="summary-item-label summary-item-label-green">
+                                <?= htmlspecialchars($item['category']) ?>
+                            </span>
+                            <span class="summary-item-value">
+                                <?= number_format((float)$item['percentage'], 2) ?>%
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <li>No strength data available.</li>
+                <?php endif; ?>
+            </ul>
+        </article>
+
+        <article class="summary-box profile-card summary-improve-card">
+            <div class="summary-title-row summary-title-amber">
+                <h3><i class="ph ph-warning-circle"></i> Areas of Improvement</h3>
+            </div>
+
+            <ul class="summary-list summary-list-strong">
+                <?php if (!empty($improvements)): ?>
+                    <?php foreach ($improvements as $item): ?>
+                        <li>
+                            <span class="summary-item-label summary-item-label-amber">
+                                <?= htmlspecialchars($item['category']) ?>
+                            </span>
+                            <span class="summary-item-value">
+                                <?= number_format((float)$item['percentage'], 2) ?>%
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <li>No improvement data available.</li>
+                <?php endif; ?>
+            </ul>
+        </article>
+    </section>
 
         <section class="profile-chart-row">
             <article class="profile-panel">
@@ -1407,43 +1549,81 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
 
         <section class="profile-chart-row">
             <article class="profile-panel">
-                <h2>Category Breakdown</h2>
-                <div id="staffCategoryChart" style="height:320px;"></div>
-                <?php if (!$hasCategoryData): ?>
-                    <p class="empty-chart-note">No category breakdown available for this staff.</p>
+                <h2>Core Competencies</h2>
+                <div class="core-chart-shell">
+                    <div id="coreCompetencyChart" style="height:470px;"></div>
+                </div>
+
+                <?php if (empty($coreCompetencies)): ?>
+                    <p class="empty-chart-note">No core competency data available for this staff.</p>
                 <?php endif; ?>
             </article>
 
-            <article class="profile-panel">
+            <section class="profile-panel">
                 <h2>Detailed KPI Breakdown</h2>
-                <div class="detail-breakdown-grid">
-                    <div class="detail-box">
-                        <h3>Latest Summary</h3>
-                        <ul class="detail-list">
-                            <li><strong>Latest Period:</strong> <?= htmlspecialchars($latest['period'] ?: '-') ?></li>
-                            <li><strong>Trend Delta:</strong> <?= number_format((float)$trendDelta, 2) ?></li>
-                            <li><strong>Stability Score:</strong> <?= (int)$stabilityScore ?>/100</li>
-                            <li><strong>Current 5-Scale Score:</strong> <?= number_format((float)$latest['score_5'], 2) ?> / 5</li>
-                        </ul>
-                    </div>
 
-                    <div class="detail-box">
-                        <h3>KPI Categories</h3>
-                        <ul class="detail-list">
-                            <?php if (!empty($latest['category_scores'])): ?>
-                                <?php foreach ($latest['category_scores'] as $item): ?>
-                                    <li>
-                                        <strong><?= htmlspecialchars($item['category']) ?></strong>
-                                        — <?= number_format((float)$item['percentage'], 2) ?>%
-                                    </li>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <li>No KPI category data available.</li>
-                            <?php endif; ?>
-                        </ul>
-                    </div>
+                <div class="kpi-drilldown-list">
+                    <?php if (!empty($latest['category_scores'])): ?>
+                        <?php foreach ($latest['category_scores'] as $index => $category): ?>
+                            <?php
+                                $percent = (float)$category['percentage'];
+                                $barClass = 'bar-mid';
+                                if ($percent >= 85) {
+                                    $barClass = 'bar-strong';
+                                } elseif ($percent >= 70) {
+                                    $barClass = 'bar-good';
+                                } elseif ($percent >= 50) {
+                                    $barClass = 'bar-mid';
+                                } else {
+                                    $barClass = 'bar-risk';
+                                }
+                            ?>
+                            <div class="kpi-drill-card">
+                                <button
+                                    type="button"
+                                    class="kpi-drill-header"
+                                    data-target="kpiDetail<?= $index ?>"
+                                >
+                                    <div class="kpi-drill-title-row">
+                                        <span class="kpi-drill-name"><?= htmlspecialchars($category['category']) ?></span>
+                                        <span class="kpi-drill-percent"><?= number_format($percent, 2) ?>%</span>
+                                    </div>
+
+                                    <div class="kpi-progress-wrap">
+                                        <div class="kpi-progress-track">
+                                            <div class="kpi-progress-fill <?= $barClass ?>" style="width: <?= min($percent, 100) ?>%;"></div>
+                                        </div>
+                                        <span class="kpi-drill-icon">▾</span>
+                                    </div>
+                                </button>
+
+                                <div class="kpi-drill-body" id="kpiDetail<?= $index ?>" style="display:none;">
+                                    <?php if (!empty($category['items'])): ?>
+                                        <div class="kpi-item-table">
+                                            <?php foreach ($category['items'] as $item): ?>
+                                                <div class="kpi-item-row">
+                                                    <div class="kpi-item-left">
+                                                        <strong><?= htmlspecialchars($item['code']) ?></strong>
+                                                        <p><?= htmlspecialchars($item['description'] ?: 'No description') ?></p>
+                                                    </div>
+                                                    <div class="kpi-item-right">
+                                                        <span><?= number_format((float)$item['score_5'], 2) ?>/5</span>
+                                                        <strong><?= number_format((float)$item['percentage'], 2) ?>%</strong>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <p class="empty-chart-note">No KPI item details available for this category.</p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="empty-chart-note">No KPI category data available.</p>
+                    <?php endif; ?>
                 </div>
-            </article>
+            </section>
         </section>
 
         <section class="profile-wide-panel">
@@ -1470,20 +1650,20 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
 <script>
 const editBtn = document.getElementById('editProfileBtn');
 const cancelBtn = document.getElementById('cancelEditBtn');
-const formGrid = document.getElementById('profileFormGrid');
-const editActions = document.getElementById('profileEditActions');
+const editDrawer = document.getElementById('profileEditDrawer');
 
-editBtn.addEventListener('click', () => {
-    formGrid.style.display = 'grid';
-    editActions.style.display = 'flex';
-    editBtn.style.display = 'none';
-});
+if (editBtn && cancelBtn && editDrawer) {
+    editBtn.addEventListener('click', () => {
+        editDrawer.style.display = 'block';
+        editBtn.style.display = 'none';
+        editDrawer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
-cancelBtn.addEventListener('click', () => {
-    formGrid.style.display = 'none';
-    editActions.style.display = 'none';
-    editBtn.style.display = 'inline-block';
-});
+    cancelBtn.addEventListener('click', () => {
+        editDrawer.style.display = 'none';
+        editBtn.style.display = 'inline-flex';
+    });
+}
 
 const trendLabels = <?= json_encode($trendSeriesLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 const trendValues = <?= json_encode($trendSeriesValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
@@ -1491,15 +1671,22 @@ const categoryLabels = <?= json_encode($categoryLabels, JSON_UNESCAPED_UNICODE |
 const categoryValues = <?= json_encode($categoryValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
 if (trendLabels.length > 0 && trendValues.length > 0) {
-    Plotly.react('staffTrendChart', [
+    const hasSingleTrendPoint = trendLabels.length === 1;
+
+    const trendTraces = [
         {
             x: trendLabels,
             y: trendValues,
             type: 'scatter',
-            mode: 'lines+markers',
+            mode: hasSingleTrendPoint ? 'markers+text' : 'lines+markers',
             name: 'KPI %',
             line: { color: '#e8308c', width: 3, shape: 'spline' },
-            marker: { size: 8, color: '#e8308c' },
+            marker: {
+                size: hasSingleTrendPoint ? 12 : 8,
+                color: '#e8308c'
+            },
+            text: hasSingleTrendPoint ? [trendValues[0].toFixed(2) + '%'] : [],
+            textposition: 'top center',
             hovertemplate: '%{x}<br>KPI: %{y:.2f}%<extra></extra>'
         },
         {
@@ -1511,65 +1698,130 @@ if (trendLabels.length > 0 && trendValues.length > 0) {
             line: { color: '#14b8a6', dash: 'dash', width: 2 },
             hovertemplate: '%{x}<br>Target: %{y:.2f}%<extra></extra>'
         }
-    ], {
-        margin: { t: 10, r: 10, b: 40, l: 50 },
+    ];
+
+    Plotly.react('staffTrendChart', trendTraces, {
+        margin: { t: 10, r: 20, b: 50, l: 50 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        yaxis: { range: [0, 100], title: 'KPI %' },
-        legend: { orientation: 'h', y: 1.12 }
+        yaxis: {
+            range: [0, 100],
+            title: '<b>KPI %</b>',
+            gridcolor: '#f1e4ec'
+        },
+        xaxis: {
+            type: '<b>category</b>',
+            tickangle: 0,
+            automargin: true
+        },
+        legend: {
+            orientation: 'h',
+            y: 1.12
+        }
     }, { responsive: true, displayModeBar: true });
 }
+const radarLabels = <?= json_encode($radarLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
 if (categoryLabels.length > 0 && categoryValues.length > 0) {
-    Plotly.react('staffRadarChart', [{
-        type: 'scatterpolar',
-        r: categoryValues,
-        theta: categoryLabels,
-        fill: 'toself',
-        name: 'KPI Category Score',
-        line: { color: '#e8308c', width: 3 },
-        fillcolor: 'rgba(232,48,140,0.20)',
-        hovertemplate: '%{theta}<br>Score: %{r:.2f}%<extra></extra>'
+        Plotly.react('staffRadarChart', [{
+            type: 'scatterpolar',
+            r: categoryValues,
+            theta: radarLabels,
+            fill: 'toself',
+            name: '<b>KPI Category Score</b>',
+            line: { color: '#e8308c', width: 3 },
+            fillcolor: 'rgba(232,48,140,0.18)',
+            hovertemplate: '%{theta}<br><b>Score: %{r:.2f}%</b><extra></extra>'
+        }], {
+            paper_bgcolor: 'transparent',
+            margin: { t: 30, r: 40, b: 30, l: 40 },
+            polar: {
+                radialaxis: {
+                    visible: true,
+                    range: [0, 100],
+                    tickfont: { size: 10 }
+                },
+                angularaxis: {
+                    tickfont: { size: 11 }
+                }
+            },
+            showlegend: false
+        }, { responsive: true, displayModeBar: true });
+
+    const coreCompetencyLabels = <?= json_encode($coreCompetencyLabelsJs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const coreCompetencyValues = <?= json_encode($coreCompetencyValuesJs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const coreCompetencyColors = <?= json_encode($coreCompetencyColorsJs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    
+ if (coreCompetencyLabels.length > 0 && coreCompetencyValues.length > 0) {
+    Plotly.react('coreCompetencyChart', [{
+        x: coreCompetencyLabels.map(label => label.replace(/ & /g, '<br>& ')),
+        y: coreCompetencyValues,
+        type: 'bar',
+        marker: {
+            color: coreCompetencyColors,
+            line: {
+                color: 'rgba(255,255,255,0.95)',
+                width: 2
+            }
+        },
+        text: coreCompetencyValues.map(v => Number(v).toFixed(1) + '%'),
+        textposition: 'outside',
+        textfont: {
+            size: 15,
+            color: '#4b3a4c'
+        },
+        hovertemplate:
+            '<b>%{x}</b><br>' +
+            'Score: %{y:.2f}%<extra></extra>'
     }], {
+        margin: { t: 30, r: 35, b: 95, l: 70 },
         paper_bgcolor: 'transparent',
-        margin: { t: 20, r: 20, b: 20, l: 20 },
-        polar: {
-            radialaxis: {
-                visible: true,
-                range: [0, 100]
+        plot_bgcolor: 'transparent',
+        bargap: 0.32,
+        xaxis: {
+            title: {
+                text: '<b>Core Competency</b>',
+                font: { size: 16, color: '#35263f' }
+            },
+            tickangle: 0,
+            automargin: true,
+            tickfont: {
+                size: 13,
+                color: '#4b3a4c'
+            }
+        },
+        yaxis: {
+            title: {
+                text: '<b>Score %</b>',
+                font: { size: 16, color: '#35263f' }
+            },
+            range: [0, 120],
+            gridcolor: '#f1e4ec',
+            gridwidth: 1,
+            zeroline: false,
+            tickfont: {
+                size: 12,
+                color: '#6f6376'
             }
         },
         showlegend: false
     }, { responsive: true, displayModeBar: true });
-
-    Plotly.react('staffCategoryChart', [{
-        x: categoryLabels,
-        y: categoryValues,
-        type: 'bar',
-        marker: {
-            color: ['#ec4899', '#f97316', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981']
-        },
-        text: categoryValues.map(v => Number(v).toFixed(1) + '%'),
-        textposition: 'outside',
-        hovertemplate: '%{x}<br>Score: %{y:.2f}%<extra></extra>'
-    }], {
-        margin: { t: 10, r: 10, b: 90, l: 50 },
-        paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
-        yaxis: { range: [0, 100], title: 'Score %' },
-        xaxis: { tickangle: -18 },
-        showlegend: false
-    }, { responsive: true, displayModeBar: true });
 }
+}
+    document.querySelectorAll('.kpi-drill-header').forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.getAttribute('data-target');
+            const target = document.getElementById(targetId);
+            const card = button.closest('.kpi-drill-card');
+
+            if (!target || !card) return;
+
+            const isOpen = target.style.display === 'block';
+
+            target.style.display = isOpen ? 'none' : 'block';
+            card.classList.toggle('is-open', !isOpen);
+        });
+    });
 </script>
-
-<div id="addKPIModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
-    <div style="max-width:900px; width:95%; max-height:92vh; padding:0; border-radius:20px;">
-        <div id="modalContentTarget">Loading...</div>
-    </div>
-</div>
-
-<script src="staff.js"></script>
-
 </body>
 </html>

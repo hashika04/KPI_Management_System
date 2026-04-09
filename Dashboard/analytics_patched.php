@@ -12,6 +12,22 @@ require_once __DIR__ . '/../includes/auth.php';
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <link rel="stylesheet" href="../asset/universal.css?v=2">
     <link rel="stylesheet" href="../asset/analytics.css?v=7">
+<style>
+/* FINAL OVERRIDES */
+.cards-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:24px}.alert-card,.stat-card{min-height:250px;border-radius:24px;padding:18px;box-shadow:0 10px 24px rgba(200,80,140,.08)}
+.risk-card-new{display:flex;flex-direction:column;gap:14px;margin-top:10px}.risk-main-box,.risk-sub-box{background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.7);border-radius:18px;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+.risk-main-box{padding:18px;flex:1}.risk-sub-box{padding:14px}.risk-main-box span,.risk-sub-box span{display:block;font-size:.8rem;color:#8a7284;font-weight:700;margin-bottom:4px}.risk-main-box small{display:block;margin-top:2px;font-size:.78rem;color:#9a8795;font-weight:700}
+.risk-main-box h2{margin:4px 0;font-size:2rem;font-weight:900}.risk-main-box h3{margin:6px 0 0;font-size:1.8rem;font-weight:900}.risk-sub-box h1{margin:6px 0 0;font-size:2.4rem;font-weight:900}
+.high-risk-card .risk-main-box h2,.high-risk-card .risk-main-box h3,.high-risk-card .risk-sub-box h1{color:#dc2626}.moderate-risk-card .risk-main-box h2,.moderate-risk-card .risk-main-box h3,.moderate-risk-card .risk-sub-box h1{color:#ea580c}
+.chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:22px}.chart-span-2{grid-column:span 2}.chart-card,.table-card,.comparison-tool{background:rgba(255,255,255,.94);border:1px solid #f0d8e4;border-radius:24px;padding:22px;box-shadow:0 10px 28px rgba(200,80,140,.08)}
+#performanceTrendChart{height:360px}#performanceDistributionChart,#trendDistributionChart,#departmentComparisonChart,#kpiVsTargetChart{height:300px}#heatmapChart{height:420px}#riskHistogramChart{height:300px}
+.kpi-breakdown-list{display:flex;flex-direction:column;gap:12px}.kpi-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:14px;background:#f9fafb;border:1px solid #efe4eb}.kpi-item strong{color:#231942;font-size:.96rem}.kpi-item span{font-weight:800;color:#4f46e5}
+.comparison-tool{display:flex;flex-direction:column;justify-content:flex-start}.comparison-toolbar,.comparison-select{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}.comparison-toolbar .ghost-btn{grid-column:span 2}
+.comparison-select select,.comparison-toolbar select{border:1.5px solid #eed4e3;border-radius:14px;background:#fff;padding:10px 14px;min-height:46px;color:#3a2948;font-size:.95rem;box-shadow:0 4px 10px rgba(232,48,140,.04)}
+.comparison-action-row{margin-top:6px}.compare-main-btn{width:100%;min-height:50px}
+@media (max-width:1200px){.cards-grid,.chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-span-2{grid-column:span 2}}
+@media (max-width:768px){.cards-grid,.chart-grid,.comparison-toolbar,.comparison-select{grid-template-columns:1fr}.chart-span-2{grid-column:span 1}}
+</style>
 </head>
 <body>
 <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -60,214 +76,203 @@ require_once __DIR__ . '/../includes/auth.php';
         </div>
     </section>
 
-    <section class="cards-grid">
-        <article class="alert-card high-risk-card" id="highRiskCard">
-             <div class="alert-card-head">
-             <h3><span class="alert-icon">⚠</span> High Risk Alert</h3>
-             <button type="button" class="details-link" id="highRiskDetailsBtn">View Details</button>
+ <section class="cards-grid">
+    <article class="alert-card high-risk-card" id="highRiskCard">
+        <div class="alert-card-head">
+            <h3><span class="alert-icon">⚠</span> High Risk Alert</h3>
+            <button type="button" class="details-link" id="highRiskDetailsBtn">View Details</button>
+        </div>
+        <div class="risk-card-new">
+            <div class="risk-main-box">
+                <span>Department</span>
+                <h2 id="highRiskDepartmentName">-</h2>
+                <small>Average KPI</small>
+                <h3 id="highRiskDepartmentKpi">-</h3>
             </div>
-            <div id="highRiskAlert">Loading...</div>
-        </article>
+            <div class="risk-sub-box">
+                <span>At-Risk Staff</span>
+                <h1 id="highRiskStaffCount">0</h1>
+            </div>
+        </div>
+    </article>
 
-        <article class="alert-card moderate-risk-card" id="moderateRiskCard">
-            <div class="alert-card-head">
+    <article class="alert-card moderate-risk-card" id="moderateRiskCard">
+        <div class="alert-card-head">
             <h3><span class="alert-icon">⚠</span> Moderate Risk Alert</h3>
             <button type="button" class="details-link" id="moderateRiskDetailsBtn">View Details</button>
-            </div>
-            <div id="moderateRiskAlert">Loading...</div>
-        </article>
-
-        <article class="stat-card summary-overview">
-            <h3>Overall KPI Summary</h3>
-
-            <div class="summary-kpi-layout">
-                <button type="button" class="summary-kpi-main" id="avgKpiBtn">
-                    <span class="stat-icon-circle kpi-icon">📈</span>
-                    <strong id="avgKpi">0</strong>
-                    <span class="stat-label-text">Average KPI %</span>
-                </button>
-
-                <div class="summary-kpi-bottom">
-                    <button type="button" class="summary-kpi-small" id="totalStaffBtn">
-                        <span class="stat-icon-circle staff-icon">👥</span>
-                        <strong id="totalStaff">0</strong>
-                        <span class="stat-label-text">Total Staff</span>
-                    </button>
-
-                    <button type="button" class="summary-kpi-small" id="improvingBtn">
-                        <span class="stat-icon-circle improving-icon">↗</span>
-                        <strong id="improvingCount">0</strong>
-                        <span class="stat-label-text">Improving</span>
-                    </button>
-                </div>
-            </div>
-        </article>
-
-        <article class="stat-card workforce-overview">
-            <h3>   Workforce Overview</h3>
-            
-
-            <ul class="workforce-list clickable-workforce-list">
-                <li id="departmentsCountBtn" tabindex="0">
-                    <span class="workforce-icon">🏢</span>
-                    <strong id="departmentsCount">0</strong>
-                    <span class="workforce-text">Departments Monitored</span>
-                </li>
-
-                <li id="topPerformersCountBtn" tabindex="0">
-                    <span class="workforce-icon">🏆</span>
-                    <strong id="topPerformersCount">0</strong>
-                    <span class="workforce-text">Top Performers ≥ 85%</span>
-                </li>
-
-                <li id="atRiskCountBtn" tabindex="0">
-                    <span class="workforce-icon">⚠</span>
-                    <strong id="atRiskCount">0</strong>
-                    <span class="workforce-text">At-Risk Staff</span>
-                </li>
-            </ul>
-</article>
-    </section>
-
-    <section class="chart-grid">
-        <article class="card chart-card chart-span-2">
-            <div class="chart-head"><h2>Performance Trends & Risk Prediction</h2></div>
-            <div id="performanceTrendChart" class="chart"></div>
-            <p class="interpretation" id="performanceTrendInsight"></p>
-        </article>
-        
-        <article class="card chart-card chart-span-2">
-            <div class="chart-head">
-            <h2>Performance Distribution & Trends</h2>
-            </div>
-
-            <div class="dual-chart-wrap">
-            <div>
-            <div id="performanceDistributionChart" class="chart small"></div>
-            </div>
-            <div>
-            <div id="trendDistributionChart" class="chart small"></div>
         </div>
-    </div>
-
-    <p class="interpretation" id="distributionInsight"></p>
-</article>
-
-        <article class="card chart-card">
-            <div class="chart-head"><h2>Department KPI Performance vs Target KPI</h2></div>
-            <div id="departmentComparisonChart" class="chart"></div>
-            <p class="interpretation" id="departmentInsight"></p>
-        </article>
-
-        <article class="card chart-card">
-            <div class="chart-head"><h2>KPI Category Performance vs Target </h2></div>
-            <div id="kpiVsTargetChart" class="chart"></div>
-            <p class="interpretation" id="kpiGapInsight"></p>
-        </article>
-
-        <article class="card chart-card ">
-            <div class="chart-head"><h2>Score Movement Heatmap</h2></div>
-            <div id="heatmapChart" class="chart heatmap"></div>
-        </article>
-
-        <article class="card chart-card">
-            <div class="chart-head"><h2>Staff Performance Risk</h2></div>
-            <div id="riskHistogramChart" class="chart"></div>
-        </article>
-
-        <article class="card table-card chart-span-2">
-            <div class="chart-head"><h2>At-Risk Staff</h2></div>
-            <div class="table-wrap">
-                <table id="atRiskTable">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Department</th>
-                            <th>Score</th>
-                            <th>Trend</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+        <div class="risk-card-new">
+            <div class="risk-main-box">
+                <span>Department</span>
+                <h2 id="moderateRiskDepartmentName">-</h2>
+                <small>Average KPI</small>
+                <h3 id="moderateRiskDepartmentKpi">-</h3>
             </div>
-        </article>
-
-        <section class="comparison-tool chart-span-2">
-            <div class="comparison-title-wrap">
-                <h2>Staff Comparison</h2>
-                <p>Select any two staff members to compare performance trends, stability, and risk level.</p>
+            <div class="risk-sub-box">
+                <span>At-Risk Staff</span>
+                <h1 id="moderateRiskStaffCount">0</h1>
             </div>
+        </div>
+    </article>
 
-            <div class="comparison-toolbar">
-                <select id="compareDepartmentFilter">
-                    <option value="All Departments">Select Department</option>
-                </select>
-
-                <select id="performanceFilter">
-                    <option value="All Performance">Select Performance</option>
-                    <option value="top">Top</option>
-                    <option value="good">Good</option>
-                    <option value="average">Average</option>
-                    <option value="critical">Critical</option>
-                    <option value="at-risk">At-Risk</option>
-                </select>
-
-                <button class="ghost-btn" id="resetCompareFilters" type="button">✕ Reset Filters</button>
+    <article class="stat-card summary-overview">
+        <h3>Overall KPI Summary</h3>
+        <div class="summary-kpi-layout">
+            <button type="button" class="summary-kpi-main" id="avgKpiBtn">
+                <span class="stat-icon-circle kpi-icon">📈</span>
+                <strong id="avgKpi">0.00%</strong>
+                <span class="stat-label-text">Average KPI %</span>
+            </button>
+            <div class="summary-kpi-bottom">
+                <button type="button" class="summary-kpi-small" id="totalStaffBtn">
+                    <span class="stat-icon-circle staff-icon">👥</span>
+                    <strong id="totalStaff">0</strong>
+                    <span class="stat-label-text">Total Staff</span>
+                </button>
+                <button type="button" class="summary-kpi-small" id="improvingBtn">
+                    <span class="stat-icon-circle improving-icon">↗</span>
+                    <strong id="improvingCount">0</strong>
+                    <span class="stat-label-text">Improving</span>
+                </button>
             </div>
+        </div>
+    </article>
 
-            <div class="comparison-search-row">
-                <div class="search-block">
-                    <input type="text" id="staff1Search" placeholder="Search by name...">
-                    <div class="suggestions" id="staff1Suggestions"></div>
-                </div>
+    <article class="stat-card workforce-overview">
+        <h3>Workforce Overview</h3>
+        <ul class="workforce-list clickable-workforce-list">
+            <li id="departmentsCountBtn" tabindex="0">
+                <span class="workforce-icon">🏢</span>
+                <strong id="departmentsCount">0</strong>
+                <span class="workforce-text">Departments Monitored</span>
+            </li>
+            <li id="topPerformersCountBtn" tabindex="0">
+                <span class="workforce-icon">🏆</span>
+                <strong id="topPerformersCount">0</strong>
+                <span class="workforce-text">Top Performers ≥ 85%</span>
+            </li>
+            <li id="atRiskCountBtn" tabindex="0">
+                <span class="workforce-icon">⚠</span>
+                <strong id="atRiskCount">0</strong>
+                <span class="workforce-text">At-Risk Staff</span>
+            </li>
+        </ul>
+    </article>
+</section>
 
-                <div class="search-block">
-                    <input type="text" id="staff2Search" placeholder="Search by name...">
-                    <div class="suggestions" id="staff2Suggestions"></div>
-                </div>
-            </div>
+<section class="chart-grid">
+    <article class="card chart-card chart-span-2">
+        <div class="chart-head"><h2>Performance Trends & Risk Prediction</h2></div>
+        <div id="performanceTrendChart" class="chart"></div>
+        <p class="interpretation" id="performanceTrendInsight">Waiting for analytics data...</p>
+    </article>
 
-            <div class="comparison-selected-row">
-                <div id="selectedStaff1" class="selected-chip empty">No staff selected</div>
-                <div class="vs-pill">vs</div>
-                <div id="selectedStaff2" class="selected-chip empty">No staff selected</div>
-            </div>
+    <article class="card chart-card">
+        <div class="chart-head"><h2>Performance Distribution</h2></div>
+        <div id="performanceDistributionChart" class="chart small"></div>
+        <p class="interpretation" id="distributionInsight"></p>
+    </article>
 
-            <div class="suggested-wrap">
-                <div class="suggestion-group">
-                    <h4>Suggestions:</h4>
-                    <div id="topPairSuggestions"></div>
-                </div>
-                <div class="suggestion-group">
-                    <h4>&nbsp;</h4>
-                    <div id="averagePairSuggestions"></div>
-                </div>
-            </div>
+    <article class="card chart-card">
+        <div class="chart-head"><h2>Trend Distribution</h2></div>
+        <div id="trendDistributionChart" class="chart small"></div>
+    </article>
 
-            <div class="compare-actions">
-                <button class="compare-main-btn" id="compareBtn" type="button" disabled>Compare Staff</button>
-            </div>
-        </section>
+    <article class="card chart-card">
+        <div class="chart-head"><h2>Department KPI Performance vs Target KPI</h2></div>
+        <div id="departmentComparisonChart" class="chart"></div>
+        <p class="interpretation" id="departmentInsight"></p>
+    </article>
 
-        <article class="card table-card chart-span-2">
-            <div class="chart-head"><h2>Department Statistics</h2></div>
-            <div class="table-wrap">
-                <table id="departmentStatsTable">
-                    <thead>
-                        <tr>
-                            <th>Department</th>
-                            <th>Average Score</th>
-                            <th>Top Performers</th>
-                            <th>At Risk</th>
-                            <th>Trend</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </article>
-    </section>
+    <article class="card chart-card">
+        <div class="chart-head"><h2>KPI Category Performance vs Target</h2></div>
+        <div id="kpiVsTargetChart" class="chart"></div>
+        <p class="interpretation" id="kpiGapInsight"></p>
+    </article>
+
+    <article class="card chart-card">
+        <div class="chart-head"><h2>Score Movement Heatmap</h2></div>
+        <div id="heatmapChart" class="chart heatmap"></div>
+    </article>
+
+    <article class="card chart-card">
+        <div class="chart-head"><h2>Staff Performance Risk</h2></div>
+        <div id="riskHistogramChart" class="chart"></div>
+    </article>
+
+    <article class="card table-card chart-span-2">
+        <div class="chart-head"><h2>At-Risk Staff</h2></div>
+        <div class="table-wrap">
+            <table id="atRiskTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Score</th>
+                        <th>Trend</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="card chart-card">
+        <div class="chart-head"><h2>KPI Breakdown</h2></div>
+        <div class="kpi-breakdown-list" id="kpiBreakdownList"></div>
+    </article>
+
+    <article class="comparison-tool">
+        <div class="comparison-title-wrap">
+            <h2>Staff Comparison</h2>
+            <p>Select two staff from the current filtered dataset.</p>
+        </div>
+        <div class="comparison-toolbar">
+            <select id="compareDepartmentFilter">
+                <option value="All Departments">All Departments</option>
+            </select>
+            <select id="performanceFilter">
+                <option value="All Performance">All Performance</option>
+                <option value="top">Top</option>
+                <option value="good">Good</option>
+                <option value="average">Average</option>
+                <option value="critical">Critical</option>
+                <option value="at-risk">At Risk</option>
+            </select>
+            <button type="button" class="ghost-btn" id="resetCompareFilters">Reset</button>
+        </div>
+        <div class="comparison-select">
+            <select id="staff1Select">
+                <option value="">Select Staff 1</option>
+            </select>
+            <select id="staff2Select">
+                <option value="">Select Staff 2</option>
+            </select>
+        </div>
+        <div class="comparison-action-row">
+            <button id="compareBtn" type="button" class="primary-btn compare-main-btn" disabled>Compare Selected Staff</button>
+        </div>
+    </article>
+
+    <article class="card table-card chart-span-2">
+        <div class="chart-head"><h2>Department Statistics</h2></div>
+        <div class="table-wrap">
+            <table id="departmentStatsTable">
+                <thead>
+                    <tr>
+                        <th>Department</th>
+                        <th>Average Score</th>
+                        <th>Top Performers</th>
+                        <th>At Risk</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </article>
+</section>
 </main>
 
 <script>
@@ -377,41 +382,15 @@ function renderSummary(data) {
     document.getElementById('topPerformersCount').textContent = Number(data.summary?.top_performers || 0);
     document.getElementById('atRiskCount').textContent = Number(data.summary?.at_risk || 0);
 
-    const high = data.high_risk_departments[0];
-    document.getElementById('highRiskAlert').innerHTML = high
-    ? `
-        <div class="alert-summary-box">
-            <strong>Department:</strong> ${escapeHtml(high.department)}<br>
-            <strong>At-Risk Staff:</strong> ${high.at_risk} staff<br>
-            <strong>Average KPI:</strong> ${Number(high.score).toFixed(2)}%<br>
-            <strong>Organisation Total:</strong> ${data.summary.at_risk} at-risk staff
-            <span class="alert-note">Immediate supervisory attention is recommended.</span>
-        </div>
-      `
-    : `
-        <div class="alert-summary-box">
-            <strong>Status:</strong> No high-risk department under the current filters.
-            <span class="alert-note">No urgent departmental intervention is currently required.</span>
-        </div>
-      `;
+    const high = (data.high_risk_departments || [])[0];
+    document.getElementById('highRiskDepartmentName').textContent = high ? high.department : 'No High-Risk Department';
+    document.getElementById('highRiskDepartmentKpi').textContent = high ? Number(high.score).toFixed(2) + '%' : '-';
+    document.getElementById('highRiskStaffCount').textContent = high ? Number(high.at_risk || 0) : 0;
 
-    const moderate = data.moderate_risk_departments[0];
-    document.getElementById('moderateRiskAlert').innerHTML = moderate
-    ? `
-        <div class="alert-summary-box">
-            <strong>Department:</strong> ${escapeHtml(moderate.department)}<br>
-            <strong>At-Risk Staff:</strong> ${moderate.at_risk} staff<br>
-            <strong>Average KPI:</strong> ${Number(moderate.score).toFixed(2)}%<br>
-            <strong>Status:</strong> Below target but still manageable
-            <span class="alert-note">Preventive monitoring and coaching are recommended.</span>
-        </div>
-      `
-    : `
-        <div class="alert-summary-box">
-            <strong>Status:</strong> No moderate-risk department under the current filters.
-            <span class="alert-note">Departments are either performing steadily or already classified as high risk.</span>
-        </div>
-      `;
+    const moderate = (data.moderate_risk_departments || [])[0];
+    document.getElementById('moderateRiskDepartmentName').textContent = moderate ? moderate.department : 'No Moderate-Risk Department';
+    document.getElementById('moderateRiskDepartmentKpi').textContent = moderate ? Number(moderate.score).toFixed(2) + '%' : '-';
+    document.getElementById('moderateRiskStaffCount').textContent = moderate ? Number(moderate.at_risk || 0) : 0;
 }
 
 function renderCharts(data) {
@@ -1028,71 +1007,46 @@ function buildSuggestionCard(left, right) {
         </div>
     `;
 }
-
 function renderSuggestionPills(data) {
-    const top = data.suggestions.top_pair || [];
-    const avg = data.suggestions.average_pair || [];
-
-    document.getElementById('topPairSuggestions').innerHTML =
-        top.length === 2 ? buildSuggestionCard(top[0], top[1]) : '<div class="empty-note">Not enough top performers</div>';
-
-    document.getElementById('averagePairSuggestions').innerHTML =
-        avg.length === 2 ? buildSuggestionCard(avg[0], avg[1]) : '<div class="empty-note">Not enough average performers</div>';
-
-    document.querySelectorAll('.suggestion-card').forEach(button => {
-        button.addEventListener('click', () => {
-            state.staff1 = button.dataset.staff1 || '';
-            state.staff2 = button.dataset.staff2 || '';
-            state.staff1Name = button.dataset.staff1Name || '';
-            state.staff2Name = button.dataset.staff2Name || '';
-            document.getElementById('staff1Search').value = state.staff1Name;
-            document.getElementById('staff2Search').value = state.staff2Name;
-            updateSelectedChips();
-        });
-    });
+    /* suggestions hidden in this finalized version */
 }
 
 function updateSelectedChips() {
-    const chip1 = document.getElementById('selectedStaff1');
-    const chip2 = document.getElementById('selectedStaff2');
-    chip1.textContent = state.staff1Name || 'No staff selected';
-    chip2.textContent = state.staff2Name || 'No staff selected';
-    chip1.classList.toggle('empty', !state.staff1);
-    chip2.classList.toggle('empty', !state.staff2);
-    document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2);
+    document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
 }
 
-async function populateSearch(inputId, suggestionsId, key, excludeKey) {
-    const query = document.getElementById(inputId).value;
-    const data = await fetchJson({
-        action: 'search_staff',
-        query,
-        department: state.compareDepartment,
-        performance: state.performance,
-        exclude_id: state[excludeKey]
-    });
+function populateStaffDropdown(data) {
+    const select1 = document.getElementById('staff1Select');
+    const select2 = document.getElementById('staff2Select');
+    if (!select1 || !select2) return;
 
-    const container = document.getElementById(suggestionsId);
-    container.innerHTML = data.items.map(item => `
-        <button class="suggestion-item" type="button"
-            data-id="${item.id}"
-            data-name="${escapeHtml(item.name)}">
-            <span>
-                <strong>${escapeHtml(item.name)}</strong>
-                <small>${escapeHtml(item.department)} • ${item.score}%</small>
-            </span>
-            <em>${escapeHtml(item.performance_level)}</em>
-        </button>
-    `).join('');
+    const compareDepartment = state.compareDepartment || 'All Departments';
+    const performance = String(state.performance || 'All Performance').toLowerCase();
+    let staff = Array.isArray(data.staff_snapshot_list) ? [...data.staff_snapshot_list] : [];
 
-    container.querySelectorAll('.suggestion-item').forEach(button => {
-        button.addEventListener('click', () => {
-            state[key] = button.dataset.id || '';
-            state[key + 'Name'] = button.dataset.name || '';
-            document.getElementById(inputId).value = state[key + 'Name'];
-            container.innerHTML = '';
-            updateSelectedChips();
-        });
+    if (compareDepartment !== 'All Departments') {
+        staff = staff.filter(item => item.department === compareDepartment);
+    }
+
+    if (performance !== 'all performance') {
+        staff = staff.filter(item => String(item.performance_level).toLowerCase() === performance);
+    }
+
+    select1.innerHTML = '<option value="">Select Staff 1</option>';
+    select2.innerHTML = '<option value="">Select Staff 2</option>';
+
+    staff.forEach(item => {
+        const label = `${item.name} (${item.department}) - ${item.score}%`;
+        const option1 = document.createElement('option');
+        option1.value = item.name;
+        option1.textContent = label;
+        option1.dataset.id = item.id ?? '';
+        select1.appendChild(option1);
+        const option2 = document.createElement('option');
+        option2.value = item.name;
+        option2.textContent = label;
+        option2.dataset.id = item.id ?? '';
+        select2.appendChild(option2);
     });
 }
 
@@ -1107,70 +1061,36 @@ async function loadDashboard() {
         });
 
         latestDashboardData = data;
-
-        setDepartmentOptions(data.filters.available_departments || []);
-        setCategoryOptions(data.filters.available_categories || []);
+        setDepartmentOptions(data.filters?.available_departments || []);
+        setCategoryOptions(data.filters?.available_categories || []);
         setYearOptions(data.performance_trend || []);
         renderSummary(data);
         renderCharts(data);
         renderTables(data);
-        renderSuggestionPills(data);
-
-        console.log('Analytics JSON loaded:', data);
-
-        try {
-            setDepartmentOptions(data.filters?.available_departments || []);
-        } catch (e) {
-            console.error('setDepartmentOptions failed:', e);
-        }
-
-        try {
-            setCategoryOptions(data.filters?.available_categories || []);
-        } catch (e) {
-            console.error('setCategoryOptions failed:', e);
-        }
-
-        try {
-            setYearOptions(data.performance_trend || []);
-        } catch (e) {
-            console.error('setYearOptions failed:', e);
-        }
-
-        try {
-            renderSummary(data);
-        } catch (e) {
-            console.error('renderSummary failed:', e);
-        }
-
-        try {
-            renderCharts(data);
-        } catch (e) {
-            console.error('renderCharts failed:', e);
-        }
-
-        try {
-            renderTables(data);
-        } catch (e) {
-            console.error('renderTables failed:', e);
-        }
-
-        try {
-            renderSuggestionPills(data);
-        } catch (e) {
-            console.error('renderSuggestionPills failed:', e);
-        }
-
-        try {
-            updateSelectedChips();
-        } catch (e) {
-            console.error('updateSelectedChips failed:', e);
-        }
-
+        renderKpiBreakdown(data);
+        populateStaffDropdown(data);
+        updateSelectedChips();
     } catch (error) {
         console.error('loadDashboard failed completely:', error);
-        document.getElementById('highRiskAlert').innerHTML = '<p>Failed to load analytics data.</p>';
-        document.getElementById('moderateRiskAlert').innerHTML = '<p>Failed to load analytics data.</p>';
+        document.getElementById('performanceTrendInsight').textContent =
+            'Unable to load analytics data. Check analytics_data_patched.php and your database connection.';
     }
+}
+
+function renderKpiBreakdown(data) {
+    const container = document.getElementById('kpiBreakdownList');
+    const rows = data.kpi_vs_target || [];
+    if (!container) return;
+    if (!rows.length) {
+        container.innerHTML = '<div class="empty-note">No KPI breakdown data under the current filters.</div>';
+        return;
+    }
+    container.innerHTML = rows.map(item => `
+        <div class="kpi-item">
+            <strong>${escapeHtml(item.category)}</strong>
+            <span>${Number(item.actual).toFixed(2)}%</span>
+        </div>
+    `).join('');
 }
 
 function escapeHtml(value) {
@@ -1621,43 +1541,37 @@ function attachEvents() {
         state.year = event.target.value;
         loadDashboard();
     });
-
     document.getElementById('departmentFilter').addEventListener('change', event => {
         state.department = event.target.value;
         loadDashboard();
     });
-
     document.getElementById('kpiCategoryFilter').addEventListener('change', event => {
         state.kpi_category = event.target.value;
         loadDashboard();
     });
-
     document.getElementById('periodFilter').addEventListener('change', event => {
         state.period = event.target.value;
         loadDashboard();
     });
-
     document.getElementById('resetTopFilters').addEventListener('click', () => {
         state.year = '';
         state.department = 'All Departments';
         state.kpi_category = 'All Categories';
         state.period = 'Monthly';
-
         document.getElementById('yearFilter').value = '';
         document.getElementById('departmentFilter').value = 'All Departments';
         document.getElementById('kpiCategoryFilter').value = 'All Categories';
         document.getElementById('periodFilter').value = 'Monthly';
         loadDashboard();
     });
-
     document.getElementById('compareDepartmentFilter').addEventListener('change', event => {
         state.compareDepartment = event.target.value;
+        if (latestDashboardData) populateStaffDropdown(latestDashboardData);
     });
-
     document.getElementById('performanceFilter').addEventListener('change', event => {
         state.performance = event.target.value;
+        if (latestDashboardData) populateStaffDropdown(latestDashboardData);
     });
-
     document.getElementById('resetCompareFilters').addEventListener('click', () => {
         state.compareDepartment = 'All Departments';
         state.performance = 'All Performance';
@@ -1665,78 +1579,54 @@ function attachEvents() {
         state.staff2 = '';
         state.staff1Name = '';
         state.staff2Name = '';
-
         document.getElementById('compareDepartmentFilter').value = 'All Departments';
         document.getElementById('performanceFilter').value = 'All Performance';
-        document.getElementById('staff1Search').value = '';
-        document.getElementById('staff2Search').value = '';
-        document.getElementById('staff1Suggestions').innerHTML = '';
-        document.getElementById('staff2Suggestions').innerHTML = '';
-
+        if (latestDashboardData) populateStaffDropdown(latestDashboardData);
         updateSelectedChips();
-        loadDashboard();
     });
-
-    document.getElementById('staff1Search').addEventListener('input', () => populateSearch('staff1Search', 'staff1Suggestions', 'staff1', 'staff2'));
-    document.getElementById('staff2Search').addEventListener('input', () => populateSearch('staff2Search', 'staff2Suggestions', 'staff2', 'staff1'));
-
+    document.getElementById('staff1Select').addEventListener('change', event => {
+        const selected = event.target.selectedOptions[0];
+        state.staff1 = selected?.dataset?.id || '';
+        state.staff1Name = selected?.value || '';
+        updateSelectedChips();
+    });
+    document.getElementById('staff2Select').addEventListener('change', event => {
+        const selected = event.target.selectedOptions[0];
+        state.staff2 = selected?.dataset?.id || '';
+        state.staff2Name = selected?.value || '';
+        updateSelectedChips();
+    });
     document.getElementById('compareBtn').addEventListener('click', () => {
-        if (!state.staff1 || !state.staff2) return;
+        if (!state.staff1 || !state.staff2 || state.staff1 === state.staff2) return;
         const params = new URLSearchParams({ staff1: state.staff1, staff2: state.staff2 });
         window.location.href = './staff_comparison_patched.php?' + params.toString();
     });
-
     document.getElementById('detailsModalClose').addEventListener('click', closeDetailsModal);
-
     document.getElementById('detailsModal').addEventListener('click', (event) => {
-        if (event.target.id === 'detailsModal') {
-            closeDetailsModal();
-        }
+        if (event.target.id === 'detailsModal') closeDetailsModal();
     });
-
     document.getElementById('highRiskDetailsBtn').addEventListener('click', () => {
         if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
             openDetailsModal('High Risk Alert Details', '<p>No high-risk department under the current filters.</p>');
             return;
         }
-
         const dept = latestDashboardData.high_risk_departments[0];
         openDetailsModal('High Risk Alert Details', buildDepartmentDetailsHtml(dept.department));
     });
-
     document.getElementById('moderateRiskDetailsBtn').addEventListener('click', () => {
         if (!latestDashboardData || !latestDashboardData.moderate_risk_departments || latestDashboardData.moderate_risk_departments.length === 0) {
             openDetailsModal('Moderate Risk Alert Details', '<p>No moderate-risk department under the current filters.</p>');
             return;
         }
-
         const dept = latestDashboardData.moderate_risk_departments[0];
         openDetailsModal('Moderate Risk Alert Details', buildDepartmentDetailsHtml(dept.department));
     });
-
-    document.getElementById('totalStaffBtn').addEventListener('click', () => {
-        openDetailsModal('Total Staff Details', buildTotalStaffHtml());
-    });
-
-    document.getElementById('avgKpiBtn').addEventListener('click', () => {
-        openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml());
-    });
-
-    document.getElementById('improvingBtn').addEventListener('click', () => {
-        openDetailsModal('Improving Performance Details', buildImprovingStaffHtml());
-    });
-
-    document.getElementById('departmentsCountBtn').addEventListener('click', () => {
-        openDetailsModal('Departments Monitored', buildDepartmentsMonitoredHtml());
-    });
-
-    document.getElementById('topPerformersCountBtn').addEventListener('click', () => {
-        openDetailsModal('Top Performers Details', buildTopPerformersHtml());
-    });
-
-    document.getElementById('atRiskCountBtn').addEventListener('click', () => {
-        openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml());
-    });
+    document.getElementById('totalStaffBtn').addEventListener('click', () => openDetailsModal('Total Staff Details', buildTotalStaffHtml()));
+    document.getElementById('avgKpiBtn').addEventListener('click', () => openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml()));
+    document.getElementById('improvingBtn').addEventListener('click', () => openDetailsModal('Improving Performance Details', buildImprovingStaffHtml()));
+    document.getElementById('departmentsCountBtn').addEventListener('click', () => openDetailsModal('Departments Monitored', buildDepartmentsMonitoredHtml()));
+    document.getElementById('topPerformersCountBtn').addEventListener('click', () => openDetailsModal('Top Performers Details', buildTopPerformersHtml()));
+    document.getElementById('atRiskCountBtn').addEventListener('click', () => openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml()));
 }
 
 attachEvents();
@@ -1744,7 +1634,8 @@ loadDashboard().catch(error => {
     console.error(error);
     document.getElementById('performanceTrendInsight').textContent = 'Unable to load analytics data. Check analytics_data_patched.php and your database connection.';
 });
-    
+
 </script>
+
 </body>
 </html>
