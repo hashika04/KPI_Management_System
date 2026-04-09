@@ -37,12 +37,107 @@ require_once __DIR__ . '/../includes/auth.php';
 .comparison-select-box label{display:block;margin:0 0 8px;font-size:.9rem;font-weight:700;color:#6f6376;}
 .comparison-select-box select{width:100%;border:1.5px solid #eed4e3;border-radius:14px;background:#fff;padding:10px 14px;min-height:46px;color:#3a2948;font-size:.95rem;box-shadow:0 4px 10px rgba(232,48,140,.04);}
 .compare-main-btn{max-width:none;}
-.risk-modal{position:fixed!important;inset:0!important;display:none!important;align-items:center!important;justify-content:center!important;padding:24px!important;background:rgba(32,18,33,.38)!important;backdrop-filter:blur(4px)!important;-webkit-backdrop-filter:blur(4px)!important;z-index:99999!important;}
-.risk-modal.show{display:flex!important;}
-.risk-modal-box{width:min(760px,92vw)!important;max-height:85vh!important;overflow-y:auto!important;overflow-x:hidden!important;margin:0 auto!important;background:#fff!important;border-radius:24px!important;box-shadow:0 24px 60px rgba(27,20,35,.24)!important;border:1px solid #f0dce7!important;}
-.risk-modal-body{padding:22px!important;}
 @media (max-width: 900px){.comparison-select-grid{grid-template-columns:1fr;}}
+/* MINIMAL MODAL - NO DARK BACKDROP */
+.risk-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 999999 !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    background: transparent !important;  /* NO dark background */
+    backdrop-filter: none !important;
+}
 
+.risk-modal.show {
+    display: flex !important;
+}
+
+.risk-modal-box {
+    width: min(500px, 90vw) !important;  /* Smaller width */
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #e8d5e2 !important;
+    position: relative !important;
+    margin: 0 auto !important;
+}
+
+.risk-modal-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 16px 20px !important;
+    border-bottom: 1px solid #f0e3ea !important;
+    background: #ffffff !important;
+    border-radius: 20px 20px 0 0 !important;
+}
+
+.risk-modal-head h3 {
+    margin: 0 !important;
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    color: #231942 !important;
+}
+
+.risk-modal-close {
+    width: 28px !important;
+    height: 28px !important;
+    border: none !important;
+    border-radius: 50% !important;
+    background: #f0e6ec !important;
+    color: #b42361 !important;
+    font-size: 1.1rem !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+}
+
+.risk-modal-close:hover {
+    background: #e0d4dc !important;
+}
+
+.risk-modal-body {
+    padding: 18px 20px 22px !important;
+    color: #4b3a4c !important;
+    line-height: 1.5 !important;
+    font-size: 0.9rem !important;
+}
+
+.modal-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 12px !important;
+    font-size: 0.85rem !important;
+}
+
+.modal-table th,
+.modal-table td {
+    padding: 8px 10px !important;
+    border-bottom: 1px solid #f0e3ea !important;
+    text-align: left !important;
+}
+
+.modal-table th {
+    background: #fcf6fa !important;
+    color: #6b4d60 !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+}
+
+.modal-note {
+    margin-top: 12px !important;
+    font-size: 0.8rem !important;
+    color: #9a8795 !important;
+}
 </style>
 </head>
 <body>
@@ -1100,44 +1195,190 @@ require_once __DIR__ . '/../includes/auth.php';
             .replaceAll('"', '&quot;')
             .replaceAll("'", '&#039;');
     }
-function openDetailsModal(title, html) {
-    const modal = document.getElementById('detailsModal');
-    const titleEl = document.getElementById('detailsModalTitle');
-    const bodyEl = document.getElementById('detailsModalBody');
+    function openDetailsModal(title, html, triggerElement) {
+        const modal = document.getElementById('detailsModal');
+        const titleEl = document.getElementById('detailsModalTitle');
+        const bodyEl = document.getElementById('detailsModalBody');
 
-    if (!modal || !titleEl || !bodyEl) return;
+        if (!modal || !titleEl || !bodyEl) return;
 
-    titleEl.textContent = title;
-    bodyEl.innerHTML = html;
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeDetailsModal() {
-    const modal = document.getElementById('detailsModal');
-    if (!modal) return;
-
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('detailsModal');
-    const closeBtn = document.getElementById('detailsModalClose');
-
-    if (modal) modal.classList.remove('show');
-
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeDetailsModal);
+        titleEl.textContent = title;
+        bodyEl.innerHTML = html;
+        
+        // Position modal near the clicked button
+        if (triggerElement) {
+            const rect = triggerElement.getBoundingClientRect();
+            const modalWidth = 500; // Max width of modal
+            const modalHeight = 400; // Approximate height
+            
+            let top = rect.bottom + window.scrollY + 8;
+            let left = rect.left + window.scrollX;
+            
+            // Adjust if modal would go off-screen
+            if (left + modalWidth > window.innerWidth) {
+                left = window.innerWidth - modalWidth - 20;
+            }
+            if (left < 20) {
+                left = 20;
+            }
+            
+            // If not enough space below, show above
+            if (top + modalHeight > window.innerHeight + window.scrollY) {
+                top = rect.top + window.scrollY - modalHeight - 8;
+            }
+            
+            modal.style.position = 'absolute';
+            modal.style.top = top + 'px';
+            modal.style.left = left + 'px';
+            modal.style.right = 'auto';
+            modal.style.bottom = 'auto';
+        } else {
+            // Fallback to center
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+        }
+        
+        modal.classList.add('show');
     }
 
-    if (modal) {
-        modal.addEventListener('click', (event) => {
-            if (event.target === modal) closeDetailsModal();
-        });
-    }
-});
+    function closeDetailsModal() {
+        const modal = document.getElementById('detailsModal');
+        if (!modal) return;
 
+        modal.classList.remove('show');
+        modal.style.position = '';
+        modal.style.top = '';
+        modal.style.left = '';
+        modal.style.transform = '';
+    }
+
+    // Update event listeners to pass the trigger element
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('detailsModal');
+        const closeBtn = document.getElementById('detailsModalClose');
+        
+        if (modal) {
+            modal.classList.remove('show');
+        }
+        
+        if (closeBtn) {
+            // Remove existing listeners to avoid duplicates
+            const newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            newCloseBtn.addEventListener('click', closeDetailsModal);
+        }
+        
+        if (modal) {
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) closeDetailsModal();
+            });
+        }
+        
+        // Update all detail buttons to pass the trigger element
+        const highRiskBtn = document.getElementById('highRiskDetailsBtn');
+        const moderateRiskBtn = document.getElementById('moderateRiskDetailsBtn');
+        const totalStaffBtn = document.getElementById('totalStaffBtn');
+        const avgKpiBtn = document.getElementById('avgKpiBtn');
+        const improvingBtn = document.getElementById('improvingBtn');
+        const departmentsCountBtn = document.getElementById('departmentsCountBtn');
+        const topPerformersCountBtn = document.getElementById('topPerformersCountBtn');
+        const atRiskCountBtn = document.getElementById('atRiskCountBtn');
+        
+        if (highRiskBtn) {
+            const newBtn = highRiskBtn.cloneNode(true);
+            highRiskBtn.parentNode.replaceChild(newBtn, highRiskBtn);
+            newBtn.addEventListener('click', (event) => {
+                if (!latestDashboardData || !latestDashboardData.high_risk_departments || latestDashboardData.high_risk_departments.length === 0) {
+                    openDetailsModal('High Risk Alert Details', '<p>No high-risk department under the current filters.</p>', newBtn);
+                    return;
+                }
+                const dept = latestDashboardData.high_risk_departments[0];
+                openDetailsModal('High Risk Alert Details', buildDepartmentDetailsHtml(dept.department), newBtn);
+            });
+        }
+        
+        if (moderateRiskBtn) {
+            const newBtn = moderateRiskBtn.cloneNode(true);
+            moderateRiskBtn.parentNode.replaceChild(newBtn, moderateRiskBtn);
+            newBtn.addEventListener('click', (event) => {
+                if (!latestDashboardData || !latestDashboardData.moderate_risk_departments || latestDashboardData.moderate_risk_departments.length === 0) {
+                    openDetailsModal('Moderate Risk Alert Details', '<p>No moderate-risk department under the current filters.</p>', newBtn);
+                    return;
+                }
+                const dept = latestDashboardData.moderate_risk_departments[0];
+                openDetailsModal('Moderate Risk Alert Details', buildDepartmentDetailsHtml(dept.department), newBtn);
+            });
+        }
+        
+        if (totalStaffBtn) {
+            const newBtn = totalStaffBtn.cloneNode(true);
+            totalStaffBtn.parentNode.replaceChild(newBtn, totalStaffBtn);
+            newBtn.addEventListener('click', () => openDetailsModal('Total Staff Details', buildTotalStaffHtml(), newBtn));
+        }
+        
+        if (avgKpiBtn) {
+            const newBtn = avgKpiBtn.cloneNode(true);
+            avgKpiBtn.parentNode.replaceChild(newBtn, avgKpiBtn);
+            newBtn.addEventListener('click', () => openDetailsModal('Average KPI Breakdown', buildAverageKpiHtml(), newBtn));
+        }
+        
+        if (improvingBtn) {
+            const newBtn = improvingBtn.cloneNode(true);
+            improvingBtn.parentNode.replaceChild(newBtn, improvingBtn);
+            newBtn.addEventListener('click', () => openDetailsModal('Improving Performance Details', buildImprovingStaffHtml(), newBtn));
+        }
+        
+        if (departmentsCountBtn) {
+            const newBtn = departmentsCountBtn.cloneNode(true);
+            departmentsCountBtn.parentNode.replaceChild(newBtn, departmentsCountBtn);
+            newBtn.addEventListener('click', () => openDetailsModal('Departments Monitored', buildDepartmentsMonitoredHtml(), newBtn));
+        }
+        
+        if (topPerformersCountBtn) {
+            const newBtn = topPerformersCountBtn.cloneNode(true);
+            topPerformersCountBtn.parentNode.replaceChild(newBtn, topPerformersCountBtn);
+            newBtn.addEventListener('click', () => openDetailsModal('Top Performers Details', buildTopPerformersHtml(), newBtn));
+        }
+        
+        if (atRiskCountBtn) {
+            const newBtn = atRiskCountBtn.cloneNode(true);
+            atRiskCountBtn.parentNode.replaceChild(newBtn, atRiskCountBtn);
+            newBtn.addEventListener('click', () => openDetailsModal('At-Risk Staff Details', buildAtRiskStaffHtml(), newBtn));
+        }
+        
+        // Also handle chart click events
+        const riskChart = document.getElementById('riskHistogramChart');
+        if (riskChart) {
+            riskChart.removeAllListeners?.('plotly_click');
+            riskChart.on('plotly_click', function(eventData) {
+                if (!eventData || !eventData.points || !eventData.points.length) return;
+                const clickedBand = eventData.points[0].x;
+                openDetailsModal(`${clickedBand} Details`, buildRiskBandDetailsHtml(clickedBand), riskChart);
+            });
+        }
+        
+        const performanceChart = document.getElementById('performanceDistributionChart');
+        if (performanceChart) {
+            performanceChart.removeAllListeners?.('plotly_click');
+            performanceChart.on('plotly_click', function(eventData) {
+                const label = eventData.points?.[0]?.label;
+                if (!label) return;
+                openDetailsModal(`${label} Performance Details`, buildPerformanceSliceHtml(label), performanceChart);
+            });
+        }
+        
+        const trendChart = document.getElementById('trendDistributionChart');
+        if (trendChart) {
+            trendChart.removeAllListeners?.('plotly_click');
+            trendChart.on('plotly_click', function(eventData) {
+                const label = eventData.points?.[0]?.label;
+                if (!label) return;
+                openDetailsModal(`${label} Trend Details`, buildTrendSliceHtml(label), trendChart);
+            });
+        }
+    });
     function buildDepartmentDetailsHtml(departmentName) {
         if (!latestDashboardData) return '<p>No data available.</p>';
 
