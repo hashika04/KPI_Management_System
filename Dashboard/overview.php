@@ -5,11 +5,9 @@
  */
 
 $selectedYear = isset($_GET['year']) ? intval($_GET['year']) : null;
-
+include("../config/db.php");
 include("../includes/auth.php");
 include("../Dashboard/data.php");
-include("../config/db.php");
-
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
 $lanIp = gethostbyname(gethostname());
@@ -41,8 +39,11 @@ while($row = $chartRes->fetch_assoc()) {
 }
 
 // This creates a string like "75.5, 80.2, 65.0, 61.2"
-$jsDataString = implode(', ', array_values($yearlyData));
+$yearlyDataJs = (object)$yearlyData; 
 $avgKPI = $yearlyData['2025'];
+
+$jsDataString = implode(', ', array_values($yearlyData));
+$yearlyData   = $yearlyData   ?? ['2022' => 0, '2023' => 0, '2024' => 0, '2025' => 0];
 
 $activePage = 'dashboard';
 
@@ -62,6 +63,7 @@ $activePage = 'dashboard';
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <!-- ApexCharts for KPI trend visualization -->
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 </head>
 <body>
 
@@ -142,6 +144,51 @@ $activePage = 'dashboard';
   </div><!-- /.stat-cards -->
 
   <!-- ══════════════════════
+      HEATMAP ROW
+  ══════════════════════ -->
+  <div class="heatmap-row">
+    <div class="heatmap-card">
+      <div class="ov-section-head" style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+          <div>
+              <h2>Department × KPI Group Performance</h2>
+              <p>Bubble size and color represent average KPI score — 2025</p>
+          </div>
+      </div>
+      <div id="kpiHeatmap"></div>
+    </div>
+
+    <div class="heatmap-card speedometer-card">
+      <div class="ov-section-head">
+        <div>
+            <h2>Target Achievement</h2>
+            <p>Progress against set KPI goal</p>
+        </div>
+        <div class="speedo-controls">
+            <select id="speedoYear" class="year-filter-form" style="padding: 4px 8px; font-size: 11px;">
+                <?php
+                $speedoYearSelected = isset($_GET['speedo_year']) ? intval($_GET['speedo_year']) : 2025;
+                $speedoYearRes = $conn->query("SELECT DISTINCT YEAR(Date) as yr FROM kpi_data ORDER BY yr DESC");
+                while($syr = $speedoYearRes->fetch_assoc()):
+                    $sel = ($syr['yr'] == $speedoYearSelected) ? 'selected' : '';
+                ?>
+                    <option value="<?= $syr['yr'] ?>" <?= $sel ?>><?= $syr['yr'] ?></option>
+                <?php endwhile; ?>
+            </select>
+            <input type="number" id="speedoTarget" value="80" min="1" max="100"
+                  style="width: 50px; padding: 4px; border-radius: 6px; border: 1.5px solid #efd8e5; font-size: 11px; font-family: 'Sora';">
+            <span style="font-size: 12px; font-weight: 700;">%</span>
+        </div>
+      </div>
+
+      <div id="targetSpeedometer"></div>
+
+      <div class="speedo-footer">
+          Actual Avg: <span id="actualVal">63%</span>
+      </div>
+    </div><!-- /.speedometer-card -->
+  </div>
+
+  <!-- ══════════════════════
        TOP PERFORMERS PODIUM
   ══════════════════════ -->
   <div class="performers-card">
@@ -149,17 +196,18 @@ $activePage = 'dashboard';
       <h2 class="performers-title" style="margin:0;">Highest KPI Staff</h2>
       <div style="position:absolute; right:0;">
         <form method="GET">
-            <select name="year" onchange="this.form.submit()" class="year-filter-form">
-                <option value="">Overall (All Years)</option>
-                <?php
-                $yearRes = $conn->query("SELECT DISTINCT YEAR(Date) as yr FROM kpi_data ORDER BY yr DESC");
-                while($yr = $yearRes->fetch_assoc()):
-                    $selected = (isset($_GET['year']) && $_GET['year'] == $yr['yr']) ? 'selected' : '';
-                ?>
-                    <option value="<?= $yr['yr'] ?>" <?= $selected ?>><?= $yr['yr'] ?></option>
-                <?php endwhile; ?>
-            </select>
-        </form>
+          <input type="hidden" name="speedo_year" value="<?= isset($_GET['speedo_year']) ? intval($_GET['speedo_year']) : 2025 ?>">
+          <select name="year" onchange="this.form.submit()" class="year-filter-form">
+              <option value="">Overall (All Years)</option>
+              <?php
+              $yearRes = $conn->query("SELECT DISTINCT YEAR(Date) as yr FROM kpi_data ORDER BY yr DESC");
+              while($yr = $yearRes->fetch_assoc()):
+                  $selected = (isset($_GET['year']) && $_GET['year'] == $yr['yr']) ? 'selected' : '';
+              ?>
+                  <option value="<?= $yr['yr'] ?>" <?= $selected ?>><?= $yr['yr'] ?></option>
+              <?php endwhile; ?>
+          </select>
+      </form>
       </div>
     </div>
 
@@ -287,57 +335,113 @@ $activePage = 'dashboard';
   <!-- ══════════════════════
        ATTENTION REQUIRED
   ══════════════════════ -->
-  <?php if (!empty($atRisk)): ?>
   <div class="attention-card">
     <div class="attention-head">
-      <div>
-        <h2>Attention Required</h2>
-        <p>Staff members needing support</p>
-      </div>
-      <a href="../Reports/reports.php" class="view-report-link">
-        View Report <i class="ph ph-arrow-right"></i>
-      </a>
+        <div>
+            <h2>Attention Required</h2>
+            <p>Analyzing drops and support needs for <strong><?= $selectedYear ?></strong></p>
+        </div>
+        <form method="GET" class="attention-year-filter">
+            <select name="year" onchange="this.form.submit()" class="year-filter-form">
+                <?php for($y=2025; $y>=2022; $y--): ?>
+                    <option value="<?= $y ?>" <?= $selectedYear == $y ? 'selected' : '' ?>>Focus: <?= $y ?></option>
+                <?php endfor; ?>
+            </select>
+        </form>
     </div>
 
-    <div class="at-risk-list" id="atRiskList">
-      <?php foreach($atRisk as $s): ?>
-      <a href="../staff_masterlist/staff_profile.php?id=<?= $s['id'] ?>"
-         class="at-risk-item"
-         data-name="<?= strtolower(htmlspecialchars($s['name'])) ?>"
-         data-dept="<?= htmlspecialchars($s['dept']) ?>"
-         data-level="<?= htmlspecialchars($s['level']) ?>">
+    <div class="at-risk-list">
+        <?php foreach($atRisk as $i => $s): ?>
+        <div class="ar-item-container">
+            <div class="at-risk-item clickable" onclick="toggleExpand('ar-<?= $i ?>')">
+                <div class="at-risk-avatar">
+                    <img src="<?= $s['avatar'] ?: '../asset/images/staff/default-profile.jpg' ?>">
+                </div>
+                <div class="at-risk-info">
+                    <div class="at-risk-name-row">
+                        <a href="../staff_masterlist/staffprofile.php?id=<?= $s['id'] ?>" class="at-risk-name" onclick="event.stopPropagation()"><?= $s['name'] ?></a>
+                        <span class="level-badge <?= $s['level'] ?>"><?= strtoupper($s['level']) ?></span>
+                    </div>
+                    <div class="at-risk-dept"><?= $s['dept'] ?></div>
+                </div>
+                
+                <div class="ar-stats-summary">
+                    <div class="ar-stat-box">
+                        <small><?= $prevYear ?> Avg</small>
+                        <span><?= $s['prev_score'] ?>%</span>
+                    </div>
+                    <div class="ar-stat-box highlight">
+                        <small><?= $selectedYear ?> Avg</small>
+                        <span><?= $s['score'] ?>%</span>
+                    </div>
+                    <div class="ar-trend-box <?= $s['diff'] < 0 ? 'drop' : 'gain' ?>">
+                        <i class="ph ph-trend-<?= $s['diff'] < 0 ? 'down' : 'up' ?>"></i>
+                        <?= abs($s['diff']) ?>%
+                    </div>
+                    <i class="ph ph-caret-down expand-icon" id="icon-ar-<?= $i ?>"></i>
+                </div>
+            </div>
 
-        <div class="at-risk-avatar">
-          <?php if (!empty($s['avatar']) && file_exists($s['avatar'])): ?>
-            <img src="<?= htmlspecialchars($s['avatar']) ?>" alt="">
-          <?php else: ?>
-            <div class="avatar-initials"><?= strtoupper(substr($s['name'],0,2)) ?></div>
-          <?php endif; ?>
+            <div class="ar-expandable" id="ar-<?= $i ?>" style="display: none;">
+                <div class="ar-detail-grid">
+                    <div class="ar-chart-wrap">
+                        <h4>KPI Group Breakdown (Weakest First)</h4>
+                        <div id="chart-ar-<?= $i ?>"></div>
+                    </div>
+                    <div class="ar-action-plan">
+                        <h4>System Insight</h4>
+                        <p><?= $s['level'] === 'critical' 
+                          ? "No evaluation data for $selectedYear. Showing breakdown from most recent available year." 
+                          : ($s['diff'] < 0 
+                              ? "Performance dropped by ".abs($s['diff'])."% since $prevYear. Focus on the lowest bars in the chart."
+                              : "Performance improved by ".$s['diff']."% since $prevYear.") ?>
+                        </p>
+                        <a href="../staff_masterlist/staffprofile.php?id=<?= $s['id'] ?>" class="btn-profile">Go to Profile</a>
+                    </div>
+                </div>
+            </div>
         </div>
+        <?php endforeach; ?>
+    </div>
+</div>
 
-        <div class="at-risk-info">
-          <div class="at-risk-name-row">
-            <span class="at-risk-name"><?= htmlspecialchars($s['name']) ?></span>
-            <span class="level-badge <?= htmlspecialchars($s['level']) ?>"><?= htmlspecialchars($s['level']) ?></span>
-          </div>
-          <div class="at-risk-dept"><?= htmlspecialchars($s['dept']) ?></div>
-        </div>
+<script>
+function toggleExpand(id) {
+    const el = document.getElementById(id);
+    const icon = document.getElementById('icon-' + id);
+    const isOpen = el.style.display === 'block';
+    
+    // Close others
+    document.querySelectorAll('.ar-expandable').forEach(d => d.style.display = 'none');
+    document.querySelectorAll('.expand-icon').forEach(i => i.style.transform = 'rotate(0deg)');
 
-        <div class="at-risk-score-wrap">
-          <div class="at-risk-score"><?= $s['score'] ?></div>
-          <div class="at-risk-trend">
-            <i class="ph ph-trend-<?= $s['trend']==='up' ? 'up' : 'down' ?>"></i>
-            KPI
-          </div>
-        </div>
+    if (!isOpen) {
+        el.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+        renderDetailChart(id);
+    }
+}
 
-      </a>
-      <?php endforeach; ?>
-    </div><!-- /.at-risk-list -->
-  </div><!-- /.attention-card -->
-  <?php endif; ?>
+function renderDetailChart(id) {
+    const dataIndex = id.split('-')[1];
+    const staff = <?= json_encode($atRisk) ?>[dataIndex];
+    const containerId = "#chart-" + id;
 
-</div><!-- /.overview-page -->
+    if (document.querySelector(containerId).hasChildNodes()) return;
+
+    const options = {
+        series: [{ name: 'Score', data: staff.group_details.map(g => g.avg_pct) }],
+        chart: { type: 'bar', height: 180, toolbar: {show: false} },
+        plotOptions: { bar: { horizontal: true, distributed: true, borderRadius: 4 } },
+        colors: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'],
+        xaxis: { categories: staff.group_details.map(g => g.kpi_group.substring(0,15) + '...') },
+        legend: { show: false }
+    };
+
+    new ApexCharts(document.querySelector(containerId), options).render();
+}
+</script>
+</div>
 
 <script>
 function filterTable() {
@@ -362,7 +466,7 @@ function filterTable() {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const kpiData    = [<?= $jsDataString ?>];
+    const kpiData = [<?= htmlspecialchars($jsDataString ?? '0,0,0,0') ?>];
     const kpiLabels  = ['2022', '2023', '2024', '2025'];
 
     renderSparkline('#sparkline-kpi', kpiData, '#097067');
@@ -428,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             fontSize: '9px', 
                             fontWeight: 600, 
                             offsetY: 5, // Adjusted up to center stacked lines
-                            color: '#66021F',
+                            color: '#333',
                             formatter: () => "Depts"
                         },
                         value: { show: false }, // Hides the large number in center
@@ -510,6 +614,274 @@ document.addEventListener('DOMContentLoaded', function () {
     }).render();
  
 });
+
+// heatmap
+document.addEventListener('DOMContentLoaded', function () {
+    const heatmapSeries = <?= !empty($heatmapSeries) ? json_encode($heatmapSeries) : '[]' ?>;
+    if (!heatmapSeries.length) return;
+
+    // Build flat data
+    const depts = heatmapSeries.map(s => s.name);
+    const groups = heatmapSeries[0].data.map(d => d.x);
+    const data = [];
+
+    heatmapSeries.forEach(series => {
+        series.data.forEach(point => {
+            data.push({
+                dept: series.name,
+                group: point.x,
+                value: point.y
+            });
+        });
+    });
+
+    // Dimensions
+    // FIX 1: Increase right margin (75->85) and decrease bottom (80->70)
+    const margin = { top: 10, right: 85, bottom: 70, left: 130 };
+    const cellW = 80;
+    const cellH = 45;
+    const width = groups.length * cellW;
+    const height = depts.length * cellH;
+
+    const container = document.getElementById('kpiHeatmap');
+    container.innerHTML = '';
+
+    const svg = d3.select('#kpiHeatmap')
+        .append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleBand().domain(groups).range([0, width]).padding(0.05);
+    const y = d3.scaleBand().domain(depts).range([0, height]).padding(0.05);
+
+    const color = d3.scaleSequential()
+        .domain([0, 100])
+        .interpolator(d3.interpolate('#fce7f3', '#7e22ce'));
+
+    // Draw cells
+    svg.selectAll('rect')
+        .data(data).enter().append('rect')
+        .attr('x', d => x(d.group))
+        .attr('y', d => y(d.dept))
+        .attr('width', x.bandwidth())
+        .attr('height', y.bandwidth())
+        .attr('rx', 6)
+        .attr('fill', d => d.value > 0 ? color(d.value) : '#f9f0f5');
+
+    // Cell percentages
+    svg.selectAll('.cell-label')
+        .data(data).enter().append('text')
+        .attr('x', d => x(d.group) + x.bandwidth() / 2)
+        .attr('y', d => y(d.dept) + y.bandwidth() / 2 + 4)
+        .attr('text-anchor', 'middle').attr('font-size', '11px')
+        .attr('fill', d => d.value > 60 ? '#fff' : '#4a1d6e')
+        .attr('font-weight', '700')
+        .text(d => d.value > 0 ? d.value + '%' : '');
+
+    // X axis — Truncate long labels to 12 chars
+    svg.append('g')
+        .attr('transform', `translate(0,${height})`)
+        .call(d3.axisBottom(x).tickSize(0))
+        .selectAll('text')
+        .attr('transform', 'rotate(-30)')
+        .attr('text-anchor', 'end')
+        .attr('dx', '-0.5em')
+        .attr('dy', '0.5em')
+        .style('font-size', '10px')
+        .text(function(d) {
+            return d.length > 12 ? d.substring(0, 12) + "..." : d;
+        });
+
+    // Y axis
+    svg.append('g').call(d3.axisLeft(y).tickSize(0))
+        .selectAll('text').attr('dx', '-8px').style('font-size', '11px');
+
+    svg.selectAll('.domain').remove();
+
+    // Add this after your cell-label text block
+
+    // Create tooltip div
+    const tooltip = d3.select('body').append('div')
+        .style('position', 'fixed')
+        .style('background', '#1e1b2e')
+        .style('color', '#fff')
+        .style('padding', '8px 14px')
+        .style('border-radius', '10px')
+        .style('font-size', '12px')
+        .style('font-family', 'Sora, sans-serif')
+        .style('font-weight', '600')
+        .style('pointer-events', 'none')
+        .style('opacity', 0)
+        .style('z-index', 9999)
+        .style('box-shadow', '0 4px 16px rgba(0,0,0,0.18)')
+        .style('transition', 'opacity 0.15s ease')
+        .style('white-space', 'nowrap');
+
+    // Attach hover events to the existing rects
+    svg.selectAll('rect')
+        .on('mousemove', function(event, d) {
+            tooltip
+                .style('opacity', 1)
+                .style('left', (event.clientX + 14) + 'px')
+                .style('top',  (event.clientY - 36) + 'px')
+                .html(`
+                    <div style="margin-bottom:3px; font-size:11px; color:#c4b5fd;">${d.dept}</div>
+                    <div>${d.group}</div>
+                    <div style="font-size:18px; color:#f0abfc; margin-top:2px;">${d.value > 0 ? d.value + '%' : 'No data'}</div>
+                `);
+        })
+        .on('mouseleave', function() {
+            tooltip.style('opacity', 0);
+        });
+    // Color legend bar
+    const legendWidth = 10;
+    const legendHeight = height;
+    const legendX = width + 30; // FIX 2: Move legend further right
+
+    const defs = svg.append('defs');
+    const linearGradient = defs.append('linearGradient')
+        .attr('id', 'legend-gradient').attr('x1', '0%').attr('x2', '0%')
+        .attr('y1', '100%').attr('y2', '0%');
+
+    linearGradient.append('stop').attr('offset', '0%').attr('stop-color', '#fce7f3');
+    linearGradient.append('stop').attr('offset', '100%').attr('stop-color', '#7e22ce');
+
+    svg.append('rect')
+        .attr('x', legendX).attr('y', 0)
+        .attr('width', legendWidth).attr('height', legendHeight)
+        .attr('rx', 4).style('fill', 'url(#legend-gradient)');
+
+    // Legend labels - Add padding to prevent cutoff
+    [0, 50, 100].forEach(val => {
+        svg.append('text')
+            .attr('x', legendX + legendWidth + 6) // FIX 3: Increase horizontal padding for %
+            .attr('y', legendHeight - (val / 100) * legendHeight + 4)
+            .attr('font-size', '10px')
+            .attr('fill', '#6b7280')
+            .text(val + '%');
+    });
+});
+
+// Speedometer logic
+document.addEventListener('DOMContentLoaded', function () {
+    // Data from your existing PHP $yearlyData array
+    const yearlyActuals = <?= json_encode((object)($yearlyData ?? [])) ?>;
+    let chart;
+
+    function updateSpeedometer() {
+        const year = document.getElementById('speedoYear').value;
+        const target = parseFloat(document.getElementById('speedoTarget').value) || 80;
+        
+        const actual = parseFloat(yearlyActuals[year]) || 0;
+
+        // The math: (Actual / Target) * 100
+        const percentageOfTarget = Math.round((actual / target) * 100);
+        
+        // Update the footer text
+        document.getElementById('actualVal').textContent = actual.toFixed(1) + '%';
+
+        const options = {
+            series: [Math.min(percentageOfTarget, 100)], // Caps at 100% visually
+            chart: {
+                height: 280,
+                type: 'radialBar',
+                offsetY: -10,
+                width: '100%'
+            },
+            plotOptions: {
+              radialBar: {
+                  startAngle: -135,
+                  endAngle: 135,
+                  track: {
+                      background: '#f3e8ff',
+                      strokeWidth: '97%',
+                      margin: 5,
+                  },
+                  hollow: {
+                      margin: 0,
+                      size: '65%',            /* FIX 3: bigger hollow = % sits more centered */
+                  },
+                  dataLabels: {
+                      name: {
+                          fontSize: '11px',
+                          color: '#6b7280',
+                          offsetY: 70,        /* FIX 4: push label further down from chart */
+                          fontFamily: 'Sora'
+                      },
+                      value: {
+                          offsetY: -10,       /* FIX 3: negative = moves UP into circle center */
+                          fontSize: '28px',
+                          fontWeight: 800,
+                          fontFamily: 'Sora',
+                          formatter: function (val) {
+                              return val + "%";
+                          }
+                      }
+                  }
+              }
+          },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: 'dark',
+                    shadeIntensity: 0.15,
+                    inverseColors: false,
+                    opacityFrom: 1,
+                    opacityTo: 1,
+                    stops: [0, 50, 65, 91],
+                    gradientToColors: ['#7e22ce'] // Purple to match your theme
+                },
+            },
+            stroke: { dashArray: 4 },
+            labels: ['Target Achievement'],
+            colors: ['#e8308c'] // Pink starting color
+        };
+
+        if (chart) {
+            chart.updateOptions({
+                series: [Math.min(percentageOfTarget, 100)]
+            });
+        } else {
+            chart = new ApexCharts(document.querySelector("#targetSpeedometer"), options);
+            chart.render();
+        }
+    }
+
+    // Listeners for filters
+    document.getElementById('speedoYear').addEventListener('change', updateSpeedometer);
+    document.getElementById('speedoTarget').addEventListener('input', updateSpeedometer);
+
+    // Initial render
+    setTimeout(updateSpeedometer, 50);
+});
+
+function toggleAR(index) {
+    const card = document.getElementById('ar-card-' + index);
+    // Toggle the 'active' class to expand/collapse
+    card.classList.toggle('active');
+    
+    // Rotate the chevron
+    const chevron = card.querySelector('.ar-chevron');
+    if(chevron) {
+        chevron.style.transform = card.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+}
+
+function initARChart(index, groups, scores, name) {
+    const options = {
+        series: [{ name: 'Group Score', data: scores }],
+        chart: { type: 'bar', height: 160, toolbar: { show: false } },
+        plotOptions: { bar: { horizontal: true, distributed: true, borderRadius: 4 } },
+        colors: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'],
+        xaxis: { categories: groups.map(g => g.substring(0, 15) + '...') },
+        legend: { show: false },
+        tooltip: { y: { formatter: val => val + "%" } }
+    };
+    new ApexCharts(document.querySelector("#chart-ar-" + index), options).render();
+}
+
 </script>
 
 </body>
