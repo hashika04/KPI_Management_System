@@ -114,6 +114,7 @@ $existingComment = $commentRes->get_result()->fetch_assoc();
 
     <div class="modal-body">
         <form id="kpiForm">
+            <input type="hidden" name="staff_id" value="<?= $staffId ?>">
             <input type="hidden" name="staff_name" value="<?= htmlspecialchars($staffName) ?>">
             <input type="hidden" name="year" value="<?= $evalYear ?>">
 
@@ -275,4 +276,33 @@ function recalculate() {
 }
 
 recalculate();
+
+function saveKPI() {
+    const form = document.getElementById('kpiForm');
+    const formData = new FormData(form);
+
+    // Debug - show what's being sent
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
+
+    fetch('save_kpi.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('KPI scores saved successfully!');
+            closeModal();
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(err => {
+        alert('Failed to save. Please try again.');
+        console.error(err);
+    });
+}
 </script>

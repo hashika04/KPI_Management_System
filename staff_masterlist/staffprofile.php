@@ -1262,7 +1262,7 @@ $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
 
         <!-- ROW 2 RIGHT: buttons -->
         <div class="profile-hero-action">
-            <button class="profile-action-btn action-kpi">
+            <button class="profile-action-btn action-kpi" onclick="openAddKPIModal(<?= $staff['id'] ?>, '<?= htmlspecialchars($staff['full_name'], ENT_QUOTES) ?>')">
                 <i class="ph ph-note-pencil"></i> Edit KPI
             </button>
 
@@ -1571,5 +1571,14 @@ if (categoryLabels.length > 0 && categoryValues.length > 0) {
     }, { responsive: true, displayModeBar: true });
 }
 </script>
+
+<div id="addKPIModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div style="max-width:900px; width:95%; max-height:92vh; padding:0; border-radius:20px;">
+        <div id="modalContentTarget">Loading...</div>
+    </div>
+</div>
+
+<script src="staff.js"></script>
+
 </body>
 </html>
