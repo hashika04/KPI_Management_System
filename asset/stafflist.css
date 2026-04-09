@@ -24,7 +24,7 @@
 }
 
 .staff-masterlist-header h1 {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700; /* Match overview */
     margin-bottom: 4px; /* Match overview */
     color: var(--text-main);
@@ -32,7 +32,7 @@
 }
 
 .subtitle {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-muted);
     font-weight: 400; /* Match overview */
     margin-bottom: 20px; /* Keep some space before filters */

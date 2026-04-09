@@ -199,7 +199,7 @@ while ($row = $depts_result->fetch_assoc()) {
     }
 
     .reports-header h1 {
-        font-size: 26px;
+        font-size: 28px;
         font-weight: 700;
         margin-bottom: 4px;
         color: var(--text-main);
@@ -207,7 +207,7 @@ while ($row = $depts_result->fetch_assoc()) {
     }
 
     .reports-subtitle {
-        font-size: 12px;
+        font-size: 13px;
         color: var(--text-muted);
         margin-bottom: 15px;
     }
