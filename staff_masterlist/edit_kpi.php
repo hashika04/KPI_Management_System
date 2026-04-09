@@ -60,7 +60,14 @@ foreach ($sec2Items as $item) {
 
 
 // Calculate Total Sec 2 weight (5.0% * number of groups)
-$sec2WeightTotal = count($sec2Groups) * 5.0;
+$sec2WeightTotal = 0;
+$groupWeights = [];
+foreach ($sec2Items as $item) {
+    if (!isset($groupWeights[$item['kpi_group']])) {
+        $groupWeights[$item['kpi_group']] = (float)$item['group_weight'];
+        $sec2WeightTotal += (float)$item['group_weight'];
+    }
+}
 
 
 // Existing Data
@@ -141,33 +148,48 @@ $existingComment = $commentRes->get_result()->fetch_assoc();
 
             <div class="section-header">SECTION 2: KPI Achievement (<?= $sec2WeightTotal ?>%)</div>
             <table class="kpi-table">
-                <thead><tr><th>KPI Group</th><th>Measurable Target</th><th>Rating (1-5)</th><th>Weighted Score</th><th>Avg Score</th><th>Weight</th><th>Group Weighted</th></tr></thead>
+                <thead><tr><th>KPI Group</th><th>Measurable Target</th><th>Rating (1-5)</th><th>Avg Score</th><th>Weight</th><th>Weighted Score</th></tr></thead>
                 <tbody>
                     <?php foreach ($sec2Groups as $groupName => $groupItems):
-                        $count = count($groupItems); $first = true; $grpWeight = 5.0; $itemWeight = $grpWeight / $count; ?>
-                        <?php foreach ($groupItems as $item):
-                            $code = $item['kpi_code']; $current = $existingScores[$code] ?? 3; ?>
-                            <tr data-group="<?= safeId($groupName) ?>">
-                                <?php if($first): ?><td rowspan="<?= $count ?>" style="font-weight:700; background:#fbfcfe; border-right:1px solid #f1f5f9;"><?= htmlspecialchars($groupName) ?></td><?php endif; ?>
+                        $count = count($groupItems); 
+                        $first = true; 
+                        $grpWeight = $groupWeights[$groupName] ?? 0.0;
+                        foreach ($groupItems as $item):
+                            $code = $item['kpi_code']; 
+                            $current = $existingScores[$code] ?? 3; ?>
+                            <tr>
+                                <?php if($first): ?>
+                                    <td rowspan="<?= $count ?>" style="font-weight:700; background:#fbfcfe; border-right:1px solid #f1f5f9;"><?= htmlspecialchars($groupName) ?></td>
+                                <?php endif; ?>
                                 <td><?= htmlspecialchars($item['kpi_description']) ?></td>
                                 <td>
-                                    <select class="score-select sec2-score" name="score[<?= $code ?>]" data-group="<?= safeId($groupName) ?>" data-weight="<?= $itemWeight ?>" onchange="recalculate()">
+                                    <select class="score-select sec2-score" 
+                                        name="score[<?= $code ?>]" 
+                                        data-group="<?= safeId($groupName) ?>" 
+                                        data-groupweight="<?= $grpWeight ?>" 
+                                        onchange="recalculate()">
                                         <?php for($s=1;$s<=5;$s++) echo "<option value='$s' ".($s==$current?'selected':'').">$s</option>"; ?>
                                     </select>
                                 </td>
-                                <td id="ws_<?= $code ?>" style="text-align:center; font-weight:700; color:#64748b;">0.00</td>
                                 <?php if($first): ?>
-                                    <td id="avg_<?= safeId($groupName) ?>" rowspan="<?= $count ?>" style="text-align:center; font-weight:700; border-left:1px solid #f1f5f9;">0.00</td>
+                                    <td id="avg_<?= safeId($groupName) ?>" rowspan="<?= $count ?>" style="text-align:center; font-weight:700;">0.00</td>
                                     <td rowspan="<?= $count ?>" style="text-align:center;"><?= number_format($grpWeight, 1) ?>%</td>
                                     <td id="gws_<?= safeId($groupName) ?>" rowspan="<?= $count ?>" style="text-align:center; font-weight:700; color:#2563eb;">0.00</td>
                                 <?php endif; ?>
                             </tr>
-                        <?php $first = false; endforeach; ?>
-                    <?php endforeach; ?>
+                    <?php $first = false; endforeach; endforeach; ?>
                 </tbody>
                 <tfoot>
-                    <tr style="background:#f8fafc; font-weight:700;"><td>Section 2 Total</td><td colspan="4"></td><td><?= number_format($sec2WeightTotal, 1) ?>%</td><td id="sec2Total" style="color:#2563eb; text-align:center;">0.00</td></tr>
-                    <tr class="final-score-row"><td colspan="6"><strong>FINAL PERFORMANCE SCORE (1-5 SCALE)</strong></td><td><span class="final-score-value" id="finalScore">0.00</span><br><span id="finalLabel" style="color:#64748b; font-size:11px;">Excellent</span></td></tr>
+                    <tr style="background:#f8fafc; font-weight:700;">
+                        <td colspan="4">Section 2 Total</td>
+                        <td style="text-align:center;"><?= number_format($sec2WeightTotal, 1) ?>%</td>
+                        <td id="sec2Total" style="color:#2563eb; text-align:center;">0.00</td>
+                    </tr>
+                    <tr class="final-score-row">
+                        <td colspan="5"><strong>FINAL PERFORMANCE SCORE</strong></td>
+                        <td><span class="final-score-value" id="finalScore">0.00</span><br>
+                        <span id="finalLabel" style="color:#64748b; font-size:11px;">-</span></td>
+                    </tr>
                 </tfoot>
             </table>
 
@@ -217,16 +239,8 @@ function recalculate() {
     let groupMap = {};
     document.querySelectorAll('.sec2-score').forEach(sel => {
         let score = parseInt(sel.value);
-        let weightFactor = parseFloat(sel.dataset.weight) / 100;
-        let weightedScore = score * weightFactor;
-       
-        let code = sel.name.match(/\[(.*?)\]/)[1];
-        let rowDisplay = document.getElementById('ws_' + code);
-        if (rowDisplay) rowDisplay.textContent = weightedScore.toFixed(2);
-
-
         let gid = sel.dataset.group;
-        if(!groupMap[gid]) groupMap[gid] = {sum:0, count:0, grpWeight: 5.0};
+        if(!groupMap[gid]) groupMap[gid] = {sum:0, count:0, grpWeight: parseFloat(sel.dataset.groupweight)};
         groupMap[gid].sum += score;
         groupMap[gid].count++;
     });
@@ -251,15 +265,14 @@ function recalculate() {
     document.getElementById('finalScore').textContent = final.toFixed(2);
    
     // Label Mapping
-    let label = "Unsatisfactory";
+    let label = "";
     if (final >= 4.5) label = "Excellent";
     else if (final >= 3.5) label = "Good";
     else if (final >= 2.5) label = "Satisfactory";
-    else if (final >= 1.5) label = "Needs Improvement";
+    else if (final >= 1.5) label = "Poor";
+    else label = "Very Poor";
     document.getElementById('finalLabel').textContent = label;
 }
 
-
-// Initial calculation on load
 recalculate();
 </script>

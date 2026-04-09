@@ -12,7 +12,6 @@ if ($staffId <= 0) {
 
 $success = '';
 $error = '';
-$selectedYear = trim((string)($_GET['year'] ?? ''));
 
 define('KPI_TARGET_PERCENT', 80.0);
 define('TREND_STABLE_DELTA', 0.2);
@@ -158,8 +157,8 @@ $staffName = trim((string)$staff['full_name']);
 $stmt->bind_param('s', $staffName);
 $stmt->execute();
 $kpiResult = $stmt->get_result();
-$selectedYear = trim((string)($_GET['year'] ?? ''));
 
+$records = [];
 while ($row = $kpiResult->fetch_assoc()) {
     $date = DateTime::createFromFormat('Y-m-d', trim((string)$row['evaluation_date']));
     if (!$date) {
@@ -179,20 +178,7 @@ while ($row = $kpiResult->fetch_assoc()) {
     ];
 }
 $stmt->close();
-$allRecords = $records;
 
-$availableYears = [];
-foreach ($allRecords as $row) {
-    $availableYears[(string)$row['year']] = true;
-}
-$availableYears = array_keys($availableYears);
-rsort($availableYears);
-
-if ($selectedYear !== '') {
-    $records = array_values(array_filter($records, function ($row) use ($selectedYear) {
-        return (string)$row['year'] === (string)$selectedYear;
-    }));
-}
 /*
 |--------------------------------------------------------------------------
 | BUILD PERIOD SCORES
@@ -260,20 +246,12 @@ foreach ($groupedPeriods as $period => $entry) {
         $weighted = $avg * $weight;
         $section2Weighted += $weighted;
 
-    $categoryScores[] = [
-        'category' => $groupName,
-        'percentage' => round(($avg / 5) * 100, 2),
-        'avg_5_scale' => round($avg, 4),
-        'weighted_score_5' => round($weighted, 4),
-        'items' => array_map(function ($item) {
-            return [
-                'code' => $item['code'],
-                'description' => $item['description'],
-                'score_5' => (float)$item['score'],
-                'percentage' => round(((float)$item['score'] / 5) * 100, 2),
-            ];
-        }, $items),
-    ];
+        $categoryScores[] = [
+            'category' => $groupName,
+            'percentage' => round(($avg / 5) * 100, 2),
+            'avg_5_scale' => round($avg, 4),
+            'weighted_score_5' => round($weighted, 4),
+        ];
     }
 
     usort($categoryScores, fn($a, $b) => strcmp($a['category'], $b['category']));
@@ -307,42 +285,6 @@ $latest = end($periodSummaries) ?: [
 
 $latestComment = $latest['comments'] ?: 'No supervisor comment available.';
 $latestTraining = $latest['training'] ?: 'No training recommendation available.';
-
-$coreCompetencyLabels = [
-    'S1.1' => 'Initiative',
-    'S1.2' => 'Professional Conduct',
-    'S1.3' => 'Reliability & Accountability'
-];
-
-$coreCompetencies = [];
-$latestPeriodKey = $latest['period'] ?? '';
-
-if ($latestPeriodKey !== '' && isset($groupedPeriods[$latestPeriodKey])) {
-    $latestSection1Scores = $groupedPeriods[$latestPeriodKey]['section1_scores'] ?? [];
-
-    foreach ($coreCompetencyLabels as $code => $label) {
-        $score5 = isset($latestSection1Scores[$code]) ? (float)$latestSection1Scores[$code] : 0.0;
-        $percentage = round(($score5 / 5) * 100, 2);
-
-        $coreCompetencies[] = [
-            'code' => $code,
-            'label' => $label,
-            'score_5' => $score5,
-            'percentage' => $percentage,
-        ];
-    }
-}
-
-$coreCompetencyLabelsJs = array_map(fn($item) => $item['label'], $coreCompetencies);
-$coreCompetencyValuesJs = array_map(fn($item) => $item['percentage'], $coreCompetencies);
-$coreCompetencyColorsJs = array_map(function ($item) {
-    $percent = (float)$item['percentage'];
-
-    if ($percent >= 85) return '#16a34a';
-    if ($percent >= 70) return '#3b82f6';
-    if ($percent >= 50) return '#f59e0b';
-    return '#ef4444';
-}, $coreCompetencies);
 
 $recentScores5 = array_column(array_slice($periodSummaries, -3), 'score_5');
 $trendDelta = 0.0;
@@ -401,68 +343,13 @@ if ($riskLevel === 'Low') {
 }
 
 $profilePhoto = htmlspecialchars(normalizeAvatarPath((string)($staff['profile_photo'] ?? '')));
-
-$trendSeriesLabels = array_map(function ($row) {
-    $raw = (string)$row['period'];
-
-    if (preg_match('/^\d{4}-\d{2}$/', $raw)) {
-        $date = DateTime::createFromFormat('Y-m', $raw);
-        if ($date) {
-            return $date->format('M Y');
-        }
-    }
-
-    if (preg_match('/^\d{4}$/', $raw)) {
-        return $raw;
-    }
-
-    return $raw;
-}, $periodSummaries);
-
+$trendSeriesLabels = array_map(fn($row) => $row['period'], $periodSummaries);
 $trendSeriesValues = array_map(fn($row) => $row['percentage'], $periodSummaries);
 $categoryLabels = array_map(fn($row) => $row['category'], $latest['category_scores']);
-$categoryWrappedLabels = array_map(function ($label) {
-    return match ($label) {
-        'Customer Service Quality' => 'Customer<br>Service<br>Quality',
-        'Daily Sales Operations' => 'Daily<br>Sales<br>Operations',
-        'Inventory & Cost Control' => 'Inventory &<br>Cost Control',
-        'Training, Learning & Team Contribution' => 'Training,<br>Learning & Team<br>Contribution',
-        'Sales Target Contribution' => 'Sales Target<br>Contribution',
-        'Store Operations Support' => 'Store Operations<br>Support',
-        default => str_replace(' ', '<br>', $label),
-    };
-}, $categoryLabels);
-$radarLabels = array_map(function ($label) {
-    return match ($label) {
-        'Training, Learning & Team Contribution' => 'Training & Team',
-        'Inventory & Cost Control' => 'Inventory & Cost',
-        'Daily Sales Operations' => 'Daily Sales',
-        'Customer Service Quality' => 'Customer Service',
-        'Sales Target Contribution' => 'Sales Target',
-        'Store Operations Support' => 'Store Support',
-        default => $label,
-    };
-}, $categoryLabels);
-
 $categoryValues = array_map(fn($row) => $row['percentage'], $latest['category_scores']);
 $hasTrendData = !empty($trendSeriesLabels) && !empty($trendSeriesValues);
 $hasCategoryData = !empty($categoryLabels) && !empty($categoryValues);
-
-$recordCount = count($periodSummaries);
-$hasPreviousComparison = $recordCount >= 2;
-
-$currentPerformanceBadgeClass =
-    $performanceLevel === 'Top' ? 'pill-top' :
-    ($performanceLevel === 'Good' ? 'pill-good' :
-    ($performanceLevel === 'Average' ? 'pill-average' : 'pill-risk'));
-
-$currentTrendBadgeClass =
-    $trendLabel === 'Improving' ? 'pill-low' :
-    ($trendLabel === 'Stable' ? 'pill-good' : 'pill-high');
 ?>
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -484,16 +371,16 @@ $currentTrendBadgeClass =
             margin-bottom: 20px;
         }
         .staff-profile-header h1 {
-            font-size: 2.8rem;   
-            font-weight: 900;
-            color: #1a132f;
-            letter-spacing: -0.5px;
-            margin-bottom: 6px;
+            margin: 8px 0 0;
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: #1d1635;
         }
-
         .staff-profile-header p {
-            font-size: 1.05rem;
-            color: #7c6f87;
+            margin: 8px 0 0;
+            color: #8f6d83;
+            font-size: 1rem;
+            font-weight: 500;
         }
         .profile-shell {
             display: grid;
@@ -550,28 +437,15 @@ $currentTrendBadgeClass =
             grid-template-columns: repeat(2, minmax(0,1fr));
             gap: 12px 18px;
         }
-        
         .profile-meta-item {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-
-            padding: 12px 14px;
-
-            background: #ffffff;
-            border: 1px solid #e9d7e3;
+            background: #fff;
+            border: 1px solid #f0dce7;
             border-radius: 14px;
-
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-
-            transition: 0.2s ease;
+            padding: 10px 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
         }
-
-        .profile-meta-item:hover {
-            border-color: #e8308c;
-            box-shadow: 0 4px 12px rgba(232, 48, 140, 0.15);
-        }
-
         .profile-meta-item i {
             font-size: 1rem;
             color: #b35d99;
@@ -813,531 +687,6 @@ $currentTrendBadgeClass =
                 padding: 110px 18px 28px;
             }
         }
-
-        .profile-filter-row {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: -4px;
-            margin-bottom: 2px;
-        }
-
-        .profile-year-filter-form {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #fff;
-            border: 1px solid #edd7e5;
-            border-radius: 14px;
-            padding: 10px 14px;
-            box-shadow: 0 4px 14px rgba(200, 80, 140, 0.06);
-        }
-
-        .profile-year-filter-form label {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #6f6376;
-        }
-
-        .profile-year-filter-form select {
-            border: 1px solid #e8d8e3;
-            border-radius: 10px;
-            padding: 8px 12px;
-            background: #fff;
-            color: #2f2138;
-            font-size: 0.92rem;
-            font-weight: 600;
-            outline: none;
-        }
-
-       .profile-hero-card {
-            display: grid;
-            grid-template-columns: 320px 1fr auto;
-            align-items: center;
-            gap: 18px;
-
-            padding: 24px 26px;
-
-            background: linear-gradient(135deg, #ffffff 0%, #fff4fa 100%);
-            border: 1px solid #faa1cc;
-
-            border-radius: 20px;
-
-            box-shadow: 
-                0 8px 30px rgba(200, 80, 140, 0.15),
-                0 2px 6px rgba(0,0,0,0.05);
-
-            transition: 0.2s ease;
-        }
-
-        .profile-hero-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 
-                0 14px 40px rgba(200, 80, 140, 0.2),
-                0 4px 10px rgba(0,0,0,0.08);
-}
-
-.profile-hero-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.profile-hero-left img {
-    width: 92px;
-    height: 92px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #efd6e5;
-    background: #fff;
-    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
-}
-
-.profile-hero-identity h2 {
-    margin: 0;
-    font-size: 1.7rem;
-    font-weight: 800;
-    color: #231942;
-}
-
-.profile-hero-title-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 6px;
-}
-
-.hero-role-line {
-    margin: 0;
-    color: #675a70;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.profile-hero-details-row {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    align-items: stretch;
-}
-
-.hero-detail-chip {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #fff;
-    border: 1px solid #f0dce7;
-    border-radius: 16px;
-    padding: 12px 14px;
-    min-width: 0;
-}
-
-.hero-detail-chip i {
-    font-size: 1.05rem;
-    color: #b35d99;
-    flex-shrink: 0;
-}
-
-.hero-detail-chip span {
-    display: block;
-    font-size: 0.76rem;
-    color: #9b8796;
-    margin-bottom: 2px;
-}
-
-.hero-detail-chip strong {
-    display: block;
-    font-size: 0.93rem;
-    color: #2a2038;
-    word-break: break-word;
-}
-
-.profile-hero-action {
-    display: flex;
-    justify-content: flex-end;
-    align-items: flex-start;
-}
-
-.profile-edit-btn-strong {
-    background: linear-gradient(135deg, #c070e0, #e8308c);
-    color: #fff;
-
-    border: none;
-    border-radius: 12px;
-
-    padding: 10px 16px;
-    font-weight: 700;
-
-    box-shadow: 0 4px 12px rgba(232, 48, 140, 0.3);
-
-    transition: 0.2s ease;
-}
-
-.profile-edit-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(236, 15, 126, 0.4);
-    filter: brightness(1.03);
-}
-
-.profile-edit-drawer {
-    border: 1px solid #edd9e7;
-    background: #fff;
-}
-
-.profile-summary-row-refined {
-    grid-template-columns: 1.1fr 1fr 1fr;
-    align-items: stretch;
-}
-
-.summary-score-card-main {
-    box-shadow: 0 10px 24px rgba(219, 39, 119, 0.08);
-}
-
-.summary-score-card {
-    background: linear-gradient(135deg, #fff1f4 0%, #fff8fa 100%);
-    border: 1px solid #f3c9d6;
-}
-
-.summary-strength-card {
-    background: linear-gradient(135deg, #f2fff7 0%, #fbfffd 100%);
-    border: 1px solid #cfead9;
-}
-
-.summary-improve-card {
-    background: linear-gradient(135deg, #fff9ee 0%, #fffdf8 100%);
-    border: 1px solid #f3dfb7;
-}
-
-.summary-title-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.summary-title-row h3 {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 1.02rem;
-    font-weight: 800;
-    color: #221834;
-}
-
-.summary-title-row h3 i {
-    font-size: 1rem;
-    color: #b35d99;
-}
-
-.summary-title-green h3 {
-    color: #166534;
-}
-
-.summary-title-green h3 i {
-    color: #16a34a;
-}
-
-.summary-title-amber h3 {
-    color: #a16207;
-}
-
-.summary-title-amber h3 i {
-    color: #d97706;
-}
-
-.summary-list-strong {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-}
-
-.summary-list-strong li {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
-.summary-list-strong li:last-child {
-    border-bottom: none;
-}
-
-.summary-item-label {
-    font-size: 1rem;
-    font-weight: 800;
-    line-height: 1.4;
-}
-
-.summary-item-label-green {
-    color: #15803d;
-}
-
-.summary-item-label-amber {
-    color: #b45309;
-}
-
-.summary-item-value {
-    font-size: 0.9rem;
-    color: #6b5b67;
-    font-weight: 600;
-}
-
-@media (max-width: 1300px) {
-    .profile-hero-card {
-        grid-template-columns: 1fr;
-    }
-
-    .profile-hero-details-row {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .profile-hero-action {
-        justify-content: flex-start;
-    }
-}
-
-@media (max-width: 900px) {
-    .profile-hero-details-row,
-    .profile-summary-row-refined {
-        grid-template-columns: 1fr;
-    }
-}
-
-.profile-top-filter-row {
-    margin-top: 18px;
-    display: flex;
-    justify-content: flex-start;
-}
-
-.profile-top-filter-form {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.profile-top-filter-form select {
-    min-width: 160px;
-    height: 50px;
-    border: 1px solid #ffc9ef;
-    border-radius: 10px;
-    background: #fff;
-    color: #2f2138;
-    font-size: 0.95rem;
-    font-weight: 600;
-    padding: 0 12px;
-    outline: none;
-    box-shadow: 0 4px 12px rgba(200, 80, 140, 0.05);
-}
-
-.chart-center-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-}
-
-#staffCategoryChart {
-    width: 95%;
-    max-width: 900px;
-}
-
-.kpi-drilldown-list {
-    display: grid;
-    gap: 14px;
-}
-
-.kpi-drill-card {
-    border: 1px solid #efdeea;
-    border-radius: 18px;
-    background: #fffafd;
-    overflow: hidden;
-}
-
-.kpi-drill-header {
-    width: 100%;
-    border: none;
-    background: transparent;
-    padding: 16px 18px;
-    cursor: pointer;
-    text-align: left;
-}
-
-.kpi-drill-title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-}
-
-.kpi-drill-name {
-    font-size: 1rem;
-    font-weight: 800;
-    color: #231942;
-}
-
-.kpi-drill-percent {
-    font-size: 0.96rem;
-    font-weight: 800;
-    color: #7c3aed;
-    white-space: nowrap;
-}
-
-.kpi-progress-wrap {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.kpi-progress-track {
-    flex: 1;
-    height: 16px;
-    border-radius: 999px;
-    background: #f3edf2;
-    overflow: hidden;
-    border: 1px solid #eadfe7;
-}
-
-.kpi-progress-fill {
-    height: 100%;
-    border-radius: 999px;
-}
-
-.kpi-progress-fill.bar-strong {
-    background: linear-gradient(90deg, #86efac 0%, #22c55e 100%);
-}
-
-.kpi-progress-fill.bar-good {
-    background: linear-gradient(90deg, #bfdbfe 0%, #3b82f6 100%);
-}
-
-.kpi-progress-fill.bar-mid {
-    background: linear-gradient(90deg, #fde68a 0%, #f59e0b 100%);
-}
-
-.kpi-progress-fill.bar-risk {
-    background: linear-gradient(90deg, #fecaca 0%, #ef4444 100%);
-}
-
-.kpi-drill-icon {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #8f6d83;
-    transition: transform 0.2s ease;
-}
-
-.kpi-drill-card.is-open .kpi-drill-icon {
-    transform: rotate(180deg);
-}
-
-.kpi-drill-body {
-    padding: 0 18px 16px;
-    border-top: 1px solid #f1e5ec;
-    background: #fff;
-}
-
-.kpi-item-table {
-    display: grid;
-    gap: 12px;
-    margin-top: 14px;
-}
-
-.kpi-item-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 12px 14px;
-    border: 1px solid #f0e3ea;
-    border-radius: 14px;
-    background: #fffafd;
-}
-
-.kpi-item-left strong {
-    display: block;
-    color: #231942;
-    margin-bottom: 4px;
-}
-
-.kpi-item-left p {
-    margin: 0;
-    color: #6f6376;
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-.kpi-item-right {
-    min-width: 88px;
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-}
-
-.kpi-item-right span {
-    color: #7d6979;
-    font-size: 0.88rem;
-    font-weight: 600;
-}
-
-.kpi-item-right strong {
-    color: #231942;
-    font-size: 0.95rem;
-    font-weight: 800;
-}
-.profile-chart-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-    align-items: stretch;
-}
-
-.profile-chart-row > .profile-panel,
-.profile-chart-row > .profile-wide-panel {
-    height: 100%;
-    min-height: 520px;
-    display: flex;
-    flex-direction: column;
-}
-
-.kpi-drilldown-list {
-    display: grid;
-    gap: 14px;
-    flex: 1;
-}
-
-.profile-panel h2 {
-    margin-bottom: 18px;
-}
-
-.profile-panel {
-    border: 1px solid #efd8e5;
-    border-radius: 22px;
-    background: rgba(255,255,255,0.96);
-    box-shadow: 0 10px 28px rgba(200, 80, 140, 0.08);
-}
-
-#coreCompetencyChart {
-    width: 100%;
-    max-width: 100%;
-}
-
-.core-chart-shell {
-    background: linear-gradient(180deg, #fffefe 0%, #fff7fb 100%);
-    border: 1px solid #f0dce7;
-    border-radius: 18px;
-    padding: 14px 14px 8px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 8px 18px rgba(200, 80, 140, 0.06);
-}
-
-marker: {
-    color: coreCompetencyColors,
-    line: {
-        color: 'rgba(120, 90, 110, 0.20)',
-        width: 2.5
-    }
-}
     </style>
 </head>
 <body>
@@ -1345,219 +694,171 @@ marker: {
 
 <main class="staff-profile-page">
     <section class="staff-profile-header">
-    <a href="./stafflist.php" class="back-link">← Back to Staff List</a>
-    <h1>Staff Performance Profile</h1>
-    <p>View profile information, review KPI performance, and manage supervisor-facing staff details.</p>
-
-    <div class="profile-top-filter-row">
-        <form method="GET" class="profile-top-filter-form">
-            <input type="hidden" name="id" value="<?= (int)$staff['id'] ?>">
-
-            <select name="year" onchange="this.form.submit()">
-                <option value="">All Years</option>
-                <?php foreach ($availableYears as $year): ?>
-                    <option value="<?= htmlspecialchars($year) ?>" <?= $selectedYear === (string)$year ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($year) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </form>
-    </div>
-</section>
+        <a href="./stafflist.php" class="back-link">← Back to Staff List</a>
+        <h1>Staff Performance Profile</h1>
+        <p>View profile information, review KPI performance, and manage supervisor-facing staff details.</p>
+    </section>
 
     <section class="profile-shell">
-
-    <section class="profile-hero-card">
-        <div class="profile-hero-left">
-            <img src="<?= $profilePhoto ?>" alt="<?= htmlspecialchars($staff['full_name']) ?>">
-
-            <div class="profile-hero-identity">
-                <div class="profile-hero-title-row">
+        <section class="profile-top-banner profile-card">
+            <div class="profile-top-left">
+                <img src="<?= $profilePhoto ?>" alt="<?= htmlspecialchars($staff['full_name']) ?>">
+                <div class="profile-identity">
                     <h2><?= htmlspecialchars($staff['full_name']) ?></h2>
-                    <span class="profile-pill <?= $currentPerformanceBadgeClass ?>">
-                        <?= htmlspecialchars($performanceLevel) ?>
-                    </span>
-                </div>
-                <div>
-                <p class="hero-role-line">
-                    <?= htmlspecialchars($staff['position']) ?> • <?= htmlspecialchars($staff['staff_code']) ?>
-                </p>
-                 </div>
-            </div>
-        </div>
-
-        <div class="profile-hero-details-row">
-            <div class="hero-detail-chip">
-                <i class="ph ph-envelope-simple"></i>
-                <div>
-                    <span>Email</span>
-                    <strong><?= htmlspecialchars($staff['email'] ?? '-') ?></strong>
+                    <p class="identity-line"><?= htmlspecialchars($staff['position']) ?> • <?= htmlspecialchars($staff['staff_code']) ?></p>
+                    <p class="identity-line"><?= htmlspecialchars($staff['department']) ?></p>
                 </div>
             </div>
 
-            <div class="hero-detail-chip">
-                <i class="ph ph-phone"></i>
-                <div>
-                    <span>Phone</span>
-                    <strong><?= htmlspecialchars($staff['phone_number'] ?? '-') ?></strong>
+            <div class="profile-meta-grid">
+                <div class="profile-meta-item">
+                    <i class="ph ph-envelope-simple"></i>
+                    <div class="profile-meta-text">
+                        <span>Email</span>
+                        <strong><?= htmlspecialchars($staff['email'] ?? '-') ?></strong>
+                    </div>
+                </div>
+
+                <div class="profile-meta-item">
+                    <i class="ph ph-phone"></i>
+                    <div class="profile-meta-text">
+                        <span>Phone</span>
+                        <strong><?= htmlspecialchars($staff['phone_number'] ?? '-') ?></strong>
+                    </div>
+                </div>
+
+                <div class="profile-meta-item">
+                    <i class="ph ph-calendar-blank"></i>
+                    <div class="profile-meta-text">
+                        <span>Join Date</span>
+                        <strong><?= !empty($staff['join_date']) ? htmlspecialchars($staff['join_date']) : '-' ?></strong>
+                    </div>
+                </div>
+
+                <div class="profile-meta-item">
+                    <i class="ph ph-buildings"></i>
+                    <div class="profile-meta-text">
+                        <span>Department</span>
+                        <strong><?= htmlspecialchars($staff['department'] ?? '-') ?></strong>
+                    </div>
                 </div>
             </div>
 
-            <div class="hero-detail-chip">
-                <i class="ph ph-calendar-blank"></i>
-                <div>
-                    <span>Join Date</span>
-                    <strong><?= !empty($staff['join_date']) ? htmlspecialchars($staff['join_date']) : '-' ?></strong>
-                </div>
-            </div>
-
-            <div class="hero-detail-chip">
-                <i class="ph ph-buildings"></i>
-                <div>
-                    <span>Department</span>
-                    <strong><?= htmlspecialchars($staff['department'] ?? '-') ?></strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="profile-hero-action">
-            <button type="button" class="profile-edit-btn profile-edit-btn-strong" id="editProfileBtn">
-                <i class="ph ph-pencil-simple"></i>
-                Edit Profile
-            </button>
-        </div>
-    </section>
-
-    <section class="profile-edit-drawer profile-main-card" id="profileEditDrawer" style="display:none;">
-        <h2>Edit Profile</h2>
-
-        <?php if ($success): ?>
-            <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
-        <?php endif; ?>
-
-        <?php if ($error): ?>
-            <div class="profile-message message-error"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
-
-        <form method="POST" id="staffProfileForm">
-            <input type="hidden" name="update_profile" value="1">
-            <input type="hidden" name="staff_id" value="<?= (int)$staff['id'] ?>">
-
-            <div class="profile-form-grid" id="profileFormGrid" style="display:grid;">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" value="<?= htmlspecialchars($staff['email'] ?? '') ?>">
-                </div>
-
-                <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="text" name="phone_number" value="<?= htmlspecialchars($staff['phone_number'] ?? '') ?>">
-                </div>
-
-                <div class="form-group">
-                    <label>Department</label>
-                    <input type="text" name="department" value="<?= htmlspecialchars($staff['department'] ?? '') ?>">
-                </div>
-
-                <div class="form-group">
-                    <label>Position</label>
-                    <input type="text" name="position" value="<?= htmlspecialchars($staff['position'] ?? '') ?>">
-                </div>
-
-                <div class="form-group">
-                    <label>Join Date</label>
-                    <input type="date" name="join_date" value="<?= htmlspecialchars($staff['join_date'] ?? '') ?>">
-                </div>
-            </div>
-
-            <div class="profile-action-row" id="profileEditActions" style="display:flex;">
-                <button type="button" class="profile-cancel-btn" id="cancelEditBtn">Cancel</button>
-                <button type="submit" class="profile-save-btn">Save Changes</button>
-            </div>
-        </form>
-    </section>
-
-    <?php if (empty($records)): ?>
-        <section class="profile-wide-panel">
-            <h2>Data Status</h2>
-            <div class="text-panel">
-                <p>No KPI records were matched for this staff profile. Please check whether the staff name in the <strong>staff</strong> table matches the name used in <strong>kpi_data</strong>.</p>
+            <div class="profile-banner-actions">
+                <button type="button" class="profile-edit-btn" id="editProfileBtn">Edit Profile</button>
             </div>
         </section>
-    <?php endif; ?>
-        
-        
-    <section class="profile-summary-row profile-summary-row-refined">
-        <article class="summary-box profile-card summary-score-card summary-score-card-main">
-            <div class="summary-title-row">
-                <h3><i class="ph ph-chart-line-up"></i> Current Performance Score</h3>
-            </div>
 
-            <div class="kpi-big-score"><?= number_format((float)$latest['percentage'], 2) ?>%</div>
+        <section class="profile-main-card">
+            <h2>Edit Staff Information</h2>
 
-            <?php if ($hasPreviousComparison): ?>
+            <?php if ($success): ?>
+                <div class="profile-message message-success"><?= htmlspecialchars($success) ?></div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="profile-message message-error"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+
+            <form method="POST" id="staffProfileForm">
+                <input type="hidden" name="update_profile" value="1">
+                <input type="hidden" name="staff_id" value="<?= (int)$staff['id'] ?>">
+
+                <div class="profile-form-grid" id="profileFormGrid">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" value="<?= htmlspecialchars($staff['email'] ?? '') ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone_number" value="<?= htmlspecialchars($staff['phone_number'] ?? '') ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input type="text" name="department" value="<?= htmlspecialchars($staff['department'] ?? '') ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Position</label>
+                        <input type="text" name="position" value="<?= htmlspecialchars($staff['position'] ?? '') ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Join Date</label>
+                        <input type="date" name="join_date" value="<?= htmlspecialchars($staff['join_date'] ?? '') ?>">
+                    </div>
+                </div>
+
+                <div class="profile-action-row" id="profileEditActions">
+                    <button type="button" class="profile-cancel-btn" id="cancelEditBtn">Cancel</button>
+                    <button type="submit" class="profile-save-btn">Save Changes</button>
+                </div>
+            </form>
+        </section>
+
+        <?php if (empty($records)): ?>
+            <section class="profile-wide-panel">
+                <h2>Data Status</h2>
+                <div class="text-panel">
+                    <p>No KPI records were matched for this staff profile. Please check whether the staff name in the <strong>staff</strong> table matches the name used in <strong>kpi_data</strong>.</p>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <section class="profile-summary-row">
+            <article class="summary-box profile-card summary-score-card">
+                <h3>Current KPI Score</h3>
+                <div class="kpi-big-score"><?= number_format((float)$latest['percentage'], 2) ?>%</div>
                 <div class="summary-subnote">
                     Previous 5-scale score: <?= number_format((float)$latest['score_5'], 2) ?> / 5
                 </div>
-            <?php else: ?>
-                <div class="summary-subnote">
-                    Current 5-scale score: <?= number_format((float)$latest['score_5'], 2) ?> / 5
+                <div class="badge-row">
+                    <span class="profile-pill <?= $performanceLevel === 'Top' ? 'pill-top' : ($performanceLevel === 'Good' ? 'pill-good' : ($performanceLevel === 'Average' ? 'pill-average' : 'pill-risk')) ?>">
+                        <?= htmlspecialchars($performanceLevel) ?>
+                    </span>
+                    <span class="profile-pill <?= $riskLevel === 'Low' ? 'pill-low' : ($riskLevel === 'Moderate' ? 'pill-moderate' : 'pill-high') ?>">
+                        <?= htmlspecialchars($riskLevel) ?> Risk
+                    </span>
+                    <span class="profile-pill <?= $trendLabel === 'Improving' ? 'pill-low' : ($trendLabel === 'Stable' ? 'pill-good' : 'pill-high') ?>">
+                        <?= htmlspecialchars($trendLabel) ?>
+                    </span>
                 </div>
-            <?php endif; ?>
+            </article>
 
-            <div class="badge-row">
-                <span class="profile-pill <?= $currentPerformanceBadgeClass ?>">
-                    <?= htmlspecialchars($performanceLevel) ?>
-                </span>
-            </div>
-        </article>
+            <article class="summary-box profile-card summary-strength-card">
+                <h3>Strengths</h3>
+                <ul class="summary-list">
+                    <?php if (!empty($strengths)): ?>
+                        <?php foreach ($strengths as $item): ?>
+                            <li>
+                                <strong><?= htmlspecialchars($item['category']) ?></strong>
+                                — <?= number_format((float)$item['percentage'], 2) ?>%
+                            </li>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <li>No strength data available.</li>
+                    <?php endif; ?>
+                </ul>
+            </article>
 
-        <article class="summary-box profile-card summary-strength-card">
-            <div class="summary-title-row summary-title-green">
-                <h3><i class="ph ph-medal"></i> Strengths</h3>
-            </div>
-
-            <ul class="summary-list summary-list-strong">
-                <?php if (!empty($strengths)): ?>
-                    <?php foreach ($strengths as $item): ?>
-                        <li>
-                            <span class="summary-item-label summary-item-label-green">
-                                <?= htmlspecialchars($item['category']) ?>
-                            </span>
-                            <span class="summary-item-value">
-                                <?= number_format((float)$item['percentage'], 2) ?>%
-                            </span>
-                        </li>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <li>No strength data available.</li>
-                <?php endif; ?>
-            </ul>
-        </article>
-
-        <article class="summary-box profile-card summary-improve-card">
-            <div class="summary-title-row summary-title-amber">
-                <h3><i class="ph ph-warning-circle"></i> Areas of Improvement</h3>
-            </div>
-
-            <ul class="summary-list summary-list-strong">
-                <?php if (!empty($improvements)): ?>
-                    <?php foreach ($improvements as $item): ?>
-                        <li>
-                            <span class="summary-item-label summary-item-label-amber">
-                                <?= htmlspecialchars($item['category']) ?>
-                            </span>
-                            <span class="summary-item-value">
-                                <?= number_format((float)$item['percentage'], 2) ?>%
-                            </span>
-                        </li>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <li>No improvement data available.</li>
-                <?php endif; ?>
-            </ul>
-        </article>
-    </section>
+            <article class="summary-box profile-card summary-improve-card">
+                <h3>Areas of Improvement</h3>
+                <ul class="summary-list">
+                    <?php if (!empty($improvements)): ?>
+                        <?php foreach ($improvements as $item): ?>
+                            <li>
+                                <strong><?= htmlspecialchars($item['category']) ?></strong>
+                                — <?= number_format((float)$item['percentage'], 2) ?>%
+                            </li>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <li>No improvement data available.</li>
+                    <?php endif; ?>
+                </ul>
+            </article>
+        </section>
 
         <section class="profile-chart-row">
             <article class="profile-panel">
@@ -1579,81 +880,43 @@ marker: {
 
         <section class="profile-chart-row">
             <article class="profile-panel">
-                <h2>Core Competencies</h2>
-                <div class="core-chart-shell">
-                    <div id="coreCompetencyChart" style="height:470px;"></div>
-                </div>
-
-                <?php if (empty($coreCompetencies)): ?>
-                    <p class="empty-chart-note">No core competency data available for this staff.</p>
+                <h2>Category Breakdown</h2>
+                <div id="staffCategoryChart" style="height:320px;"></div>
+                <?php if (!$hasCategoryData): ?>
+                    <p class="empty-chart-note">No category breakdown available for this staff.</p>
                 <?php endif; ?>
             </article>
 
-            <section class="profile-panel">
+            <article class="profile-panel">
                 <h2>Detailed KPI Breakdown</h2>
+                <div class="detail-breakdown-grid">
+                    <div class="detail-box">
+                        <h3>Latest Summary</h3>
+                        <ul class="detail-list">
+                            <li><strong>Latest Period:</strong> <?= htmlspecialchars($latest['period'] ?: '-') ?></li>
+                            <li><strong>Trend Delta:</strong> <?= number_format((float)$trendDelta, 2) ?></li>
+                            <li><strong>Stability Score:</strong> <?= (int)$stabilityScore ?>/100</li>
+                            <li><strong>Current 5-Scale Score:</strong> <?= number_format((float)$latest['score_5'], 2) ?> / 5</li>
+                        </ul>
+                    </div>
 
-                <div class="kpi-drilldown-list">
-                    <?php if (!empty($latest['category_scores'])): ?>
-                        <?php foreach ($latest['category_scores'] as $index => $category): ?>
-                            <?php
-                                $percent = (float)$category['percentage'];
-                                $barClass = 'bar-mid';
-                                if ($percent >= 85) {
-                                    $barClass = 'bar-strong';
-                                } elseif ($percent >= 70) {
-                                    $barClass = 'bar-good';
-                                } elseif ($percent >= 50) {
-                                    $barClass = 'bar-mid';
-                                } else {
-                                    $barClass = 'bar-risk';
-                                }
-                            ?>
-                            <div class="kpi-drill-card">
-                                <button
-                                    type="button"
-                                    class="kpi-drill-header"
-                                    data-target="kpiDetail<?= $index ?>"
-                                >
-                                    <div class="kpi-drill-title-row">
-                                        <span class="kpi-drill-name"><?= htmlspecialchars($category['category']) ?></span>
-                                        <span class="kpi-drill-percent"><?= number_format($percent, 2) ?>%</span>
-                                    </div>
-
-                                    <div class="kpi-progress-wrap">
-                                        <div class="kpi-progress-track">
-                                            <div class="kpi-progress-fill <?= $barClass ?>" style="width: <?= min($percent, 100) ?>%;"></div>
-                                        </div>
-                                        <span class="kpi-drill-icon">▾</span>
-                                    </div>
-                                </button>
-
-                                <div class="kpi-drill-body" id="kpiDetail<?= $index ?>" style="display:none;">
-                                    <?php if (!empty($category['items'])): ?>
-                                        <div class="kpi-item-table">
-                                            <?php foreach ($category['items'] as $item): ?>
-                                                <div class="kpi-item-row">
-                                                    <div class="kpi-item-left">
-                                                        <strong><?= htmlspecialchars($item['code']) ?></strong>
-                                                        <p><?= htmlspecialchars($item['description'] ?: 'No description') ?></p>
-                                                    </div>
-                                                    <div class="kpi-item-right">
-                                                        <span><?= number_format((float)$item['score_5'], 2) ?>/5</span>
-                                                        <strong><?= number_format((float)$item['percentage'], 2) ?>%</strong>
-                                                    </div>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php else: ?>
-                                        <p class="empty-chart-note">No KPI item details available for this category.</p>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="empty-chart-note">No KPI category data available.</p>
-                    <?php endif; ?>
+                    <div class="detail-box">
+                        <h3>KPI Categories</h3>
+                        <ul class="detail-list">
+                            <?php if (!empty($latest['category_scores'])): ?>
+                                <?php foreach ($latest['category_scores'] as $item): ?>
+                                    <li>
+                                        <strong><?= htmlspecialchars($item['category']) ?></strong>
+                                        — <?= number_format((float)$item['percentage'], 2) ?>%
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <li>No KPI category data available.</li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
                 </div>
-            </section>
+            </article>
         </section>
 
         <section class="profile-wide-panel">
@@ -1706,20 +969,20 @@ marker: {
 <script>
 const editBtn = document.getElementById('editProfileBtn');
 const cancelBtn = document.getElementById('cancelEditBtn');
-const editDrawer = document.getElementById('profileEditDrawer');
+const formGrid = document.getElementById('profileFormGrid');
+const editActions = document.getElementById('profileEditActions');
 
-if (editBtn && cancelBtn && editDrawer) {
-    editBtn.addEventListener('click', () => {
-        editDrawer.style.display = 'block';
-        editBtn.style.display = 'none';
-        editDrawer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+editBtn.addEventListener('click', () => {
+    formGrid.style.display = 'grid';
+    editActions.style.display = 'flex';
+    editBtn.style.display = 'none';
+});
 
-    cancelBtn.addEventListener('click', () => {
-        editDrawer.style.display = 'none';
-        editBtn.style.display = 'inline-flex';
-    });
-}
+cancelBtn.addEventListener('click', () => {
+    formGrid.style.display = 'none';
+    editActions.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+});
 
 const trendLabels = <?= json_encode($trendSeriesLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 const trendValues = <?= json_encode($trendSeriesValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
@@ -1727,22 +990,15 @@ const categoryLabels = <?= json_encode($categoryLabels, JSON_UNESCAPED_UNICODE |
 const categoryValues = <?= json_encode($categoryValues, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
 if (trendLabels.length > 0 && trendValues.length > 0) {
-    const hasSingleTrendPoint = trendLabels.length === 1;
-
-    const trendTraces = [
+    Plotly.react('staffTrendChart', [
         {
             x: trendLabels,
             y: trendValues,
             type: 'scatter',
-            mode: hasSingleTrendPoint ? 'markers+text' : 'lines+markers',
+            mode: 'lines+markers',
             name: 'KPI %',
             line: { color: '#e8308c', width: 3, shape: 'spline' },
-            marker: {
-                size: hasSingleTrendPoint ? 12 : 8,
-                color: '#e8308c'
-            },
-            text: hasSingleTrendPoint ? [trendValues[0].toFixed(2) + '%'] : [],
-            textposition: 'top center',
+            marker: { size: 8, color: '#e8308c' },
             hovertemplate: '%{x}<br>KPI: %{y:.2f}%<extra></extra>'
         },
         {
@@ -1754,130 +1010,56 @@ if (trendLabels.length > 0 && trendValues.length > 0) {
             line: { color: '#14b8a6', dash: 'dash', width: 2 },
             hovertemplate: '%{x}<br>Target: %{y:.2f}%<extra></extra>'
         }
-    ];
-
-    Plotly.react('staffTrendChart', trendTraces, {
-        margin: { t: 10, r: 20, b: 50, l: 50 },
+    ], {
+        margin: { t: 10, r: 10, b: 40, l: 50 },
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
-        yaxis: {
-            range: [0, 100],
-            title: '<b>KPI %</b>',
-            gridcolor: '#f1e4ec'
-        },
-        xaxis: {
-            type: '<b>category</b>',
-            tickangle: 0,
-            automargin: true
-        },
-        legend: {
-            orientation: 'h',
-            y: 1.12
-        }
+        yaxis: { range: [0, 100], title: 'KPI %' },
+        legend: { orientation: 'h', y: 1.12 }
     }, { responsive: true, displayModeBar: true });
 }
-const radarLabels = <?= json_encode($radarLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
 if (categoryLabels.length > 0 && categoryValues.length > 0) {
-        Plotly.react('staffRadarChart', [{
-            type: 'scatterpolar',
-            r: categoryValues,
-            theta: radarLabels,
-            fill: 'toself',
-            name: '<b>KPI Category Score</b>',
-            line: { color: '#e8308c', width: 3 },
-            fillcolor: 'rgba(232,48,140,0.18)',
-            hovertemplate: '%{theta}<br><b>Score: %{r:.2f}%</b><extra></extra>'
-        }], {
-            paper_bgcolor: 'transparent',
-            margin: { t: 30, r: 40, b: 30, l: 40 },
-            polar: {
-                radialaxis: {
-                    visible: true,
-                    range: [0, 100],
-                    tickfont: { size: 10 }
-                },
-                angularaxis: {
-                    tickfont: { size: 11 }
-                }
-            },
-            showlegend: false
-        }, { responsive: true, displayModeBar: true });
-
-    const coreCompetencyLabels = <?= json_encode($coreCompetencyLabelsJs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-    const coreCompetencyValues = <?= json_encode($coreCompetencyValuesJs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-    const coreCompetencyColors = <?= json_encode($coreCompetencyColorsJs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
-    
- if (coreCompetencyLabels.length > 0 && coreCompetencyValues.length > 0) {
-    Plotly.react('coreCompetencyChart', [{
-        x: coreCompetencyLabels.map(label => label.replace(/ & /g, '<br>& ')),
-        y: coreCompetencyValues,
-        type: 'bar',
-        marker: {
-            color: coreCompetencyColors,
-            line: {
-                color: 'rgba(255,255,255,0.95)',
-                width: 2
-            }
-        },
-        text: coreCompetencyValues.map(v => Number(v).toFixed(1) + '%'),
-        textposition: 'outside',
-        textfont: {
-            size: 15,
-            color: '#4b3a4c'
-        },
-        hovertemplate:
-            '<b>%{x}</b><br>' +
-            'Score: %{y:.2f}%<extra></extra>'
+    Plotly.react('staffRadarChart', [{
+        type: 'scatterpolar',
+        r: categoryValues,
+        theta: categoryLabels,
+        fill: 'toself',
+        name: 'KPI Category Score',
+        line: { color: '#e8308c', width: 3 },
+        fillcolor: 'rgba(232,48,140,0.20)',
+        hovertemplate: '%{theta}<br>Score: %{r:.2f}%<extra></extra>'
     }], {
-        margin: { t: 30, r: 35, b: 95, l: 70 },
         paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
-        bargap: 0.32,
-        xaxis: {
-            title: {
-                text: '<b>Core Competency</b>',
-                font: { size: 16, color: '#35263f' }
-            },
-            tickangle: 0,
-            automargin: true,
-            tickfont: {
-                size: 13,
-                color: '#4b3a4c'
-            }
-        },
-        yaxis: {
-            title: {
-                text: '<b>Score %</b>',
-                font: { size: 16, color: '#35263f' }
-            },
-            range: [0, 120],
-            gridcolor: '#f1e4ec',
-            gridwidth: 1,
-            zeroline: false,
-            tickfont: {
-                size: 12,
-                color: '#6f6376'
+        margin: { t: 20, r: 20, b: 20, l: 20 },
+        polar: {
+            radialaxis: {
+                visible: true,
+                range: [0, 100]
             }
         },
         showlegend: false
     }, { responsive: true, displayModeBar: true });
+
+    Plotly.react('staffCategoryChart', [{
+        x: categoryLabels,
+        y: categoryValues,
+        type: 'bar',
+        marker: {
+            color: ['#ec4899', '#f97316', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981']
+        },
+        text: categoryValues.map(v => Number(v).toFixed(1) + '%'),
+        textposition: 'outside',
+        hovertemplate: '%{x}<br>Score: %{y:.2f}%<extra></extra>'
+    }], {
+        margin: { t: 10, r: 10, b: 90, l: 50 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        yaxis: { range: [0, 100], title: 'Score %' },
+        xaxis: { tickangle: -18 },
+        showlegend: false
+    }, { responsive: true, displayModeBar: true });
 }
-}
-    document.querySelectorAll('.kpi-drill-header').forEach(button => {
-        button.addEventListener('click', () => {
-            const targetId = button.getAttribute('data-target');
-            const target = document.getElementById(targetId);
-            const card = button.closest('.kpi-drill-card');
-
-            if (!target || !card) return;
-
-            const isOpen = target.style.display === 'block';
-
-            target.style.display = isOpen ? 'none' : 'block';
-            card.classList.toggle('is-open', !isOpen);
-        });
-    });
 </script>
 </body>
 </html>

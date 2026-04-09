@@ -35,9 +35,6 @@ $result = $conn->query($sql);
     <link rel="stylesheet" href="../asset/stafflist.css">
     <link rel="stylesheet" href="../asset/dashboard.css">
     <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
-    <link rel="stylesheet" href="../kpi/edit_kpi.css">
-    <script src="../kpi/edit_kpi.js" defer></script>
-    <script src="stafflist.js"></script>
 </head>
 
 
@@ -208,27 +205,6 @@ $result = $conn->query($sql);
         </div>
     </div>
 </div>
-<script>
-    function openAddKPIModal(staffId) {
-    const modal = document.getElementById("addKPIModal");
-    const target = document.getElementById("modalContentTarget");
-
-
-    modal.style.display = "flex";
-    target.innerHTML = "Loading KPI Form...";
-
-
-    fetch(`../kpi/edit_kpi.php?staff_id=${staffId}`)
-        .then(res => res.text())
-        .then(html => {
-            target.innerHTML = html;
-        })
-        .catch(err => {
-            target.innerHTML = "Failed to load KPI form";
-            console.error(err);
-        });
-}
-</script>
-<script src="staffprofile.js"></script>
+<script src="staff.js"></script>
 </body>
 </html>
