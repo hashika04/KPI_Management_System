@@ -84,10 +84,57 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .reports-content {
-            padding: 24px 32px;
-            background: var(--bg-main);
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --success: #06d6a0;
+            --warning: #ffb703;
+            --danger: #ef476f;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --text-main: #1a1a2e;
+            --text-muted: #6c757d;
+            --border-soft: #e9ecef;
+            --bg-main: #f0f2f5;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #fcf2fa;
+        }
+        
+        .dashboard {
+            margin-left: 200px;
+            background: #fcf2fa;
+            padding: 76px 20px 40px;
             min-height: 100vh;
+        }
+        
+        .reports-content {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Header styling - EXACT MATCH with reporting page */
+        .reports-header {
+            background: #fcf2fa;
+            padding-bottom: 16px;
+            margin-bottom: 0;
+        }
+
+        .reports-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-main);
+            letter-spacing: -0.4px;
+        }
+
+        .reports-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
         }
         
         /* Top bar container */
@@ -95,7 +142,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
         
         /* Back button pill style */
@@ -103,10 +150,10 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 18px;
+            padding: 8px 16px;
             border-radius: 999px;
             background: white;
-            color: #e8308c;
+            color: #e83e8c;
             font-size: 13px;
             font-weight: 500;
             text-decoration: none;
@@ -134,7 +181,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             gap: 8px;
             padding: 8px 18px;
             border-radius: 999px;
-            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+            background: linear-gradient(135deg, #c070e0 0%, #e83e8c 100%);
             color: white;
             font-size: 13px;
             font-weight: 500;
@@ -145,7 +192,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
         
         .btn-edit:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(232, 48, 140, 0.3);
+            box-shadow: 0 6px 16px rgba(232, 62, 140, 0.3);
             color: white;
         }
         
@@ -173,14 +220,14 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
         
         /* Modern Hero Header */
         .template-hero {
-            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+            background: linear-gradient(135deg, #c070e0 0%, #e83e8c 100%);
             border-radius: 24px;
             padding: 28px 32px;
             color: white;
             display: flex;
             align-items: center;
             gap: 20px;
-            box-shadow: 0 12px 30px rgba(232, 48, 140, 0.18);
+            box-shadow: 0 12px 30px rgba(232, 62, 140, 0.18);
             margin-bottom: 30px;
         }
         
@@ -232,11 +279,6 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             color: #475569;
         }
         
-        .tag.archived {
-            background: #fef3c7;
-            color: #d97706;
-        }
-        
         .tag.config {
             background: rgba(255,255,255,0.25);
             color: white;
@@ -247,12 +289,12 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             color: #dc2626;
         }
         
-        /* Info Card */
+        /* Card wrapper styles */
         .info-card {
             border-radius: 20px;
             border: 1px solid var(--border-soft);
             margin-bottom: 24px;
-            background: var(--bg-card);
+            background: white;
         }
         
         .info-card .card-header {
@@ -270,7 +312,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             margin-bottom: 30px;
             border: 1px solid var(--border-soft);
             border-radius: 20px;
-            background-color: var(--bg-card);
+            background-color: white;
             overflow: hidden;
         }
         
@@ -392,6 +434,28 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             border-radius: 16px;
         }
         
+        @media (max-width: 768px) {
+            .dashboard {
+                margin-left: 0;
+                padding: 20px 15px;
+            }
+            
+            .template-hero {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .top-bar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+        }
+        
         @media print {
             .no-print {
                 display: none !important;
@@ -404,7 +468,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
                 padding: 20px;
             }
             .template-hero {
-                background: #e8308c;
+                background: #e83e8c;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
@@ -467,16 +531,10 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
                             <span class="tag inactive">
                                 <i class="fas fa-clock me-1"></i> Inactive Template
                             </span>
-                        <?php else: ?>
-                            <span class="tag archived">
-                                <i class="fas fa-archive me-1"></i> Archived
-                            </span>
                         <?php endif; ?>
-                        
                         <span class="tag config">
                             <i class="fas fa-chart-line me-1"></i> KPI Configuration
                         </span>
-                        
                         <?php if($is_previous): ?>
                             <span class="tag readonly">
                                 <i class="fas fa-lock me-1"></i> Read Only (Has KPI Data)
@@ -498,7 +556,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             <!-- Template Info Card -->
             <div class="info-card">
                 <div class="card-header">
-                    <i class="fas fa-info-circle me-2" style="color: #e8308c;"></i> Template Information
+                    <i class="fas fa-info-circle me-2" style="color: #e83e8c;"></i> Template Information
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -666,7 +724,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             <!-- Summary Card for Group Totals -->
             <div class="info-card no-print">
                 <div class="card-header">
-                    <i class="fas fa-chart-pie me-2" style="color: #e8308c;"></i> KPI Group Summary
+                    <i class="fas fa-chart-pie me-2" style="color: #e83e8c;"></i> KPI Group Summary
                 </div>
                 <div class="card-body">
                     <div class="row">

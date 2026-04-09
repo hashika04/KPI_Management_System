@@ -266,15 +266,62 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .reports-content {
-            padding: 24px 32px;
-            background: var(--bg-main);
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --success: #06d6a0;
+            --warning: #ffb703;
+            --danger: #ef476f;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --text-main: #1a1a2e;
+            --text-muted: #6c757d;
+            --border-soft: #e9ecef;
+            --bg-main: #f0f2f5;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #fcf2fa;
+        }
+        
+        .dashboard {
+            margin-left: 200px;
+            background: #fcf2fa;
+            padding: 76px 20px 40px;
             min-height: 100vh;
+        }
+        
+        .reports-content {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        
+        /* Header styling - EXACT MATCH with reporting page */
+        .reports-header {
+            background: #fcf2fa;
+            padding-bottom: 16px;
+            margin-bottom: 0;
+        }
+
+        .reports-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-main);
+            letter-spacing: -0.4px;
+        }
+
+        .reports-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
         }
         
         /* Top bar container */
         .top-bar {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
         
         /* Back button pill style */
@@ -282,10 +329,10 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 18px;
+            padding: 8px 16px;
             border-radius: 999px;
             background: white;
-            color: #e8308c;
+            color: #e83e8c;
             font-size: 13px;
             font-weight: 500;
             text-decoration: none;
@@ -303,14 +350,14 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         
         /* Modern Hero Header */
         .template-hero {
-            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+            background: linear-gradient(135deg, #c070e0 0%, #e83e8c 100%);
             border-radius: 24px;
             padding: 28px 32px;
             color: white;
             display: flex;
             align-items: center;
             gap: 20px;
-            box-shadow: 0 12px 30px rgba(232, 48, 140, 0.18);
+            box-shadow: 0 12px 30px rgba(232, 62, 140, 0.18);
             margin-bottom: 30px;
         }
         
@@ -367,12 +414,43 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             color: white;
         }
         
+        /* Card wrapper styles */
+        .config-card {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid var(--border-soft);
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+        
+        .card-header-custom {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-soft);
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .card-header-custom h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-main);
+        }
+        
+        .card-body-custom {
+            padding: 24px;
+        }
+        
         .section-card {
             margin-bottom: 30px;
             border: 1px solid var(--border-soft);
             border-radius: 20px;
             padding: 20px;
-            background-color: var(--bg-card);
+            background-color: white;
             transition: box-shadow 0.2s;
         }
         
@@ -392,13 +470,13 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         }
         
         .group-card {
-            background: var(--bg-main);
+            background: #f8f9fa;
             padding: 15px;
             margin-bottom: 15px;
             border-radius: 16px;
             border: 1px solid var(--border-soft);
             transition: all 0.2s;
-            border-left: 4px solid #2196f3;
+            border-left: 4px solid #e83e8c;
         }
         
         .group-header {
@@ -419,7 +497,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         .target-item {
             padding: 8px;
             margin-bottom: 8px;
-            background: var(--bg-card);
+            background: white;
             border-radius: 12px;
             transition: all 0.2s;
         }
@@ -429,11 +507,11 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             top: 20px;
             border-radius: 20px;
             border: 1px solid var(--border-soft);
-            background: var(--bg-card);
+            background: white;
         }
         
         .weight-summary-card .card-header {
-            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+            background: linear-gradient(135deg, #c070e0 0%, #e83e8c 100%);
             color: white;
             border-radius: 20px 20px 0 0;
             padding: 16px 20px;
@@ -475,29 +553,27 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             border: 1px solid var(--border-soft);
         }
         
-        .btn-primary {
-            background: linear-gradient(135deg, #c070e0 0%, #e8308c 100%);
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #c070e0 0%, #e83e8c 100%);
             border: none;
             border-radius: 14px;
             padding: 12px 28px;
             font-weight: 600;
+            color: white;
             transition: all 0.2s ease;
         }
         
-        .btn-primary:hover {
+        .btn-primary-custom:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(232, 48, 140, 0.3);
+            box-shadow: 0 6px 16px rgba(232, 62, 140, 0.3);
+            color: white;
         }
         
-        .btn-secondary {
+        .btn-secondary-custom {
             border-radius: 14px;
             padding: 12px 28px;
             font-weight: 600;
             transition: all 0.2s ease;
-        }
-        
-        .btn-secondary:hover {
-            transform: translateY(-1px);
         }
         
         .alert {
@@ -508,6 +584,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             border-radius: 20px;
             border: 1px solid var(--border-soft);
             margin-bottom: 24px;
+            background: white;
         }
         
         .template-info-card .card-header {
@@ -517,6 +594,23 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             font-weight: 600;
             font-size: 16px;
             color: #1e293b;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                margin-left: 0;
+                padding: 20px 15px;
+            }
+            
+            .template-hero {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .group-header .row {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -536,7 +630,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
             <!-- Modern Hero Header -->
             <div class="template-hero">
                 <div class="template-icon">
-                    <i class="fas fa-plus-circle"></i>
+                    <i class="fas <?php echo $is_edit ? 'fa-edit' : 'fa-plus-circle'; ?>"></i>
                 </div>
                 <div class="template-info">
                     <h2><?php echo $is_edit ? 'Edit' : 'Create New'; ?> KPI Template</h2>
@@ -594,7 +688,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                         <!-- Template Info Card -->
                         <div class="card template-info-card">
                             <div class="card-header">
-                                <i class="fas fa-info-circle me-2" style="color: #e8308c;"></i> Template Information
+                                <i class="fas fa-info-circle me-2" style="color: #e83e8c;"></i> Template Information
                             </div>
                             <div class="card-body">
                                 <div class="row">
@@ -667,10 +761,10 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
                         <input type="hidden" name="kpi_groups" id="kpi_groups">
                         
                         <div class="mt-4 mb-5 d-flex gap-3">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary-custom">
                                 <i class="fas fa-save me-2"></i> <?php echo $is_edit ? 'Update' : 'Create'; ?> Template
                             </button>
-                            <a href="kpi_template_management.php" class="btn btn-secondary">
+                            <a href="kpi_template_management.php" class="btn btn-secondary-custom btn-outline-secondary">
                                 <i class="fas fa-times me-2"></i> Cancel
                             </a>
                         </div>
