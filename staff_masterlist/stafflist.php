@@ -96,11 +96,11 @@ $result = $conn->query($sql);
                 $previousYear = (float)($row['score_2024'] ?? 0);
 
 
-                // 2. Calculate raw difference (DO NOT ROUND YET)
+                // Calculate raw difference
                 $diff = ($previousYear > 0) ? ($currentYear - $previousYear) : 0;
 
 
-                // 3. Determine status based on raw math
+                // Determine status based on raw math
                 if ($diff > 0) {
                     $trendClass = "trend-up";
                     $trendIcon  = '<i class="ph-bold ph-trend-up"></i>';

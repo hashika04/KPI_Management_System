@@ -31,12 +31,12 @@ if ($fullName !== 'Guest') {
 }
 ?>
 
-<!-- Phosphor Icons — clean, modern, professional -->
+<!-- Phosphor Icons  -->
  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
 
-<!-- TOP BAR — full width flush left to right -->
+<!-- TOP BAR -->
 <header class="topbar">
     <div class="topbar-brand">
         <div class="logo">
@@ -62,7 +62,7 @@ if ($fullName !== 'Guest') {
     </div>
 </header>
 
-<!-- SIDEBAR — floating rounded card, sits below topbar -->
+<!-- SIDEBAR -->
 <nav class="sidebar-menu">
     <div class="sidebar-top">
 
@@ -76,6 +76,6 @@ if ($fullName !== 'Guest') {
         <?php endforeach; ?>
     </div>
 
-    <!-- Bottom intentionally empty — profile & logout are in topbar -->
+    <!-- Bottom intentionally empty -->
     <div class="sidebar-bottom"></div>
 </nav>

@@ -6,7 +6,7 @@ $selectedYear = isset($_GET['year']) ? intval($_GET['year']) : 2025;
 include("../config/db.php");
 include("../includes/auth.php");
 
-// ── 1. Compute yearly averages FIRST (needed by data.php for insights) ──
+// Compute yearly averages for the sparkline and main KPI stat
 $chartSql = "
     SELECT 
         YEAR(Date) as kpi_year,
@@ -24,10 +24,8 @@ while ($row = $chartRes->fetch_assoc()) {
 $avgKPI = $yearlyData['2025'];
 $jsDataString = implode(', ', array_values($yearlyData));
 
-// ── 2. Now include data.php (it will use $yearlyData and $selectedYear) ──
 include("../Dashboard/data.php");
 
-// ── 3. The rest of your variables ──
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
 $lanIp = gethostbyname(gethostname());
 $currentHost = (filter_var($lanIp, FILTER_VALIDATE_IP) && $lanIp !== '127.0.0.1')
@@ -132,7 +130,7 @@ $activePage = 'dashboard';
       <div id="group-bar-chart" class="group-bar-container"></div>
   </div>
 
-  </div><!-- /.stat-cards -->
+  </div>
 
   <!-- ══════════════════════
       HEATMAP ROW
@@ -151,7 +149,8 @@ $activePage = 'dashboard';
           <strong>Insight:</strong> <?= $heatmapInsight ?>
       </div>
     </div>
-
+    
+    <!-- SPEEDOMETER -->
     <div class="heatmap-card speedometer-card">
       <div class="ov-section-head">
           <div>
@@ -159,7 +158,6 @@ $activePage = 'dashboard';
               <p>Progress against set KPI goal</p>
           </div>
           <form method="GET" id="speedoForm" style="display: flex; gap: 8px; align-items: center;">
-              <!-- Preserve the attention year filter if needed -->
               <?php if (isset($_GET['year'])): ?>
                   <input type="hidden" name="year" value="<?= htmlspecialchars($_GET['year']) ?>">
               <?php endif; ?>
@@ -191,7 +189,7 @@ $activePage = 'dashboard';
           <i class="ph ph-chart-line" style="margin-right: 8px; color: #eab308;"></i>
           <strong>Insight:</strong> <?= $targetInsight ?>
       </div>
-    </div><!-- /.speedometer-card -->
+    </div>
   </div>
 
   <!-- ══════════════════════
@@ -335,8 +333,8 @@ $activePage = 'dashboard';
               </div>
           </div>
       <?php endif; ?>
-    </div><!-- /.podium-grid -->
-  </div><!-- /.performers-card -->
+    </div>
+  </div>
 
   <!-- ══════════════════════
        ATTENTION REQUIRED
@@ -471,6 +469,7 @@ function filterTable() {
 <script src="../Dashboard/script.js"></script>
 
 <script>
+//DONUT CHART   
 document.addEventListener('DOMContentLoaded', function () {
     const kpiData = [<?= htmlspecialchars($jsDataString ?? '0,0,0,0') ?>];
     const kpiLabels  = ['2022', '2023', '2024', '2025'];
@@ -479,20 +478,20 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. DATA PREPARATION
+    //DATA PREPARATION
     const rawLabels = <?= json_encode($deptLabels) ?>;
     
     // Logic to force line breaks for long names
     const deptLabels = rawLabels.map(label => {
         if (typeof label === 'string' && label.includes(' ')) {
-            return label.split(' '); // Returns array for multiline support
+            return label.split(' '); 
         }
         return label;
     });
 
     const deptCounts = <?= json_encode($deptCounts) ?>;
 
-    // 2. RENDER DEPT DONUT
+    //RENDER DEPT DONUT
     new ApexCharts(document.querySelector('#dept-donut'), {
         series: deptCounts,
         labels: deptLabels, 
@@ -511,10 +510,9 @@ document.addEventListener('DOMContentLoaded', function () {
           y: {
               title: { 
                   formatter: (seriesName, opts) => {
-                      // Get the label (which might be an array like ['Home', '&', 'Living'])
+                      // Get the label 
                       const rawLabel = opts.w.globals.labels[opts.seriesIndex];
                       
-                      // If it's an array, join it with a space. If not, just return it.
                       return (Array.isArray(rawLabel) ? rawLabel.join(' ') : rawLabel) + ":";
                   }
               },
@@ -530,18 +528,18 @@ document.addEventListener('DOMContentLoaded', function () {
             pie: {
                 expandOnClick: false,
                 donut: {
-                    size: '70%', // Inner radius
+                    size: '70%', 
                     labels: {
                         show: true,
                         name: { 
                             show: true, 
                             fontSize: '9px', 
                             fontWeight: 600, 
-                            offsetY: 5, // Adjusted up to center stacked lines
+                            offsetY: 5, 
                             color: '#333',
                             formatter: () => "Depts"
                         },
-                        value: { show: false }, // Hides the large number in center
+                        value: { show: false }, 
                         total: {
                             show: true,
                             label: 'Depts',
@@ -554,6 +552,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }).render();
 });
 
+//critical kpi group bar chart
 document.addEventListener('DOMContentLoaded', function () {
  
     const groupLabels = <?= json_encode($groupLabels) ?>;
@@ -642,7 +641,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Dimensions
-    // FIX 1: Increase right margin (75->85) and decrease bottom (80->70)
     const margin = { top: 10, right: 85, bottom: 70, left: 130 };
     const cellW = 80;
     const cellH = 45;
@@ -686,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .attr('font-weight', '700')
         .text(d => d.value > 0 ? d.value + '%' : '');
 
-    // X axis — Truncate long labels to 12 chars
+    // X axis
     svg.append('g')
         .attr('transform', `translate(0,${height})`)
         .call(d3.axisBottom(x).tickSize(0))
@@ -706,8 +704,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     svg.selectAll('.domain').remove();
 
-    // Add this after your cell-label text block
-
     // Create tooltip div
     const tooltip = d3.select('body').append('div')
         .style('position', 'fixed')
@@ -725,7 +721,6 @@ document.addEventListener('DOMContentLoaded', function () {
         .style('transition', 'opacity 0.15s ease')
         .style('white-space', 'nowrap');
 
-    // Attach hover events to the existing rects
     svg.selectAll('rect')
         .on('mousemove', function(event, d) {
             tooltip
@@ -744,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Color legend bar
     const legendWidth = 10;
     const legendHeight = height;
-    const legendX = width + 30; // FIX 2: Move legend further right
+    const legendX = width + 30; 
 
     const defs = svg.append('defs');
     const linearGradient = defs.append('linearGradient')
@@ -759,10 +754,10 @@ document.addEventListener('DOMContentLoaded', function () {
         .attr('width', legendWidth).attr('height', legendHeight)
         .attr('rx', 4).style('fill', 'url(#legend-gradient)');
 
-    // Legend labels - Add padding to prevent cutoff
+    // Legend labels
     [0, 50, 100].forEach(val => {
         svg.append('text')
-            .attr('x', legendX + legendWidth + 6) // FIX 3: Increase horizontal padding for %
+            .attr('x', legendX + legendWidth + 6)
             .attr('y', legendHeight - (val / 100) * legendHeight + 4)
             .attr('font-size', '10px')
             .attr('fill', '#6b7280')
@@ -784,6 +779,7 @@ function initARChart(index, groups, scores, name) {
     new ApexCharts(document.querySelector("#chart-ar-" + index), options).render();
 }
 
+//speedometer
 document.addEventListener('DOMContentLoaded', function () {
     const yearSelect = document.getElementById('speedoYear');
     const targetInput = document.getElementById('speedoTarget');
@@ -801,7 +797,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const options = {
             series: [percentage],
-            chart: { height: 260, type: 'radialBar', offsetY: -10 },
+            chart: { height: 260, type: 'radialBar', offsetY: 20 },
             plotOptions: {
                 radialBar: {
                     startAngle: -135, endAngle: 135,
@@ -827,9 +823,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     renderSpeedometer();
-    
-    // Optional: re-render if inputs change without page reload
-    // (but since form submits on change, this is not needed – keep for safety)
+
     yearSelect?.addEventListener('change', () => setTimeout(renderSpeedometer, 50));
     targetInput?.addEventListener('input', () => setTimeout(renderSpeedometer, 50));
 });

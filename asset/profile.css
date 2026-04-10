@@ -1,6 +1,6 @@
 :root {
     --primary-gradient: linear-gradient(to right, #c070e0 0%, #d050a0 50%, #e8308c 100%);
-    --sidebar-color: #f1dcfb; /* Your requested sidebar color */
+    --sidebar-color: #f1dcfb;
     --text-main: #1a1a2e;
     --text-muted: #b08090;
     --border-pink: #f0d8e4;
@@ -10,7 +10,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Sora', sans-serif; /* Consistency */
+    font-family: 'Sora', sans-serif; 
 }
 
 body {
@@ -26,7 +26,7 @@ body {
     width: 100%;
     max-width: 1100px;
     background: #fff;
-    border-radius: 32px; /* Smooth rounded corners */
+    border-radius: 32px; 
     display: grid;
     grid-template-columns: 280px 1fr;
     overflow: hidden;
@@ -34,7 +34,7 @@ body {
 }
 
 .profile-sidebar {
-    background: #f1dcfb; /* Your requested light purple */
+    background: #f1dcfb;
     padding: 40px 24px;
     border-right: 1px solid var(--border-pink);
     display: flex;
@@ -66,11 +66,11 @@ body {
 .profile-avatar {
     width: 110px;
     height: 110px;
-    border-radius: 50%; /* Perfect circle */
-    overflow: hidden; /* Clips the image to the circle */
+    border-radius: 50%;
+    overflow: hidden; 
     margin: 0 auto 16px;
-    border: 4px solid #ffffff; /* White border to make it pop against the light purple */
-    background: var(--primary-gradient); /* Background shows if image is transparent */
+    border: 4px solid #ffffff; 
+    background: var(--primary-gradient); 
     box-shadow: 0 8px 20px rgba(200, 80, 140, 0.15);
     display:block;
 }
@@ -78,7 +78,7 @@ body {
 .profile-avatar img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Ensures the photo fills the circle without stretching */
+    object-fit: cover;
     display: block;
 }
 

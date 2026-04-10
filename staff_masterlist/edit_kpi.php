@@ -1,13 +1,12 @@
 <?php
 /*
  * edit_kpi.php — Professional KPI Evaluation Form
- * Layout matches screenshots: Purple-Pink gradient header & Blue section bars.
  */
 include("../includes/auth.php");
 include("../config/db.php");
 
 
-// Utility to create safe HTML IDs for JavaScript (replaces spaces with underscores)
+// Utility to create safe HTML IDs for JavaScript
 function safeId(string $str): string {
     return preg_replace('/[^a-zA-Z0-9_-]/', '_', $str);
 }
@@ -17,7 +16,7 @@ $staffId = intval($_GET['staff_id'] ?? 0);
 if (!$staffId) { echo "Invalid staff."; exit; }
 
 
-/* ── 1. FETCH DATA ── */
+/* ── FETCH DATA ── */
 $staffRes = $conn->prepare("SELECT full_name, staff_code FROM staff WHERE id = ? LIMIT 1");
 $staffRes->bind_param("i", $staffId);
 $staffRes->execute();
@@ -38,9 +37,8 @@ $templateId = $template['id'];
 $evalYear   = $template['year'];
 
 
-// Fixed Requirements: Section 1 (5, 10, 10) and Section 2 (5 per group)
 $sec1Weights = [5.0, 10.0, 10.0];
-$sec1WeightTotal = array_sum($sec1Weights); // 25.0%
+$sec1WeightTotal = array_sum($sec1Weights);
 
 
 $itemsRes = $conn->prepare("SELECT * FROM kpi_template_items WHERE template_id = ? AND is_active = 1 ORDER BY display_order ASC");
@@ -263,7 +261,7 @@ function recalculate() {
     document.getElementById('sec2Total').textContent = s2Total.toFixed(2);
 
 
-    // FINAL SCORE: Sum of weighted scores (already on 1-5 scale)
+    // FINAL SCORE: Sum of weighted scores
     let final = s1Total + s2Total;
     document.getElementById('finalScore').textContent = final.toFixed(2);
    

@@ -2,10 +2,9 @@
 /* ── data.php ── */
 
 // ══════════════════════════════════════════
-// 1. FILTER VARIABLES
+// FILTER VARIABLES
 // ══════════════════════════════════════════
 
-// $selectedYear is set in overview.php before this file is included.
 // Default to 2025 if not set so nothing prints null.
 if (!isset($selectedYear) || !$selectedYear) {
     $selectedYear = 2025;
@@ -17,7 +16,7 @@ $prevYear           = $podiumYear - 1;
 $currentYearFilter  = "= $podiumYear";
 
 // ══════════════════════════════════════════
-// 2. MAIN STAFF + KPI QUERY
+//MAIN STAFF + KPI QUERY
 // Fetches stat score (fixed 2025), podium score (filtered year),
 // and previous year score for trend/drop analysis.
 // Joins on full_name to match how kpi_data stores names.
@@ -148,7 +147,7 @@ if ($result) {
 }
 
 // ══════════════════════════════════════════
-// 3. STAT CARD SUMMARIES  (fixed to 2025)
+// STAT CARD SUMMARIES  (2025)
 // ══════════════════════════════════════════
 
 $totalStaff    = count($staffData);
@@ -160,7 +159,7 @@ usort($topPerformers, fn($a, $b) => $b['score'] <=> $a['score']);
 $topPerformers = array_values($topPerformers);
 
 // ══════════════════════════════════════════
-// 4. PODIUM  (uses dynamic filtered year)
+// PODIUM  (uses dynamic filtered year)
 // ══════════════════════════════════════════
 
 $podiumList = array_values(array_filter($staffData, fn($s) => $s['podium_score'] > 0));
@@ -174,7 +173,7 @@ $podium = [
 ];
 
 // ══════════════════════════════════════════
-// 5. CRITICAL KPI GROUP CHART  (fixed 2025)
+// CRITICAL KPI GROUP CHART  (2025)
 // Used by the "Critical KPI Group" stat card and bar chart.
 // ══════════════════════════════════════════
 
@@ -200,14 +199,14 @@ while ($row = $groupResult->fetch_assoc()) {
 }
 
 // ══════════════════════════════════════════
-// 6. DEPARTMENT LIST  (for filters)
+// DEPARTMENT LIST  (for filters)
 // ══════════════════════════════════════════
 
 $departments = array_unique(array_column($staffData, 'dept'));
 sort($departments);
 
 // ══════════════════════════════════════════
-// 7. DEPT DONUT CHART DATA
+// DEPT DONUT CHART DATA
 // Used by the "Total Staff" stat card donut.
 // ══════════════════════════════════════════
 
@@ -223,7 +222,7 @@ foreach ($departments as $dept) {
 }
 
 // ══════════════════════════════════════════
-// 8. HEATMAP  (Department × KPI Group, fixed 2025)
+// HEATMAP  (Department × KPI Group, 2025)
 // ══════════════════════════════════════════
 
 $heatmapSql = "
@@ -311,7 +310,6 @@ if (empty($groupInsights)) {
 $speedoYear = isset($_GET['speedo_year']) ? (int)$_GET['speedo_year'] : 2025;
 $speedoTarget = isset($_GET['speedo_target']) ? (int)$_GET['speedo_target'] : 80;
 
-// $yearlyData is already defined in overview.php before include, but to be safe:
 if (!isset($yearlyData)) {
     // fallback – compute yearlyData again or set default
     $yearlyData = ['2022'=>0, '2023'=>0, '2024'=>0, '2025'=>0];

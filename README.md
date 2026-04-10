@@ -41,3 +41,25 @@ INSTALLATION GUIDE – KPI MANAGEMENT SYSTEM
    Password: 1234
 
 The system should now be ready to use.
+
+/* QR CODE */
+The KPI Management System uses dynamic QR codes for two main purposes:
+
+1. Staff Profile QR (Podium Cards)
+   - When scanned with any mobile QR reader, the code opens that staff member’s detailed profile page (staffprofile.php?id=...).
+
+2. Report QR (PDF & Excel Preview)
+   - On the Reports page, every generated report (PDF or Excel) has a small QR icon inside the export button.
+   - Scanning it redirects the mobile device to the same report preview page (pdf_preview.php or excel_preview.php)
+
+
+- The QR is generated on‑the‑fly using the QRserver API (https://api.qrserver.com/v1/create-qr-code/).
+
+QR Generation Technical Details
+   - API used: https://api.qrserver.com/v1/create-qr-code/ (free, no API key required).
+   - Encoding: Full absolute URL (https://yourdomain.com/...) with encodeURIComponent().
+   - Integration: QR codes are injected dynamically via JavaScript after report content loads, ensuring they always match the current filters.
+
+Notes for QR Scanning
+   - When running locally, your laptop and mobile phone must be connected to the same WiFi for QR codes to work.
+
