@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../config/db.php';
-
+$activePage = 'staff';
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn->set_charset('utf8mb4');
 
@@ -140,7 +140,7 @@ $stmt = $conn->prepare("
         km.`kpi_group`,
         km.`kpi_description`
     FROM kpi_data kd
-    LEFT JOIN kpi_master_list km
+    LEFT JOIN kpi_template_items km
         ON TRIM(km.`kpi_code`) = TRIM(kd.`KPI_Code`)
         AND km.`kpi_code` <> 'KPI_Code'
     WHERE TRIM(LOWER(kd.`Name`)) = TRIM(LOWER(?))
@@ -651,7 +651,7 @@ $currentTrendBadgeClass =
         border: 1px solid #fecaca;
     }
 
-    .profile-top-filter-row {
+   .profile-top-filter-row {
         margin-top: 18px;
         display: flex;
         justify-content: flex-start;
@@ -661,20 +661,26 @@ $currentTrendBadgeClass =
         display: flex;
         align-items: center;
         gap: 10px;
+        flex-wrap: wrap;
     }
 
     .profile-top-filter-form select {
-        min-width: 160px;
-        height: 50px;
-        border: 1px solid #ffc9ef;
+        background: var(--surface-soft);
+        border: 1.5px solid var(--border-soft);
         border-radius: 10px;
-        background: #fff;
-        color: #2f2138;
-        font-size: 0.95rem;
-        font-weight: 600;
-        padding: 0 12px;
+        padding: 9px 14px;
+        font-size: 12px;
+        color: var(--text-main);
         outline: none;
-        box-shadow: 0 4px 12px rgba(200, 80, 140, 0.05);
+        min-width: 160px;
+        font-family: 'Sora', sans-serif;
+        transition: border-color 0.18s, box-shadow 0.18s;
+    }
+
+    .profile-top-filter-form select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(232, 48, 140, 0.10);
+        background: var(--bg-card);
     }
 
     .profile-edit-drawer {

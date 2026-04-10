@@ -1,9 +1,9 @@
 /*LAYOUT & SCROLL CONTROL ── */
 .dashboard {
     min-height: 100vh;
-    margin-left: 200px;
+    margin-left: 220px;
     background: #fcf2fa;
-    padding: 76px 20px 40px; 
+    padding: 84px 28px 40px; 
 }
 
 /* Container for the staff content area */

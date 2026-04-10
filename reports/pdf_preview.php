@@ -552,7 +552,7 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
                 year: urlParams.get('year') || '<?php echo $year; ?>',
                 department: urlParams.get('department') || '',
                 report_type: urlParams.get('report_type') || 'overall',
-                employee: urlParams.get('employee') || '',
+                employee: urlParams.get('employee') || '',  // Preserve employee parameter
                 threshold: urlParams.get('threshold') || 60,
                 top_count: urlParams.get('top_count') || 10,
                 custom_dept: urlParams.get('custom_dept') || '',
@@ -566,19 +566,54 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
                 const html = await response.text();
                 container.innerHTML = html;
                 
-                // Remove any export buttons from the loaded content
+                // Remove any export buttons and employee dropdown from the loaded content
                 const exportButtons = container.querySelectorAll('.export-buttons, .btn-export-pdf, .btn-export-excel, .btn-print');
                 exportButtons.forEach(btn => btn.remove());
+                
+                // Remove the employee selection dropdown in individual report preview
+                const employeeDropdown = container.querySelector('.employee-select, .row.mb-4.no-print .col-md-4, .row.mb-4.no-print');
+                if (employeeDropdown) {
+                    employeeDropdown.closest('.row')?.remove();
+                    // Also remove any parent row that contains the dropdown
+                    const parentRow = container.querySelector('.row.mb-4.no-print');
+                    if (parentRow && parentRow.querySelector('.employee-select')) {
+                        parentRow.remove();
+                    }
+                }
+                
+                // Also remove the threshold dropdown in low performance report
+                const thresholdDropdown = container.querySelector('.threshold-select');
+                if (thresholdDropdown) {
+                    thresholdDropdown.closest('.row')?.remove();
+                }
+                
+                // Remove the top count dropdown in top performers report
+                const topCountDropdown = container.querySelector('.threshold-select');
+                if (topCountDropdown && topCountDropdown.closest('.row')?.querySelector('.form-label')?.innerText?.includes('Number of Top Contributors')) {
+                    topCountDropdown.closest('.row')?.remove();
+                }
+                
+                // Remove custom report builder filters
+                const customFilters = container.querySelector('.info-box.mb-4.no-print form');
+                if (customFilters) {
+                    customFilters.closest('.info-box')?.remove();
+                }
                 
                 // Re-execute scripts
                 const scripts = container.querySelectorAll("script");
                 scripts.forEach(oldScript => {
                     const newScript = document.createElement("script");
-                    newScript.text = oldScript.text;
+                    // Copy any inline script content
+                    if (oldScript.src) {
+                        newScript.src = oldScript.src;
+                    } else {
+                        newScript.textContent = oldScript.textContent;
+                    }
                     document.body.appendChild(newScript);
                     oldScript.remove();
                 });
             } catch (error) {
+                console.error('Error loading report:', error);
                 container.innerHTML = '<div class="alert alert-danger">Error loading report. Please try again.</div>';
             }
         }
@@ -598,7 +633,7 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
-                filename: `kpi_report_${urlParams.get('report_type')}_${urlParams.get('year') || '<?php echo $year; ?>'}.pdf`,
+                filename: `kpi_report_${urlParams.get('report_type')}_${urlParams.get('employee') || ''}_${urlParams.get('year') || '<?php echo $year; ?>'}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
@@ -631,7 +666,7 @@ $custom_max_score = isset($_GET['custom_max_score']) ? intval($_GET['custom_max_
             window.print();
         }
         
-        // Go back to reports page
+        // Go back to reports page with all parameters preserved
         function goBack() {
             // Preserve all filters when going back
             const params = new URLSearchParams();

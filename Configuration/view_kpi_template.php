@@ -36,6 +36,7 @@ $data_result = $check_data_stmt->get_result();
 $data_count = $data_result->fetch_assoc()['count'];
 $has_kpi_data = ($data_count > 0);
 $is_previous = (!$is_active && $has_kpi_data);
+$is_readonly = $is_previous; // Alias for clarity
 
 // Fetch template items
 $items_sql = "SELECT * FROM kpi_template_items WHERE template_id = ? ORDER BY section, display_order";
@@ -196,6 +197,14 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(232, 62, 140, 0.3);
         color: white;
+    }
+    
+    .btn-edit.disabled,
+    .btn-edit:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+        background: linear-gradient(135deg, #b0bec5 0%, #90a4ae 100%);
     }
     
     .btn-print {
@@ -572,10 +581,17 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
                     Back to Templates
                 </a>
                 <div class="action-buttons">
-                    <a href="edit_kpi_template.php?id=<?php echo $template_id; ?>" class="btn-edit">
-                        <i class="fas fa-edit"></i>
-                        Edit Template
-                    </a>
+                    <?php if (!$is_readonly): ?>
+                        <a href="edit_kpi_template.php?id=<?php echo $template_id; ?>" class="btn-edit">
+                            <i class="fas fa-edit"></i>
+                            Edit Template
+                        </a>
+                    <?php else: ?>
+                        <button class="btn-edit disabled" disabled>
+                            <i class="fas fa-lock"></i>
+                            Read Only (Cannot Edit)
+                        </button>
+                    <?php endif; ?>
                     <button onclick="window.print()" class="btn-print">
                         <i class="fas fa-print"></i>
                         Print
@@ -614,7 +630,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
                         <span class="tag config">
                             <i class="fas fa-chart-line me-1"></i> KPI Configuration
                         </span>
-                        <?php if($is_previous): ?>
+                        <?php if($is_readonly): ?>
                             <span class="tag readonly">
                                 <i class="fas fa-lock me-1"></i> Read Only (Has KPI Data)
                             </span>
@@ -624,7 +640,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
             </div>
             
             <!-- Readonly Alert -->
-            <?php if($is_previous): ?>
+            <?php if($is_readonly): ?>
                 <div class="alert alert-readonly alert-dismissible fade show mb-4 no-print" role="alert">
                     <i class="fas fa-lock me-2"></i>
                     <strong>Read-Only Mode:</strong> This template has associated KPI data and cannot be edited to preserve historical records.

@@ -34,10 +34,47 @@ function getRatingLabel($classification) {
     ];
     return $labels[$classification] ?? ['label' => 'Unknown', 'class' => '', 'icon' => '❓'];
 }
+// Helper function to get template ID for a specific year from actual data
+function getTemplateIdForYear($conn, $year) {
+    // First, check what template_id is actually used for this year in kpi_data
+    $query = "SELECT DISTINCT template_id FROM kpi_data WHERE YEAR(Date) = ? LIMIT 1";
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $year);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $row = mysqli_fetch_assoc($result);
+    
+    if ($row && $row['template_id']) {
+        return $row['template_id'];
+    }
+    
+    // If no data found, try to find template for this year in kpi_templates
+    $template_query = "SELECT id FROM kpi_templates WHERE year = ? LIMIT 1";
+    $stmt = mysqli_prepare($conn, $template_query);
+    mysqli_stmt_bind_param($stmt, "i", $year);
+    mysqli_stmt_execute($stmt);
+    $template_result = mysqli_stmt_get_result($stmt);
+    $template_row = mysqli_fetch_assoc($template_result);
+    
+    if ($template_row) {
+        return $template_row['id'];
+    }
+    
+    // Fallback to active template
+    $template_query = "SELECT id FROM kpi_templates WHERE status = 'active' LIMIT 1";
+    $template_result = mysqli_query($conn, $template_query);
+    $template_row = mysqli_fetch_assoc($template_result);
+    return $template_row ? $template_row['id'] : 3;
+}
 
-// Calculate employee KPI score
-function calculateEmployeeScore($conn, $employee_name, $year, $template_id = 3) {
-    $query = "SELECT kd.KPI_Code, kd.Score, kti.weight 
+// Calculate employee KPI score with dynamic template
+function calculateEmployeeScore($conn, $employee_name, $year, $template_id = null) {
+    // If no template_id provided, get the one for this year
+    if ($template_id === null) {
+        $template_id = getTemplateIdForYear($conn, $year);
+    }
+    
+    $query = "SELECT kd.Score, kti.weight 
               FROM kpi_data kd
               JOIN kpi_template_items kti ON kd.KPI_Code = kti.kpi_code 
                   AND kd.template_id = kti.template_id
@@ -66,19 +103,22 @@ function calculateEmployeeScore($conn, $employee_name, $year, $template_id = 3) 
     return 0;
 }
 
-// Get employee details with score
+// Get employee details with scores
 function getEmployeeScores($conn, $year, $department = '') {
+    // Get the template for this year
+    $template_id = getTemplateIdForYear($conn, $year);
+    
     $sql = "SELECT s.id, s.full_name, s.department, s.position, s.staff_code
             FROM staff s
-            WHERE s.full_name IN (SELECT DISTINCT Name FROM kpi_data WHERE YEAR(Date) = ?)";
+            WHERE s.full_name IN (SELECT DISTINCT Name FROM kpi_data WHERE YEAR(Date) = ? AND template_id = ?)";
     
     if ($department) {
         $sql .= " AND s.department = ?";
         $stmt = mysqli_prepare($conn, $sql);
-        mysqli_stmt_bind_param($stmt, "is", $year, $department);
+        mysqli_stmt_bind_param($stmt, "iis", $year, $template_id, $department);
     } else {
         $stmt = mysqli_prepare($conn, $sql);
-        mysqli_stmt_bind_param($stmt, "i", $year);
+        mysqli_stmt_bind_param($stmt, "ii", $year, $template_id);
     }
     
     mysqli_stmt_execute($stmt);
@@ -86,7 +126,7 @@ function getEmployeeScores($conn, $year, $department = '') {
     
     $employees = [];
     while ($row = mysqli_fetch_assoc($result)) {
-        $score = calculateEmployeeScore($conn, $row['full_name'], $year);
+        $score = calculateEmployeeScore($conn, $row['full_name'], $year, $template_id);
         $classification = classifyPerformance($score);
         $employees[] = [
             'id' => $row['id'],
@@ -99,6 +139,11 @@ function getEmployeeScores($conn, $year, $department = '') {
             'rating' => getRatingLabel($classification)
         ];
     }
+    
+    // Sort by score descending
+    usort($employees, function($a, $b) {
+        return $b['score'] <=> $a['score'];
+    });
     
     return $employees;
 }
@@ -347,14 +392,17 @@ elseif ($report_type == 'individual') {
     }
     
     if ($selected_employee) {
+        // Get the template for this year
+        $template_id = getTemplateIdForYear($conn, $year);
+
         $query = "SELECT kd.KPI_Code, kd.Score, kti.weight, kti.kpi_group, kti.kpi_description, kti.section
-                  FROM kpi_data kd
-                  JOIN kpi_template_items kti ON kd.KPI_Code = kti.kpi_code AND kd.template_id = kti.template_id
-                  WHERE kd.Name = ? AND YEAR(kd.Date) = ? AND kti.is_active = 1
-                  ORDER BY kti.section, kti.display_order";
-        
+                FROM kpi_data kd
+                JOIN kpi_template_items kti ON kd.KPI_Code = kti.kpi_code AND kd.template_id = kti.template_id
+                WHERE kd.Name = ? AND YEAR(kd.Date) = ? AND kd.template_id = ? AND kti.is_active = 1
+                ORDER BY kti.section, kti.display_order";
+
         $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "si", $selected_employee, $year);
+        mysqli_stmt_bind_param($stmt, "sii", $selected_employee, $year, $template_id);
         mysqli_stmt_execute($stmt);
         $kpi_result = mysqli_stmt_get_result($stmt);
         

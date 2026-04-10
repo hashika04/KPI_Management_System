@@ -117,6 +117,7 @@ $existingComment = $commentRes->get_result()->fetch_assoc();
             <input type="hidden" name="staff_id" value="<?= $staffId ?>">
             <input type="hidden" name="staff_name" value="<?= htmlspecialchars($staffName) ?>">
             <input type="hidden" name="year" value="<?= $evalYear ?>">
+            <input type="hidden" name="template_id" value="<?= $templateId ?>">
 
 
             <div class="eval-period">
@@ -138,7 +139,7 @@ $existingComment = $commentRes->get_result()->fetch_assoc();
                                 <select class="score-select sec1-score" name="score[<?= $code ?>]" data-weight="<?= $weight ?>" onchange="recalculate()">
                                     <?php for($s=1;$s<=5;$s++) echo "<option value='$s' ".($s==$current?'selected':'').">$s</option>"; ?>
                                 </select>
-                            </td>
+                             </td>
                             <td id="ws_<?= $code ?>" style="font-weight:700; text-align:center;">0.00</td>
                         </tr>
                     <?php endforeach; ?>

@@ -585,6 +585,12 @@ $depts_result = mysqli_query($conn, $depts_query);
         
         const formData = new FormData(document.getElementById('filterForm'));
         const params = new URLSearchParams(formData);
+        
+        // Also get the selected employee from the dropdown if it exists
+        const employeeSelect = document.querySelector('.employee-select');
+        if (employeeSelect && employeeSelect.value) {
+            params.set('employee', employeeSelect.value);
+        }
 
         // build URL
         const url = 'generate_report.php?' + params.toString();
@@ -611,10 +617,45 @@ $depts_result = mysqli_query($conn, $depts_query);
             });
     }
 
-   function exportToPDF() {
-        // Get all current filter values
+    function exportToPDF() {
+        // Get all current filter values from the filter form
         const formData = new FormData(document.getElementById('filterForm'));
         const params = new URLSearchParams(formData);
+        
+        // Also get the selected employee from the dropdown inside the report (if exists)
+        const employeeSelect = document.querySelector('.employee-select');
+        if (employeeSelect && employeeSelect.value) {
+            params.set('employee', employeeSelect.value);
+        }
+        
+        // Also get threshold for low performance report
+        const thresholdSelect = document.querySelector('.threshold-select');
+        if (thresholdSelect && thresholdSelect.value) {
+            params.set('threshold', thresholdSelect.value);
+        }
+        
+        // Also get top_count for top performers report
+        const topCountSelect = document.querySelector('.threshold-select');
+        if (topCountSelect && topCountSelect.closest('.row')?.querySelector('.form-label')?.innerText?.includes('Number of Top Contributors')) {
+            params.set('top_count', topCountSelect.value);
+        }
+        
+        // Also get custom report builder filters
+        const customMinScore = document.querySelector('input[name="custom_min_score"]');
+        const customMaxScore = document.querySelector('input[name="custom_max_score"]');
+        const customDept = document.querySelector('select[name="custom_dept"]');
+        if (customMinScore && customMinScore.value) {
+            params.set('custom_min_score', customMinScore.value);
+        }
+        if (customMaxScore && customMaxScore.value) {
+            params.set('custom_max_score', customMaxScore.value);
+        }
+        if (customDept && customDept.value) {
+            params.set('custom_dept', customDept.value);
+        }
+        
+        // Debug: log the params being sent
+        console.log('PDF Preview Params:', params.toString());
         
         // Build the preview URL with all parameters
         const previewUrl = 'pdf_preview.php?' + params.toString();
@@ -624,14 +665,40 @@ $depts_result = mysqli_query($conn, $depts_query);
     }
 
     function exportToExcel() {
-        // Get all current filter values including the selected employee
+        // Get all current filter values from the filter form
         const formData = new FormData(document.getElementById('filterForm'));
         const params = new URLSearchParams(formData);
         
-        // Also check if there's an employee selected in the individual report dropdown
+        // Also get the selected employee from the dropdown inside the report (if exists)
         const employeeSelect = document.querySelector('.employee-select');
         if (employeeSelect && employeeSelect.value) {
             params.set('employee', employeeSelect.value);
+        }
+        
+        // Also get threshold for low performance report
+        const thresholdSelect = document.querySelector('.threshold-select');
+        if (thresholdSelect && thresholdSelect.value) {
+            params.set('threshold', thresholdSelect.value);
+        }
+        
+        // Also get top_count for top performers report
+        const topCountSelect = document.querySelector('.threshold-select');
+        if (topCountSelect && topCountSelect.closest('.row')?.querySelector('.form-label')?.innerText?.includes('Number of Top Contributors')) {
+            params.set('top_count', topCountSelect.value);
+        }
+        
+        // Also get custom report builder filters
+        const customMinScore = document.querySelector('input[name="custom_min_score"]');
+        const customMaxScore = document.querySelector('input[name="custom_max_score"]');
+        const customDept = document.querySelector('select[name="custom_dept"]');
+        if (customMinScore && customMinScore.value) {
+            params.set('custom_min_score', customMinScore.value);
+        }
+        if (customMaxScore && customMaxScore.value) {
+            params.set('custom_max_score', customMaxScore.value);
+        }
+        if (customDept && customDept.value) {
+            params.set('custom_dept', customDept.value);
         }
         
         // Build the preview URL with all parameters
