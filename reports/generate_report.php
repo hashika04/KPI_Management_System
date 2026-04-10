@@ -103,7 +103,7 @@ function getEmployeeScores($conn, $year, $department = '') {
     return $employees;
 }
 
-// 1. OVERALL PERFORMANCE REPORT - FIXED (Mixed Logic)
+// 1. OVERALL PERFORMANCE REPORT 
 if ($report_type == 'overall') {
     // Get employees using weighted scores (existing logic for charts and tables)
     $employees = getEmployeeScores($conn, $year, $department);
@@ -114,7 +114,7 @@ if ($report_type == 'overall') {
         exit;
     }
     
-    // --- NEW LOGIC FOR SUMMARY STATISTICS ONLY (matching Trend Report) ---
+    // --- LOGIC FOR SUMMARY STATISTICS  ---
     // Get department filter condition for direct DB query
     $dept_condition = "";
     $params = [];
@@ -162,7 +162,7 @@ if ($report_type == 'overall') {
     $top_result = mysqli_stmt_get_result($stmt);
     $top_count_direct = mysqli_num_rows($top_result);
     
-    // --- EXISTING LOGIC FOR DISTRIBUTION (using weighted scores from $employees) ---
+    //  LOGIC FOR DISTRIBUTION (using weighted scores from $employees) ---
     $distribution = ['top' => 0, 'good' => 0, 'average' => 0, 'at-risk' => 0];
     foreach ($employees as $emp) {
         $distribution[$emp['classification']]++;
@@ -192,7 +192,7 @@ if ($report_type == 'overall') {
                 <strong>Report Generated:</strong> <?php echo date('F j, Y'); ?></p>
             </div>
             
-            <!-- Summary Statistics (UPDATED with direct DB calculation) -->
+            <!-- Summary Statistics (direct DB calculation) -->
             <div class="row mb-4">
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="stat-card">
@@ -932,7 +932,7 @@ elseif ($report_type == 'low') {
 <?php
 }
 
-// 6. HIGH IMPACT CONTRIBUTORS REPORT (formerly Top Performers)
+// 6. HIGH IMPACT CONTRIBUTORS REPORT 
 elseif ($report_type == 'top') {
     $top_count = isset($_GET['top_count']) ? intval($_GET['top_count']) : 10;
     $employees = getEmployeeScores($conn, $year, $department);
@@ -1256,10 +1256,7 @@ elseif ($report_type == 'top') {
 
 <?php
 }
-// ================= TRAINING NEEDS ANALYSIS (ENHANCED) =================
-//Training Needs Analysis Report
-// ================= TRAINING NEEDS ANALYSIS (FINAL ENHANCED) =================
-// ================= TRAINING NEEDS ANALYSIS (FINAL ENHANCED) =================
+
 //Training Needs Analysis Report
 elseif ($report_type == 'training') {
     

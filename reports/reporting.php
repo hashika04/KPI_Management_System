@@ -586,10 +586,10 @@ $depts_result = mysqli_query($conn, $depts_query);
         const formData = new FormData(document.getElementById('filterForm'));
         const params = new URLSearchParams(formData);
 
-        // ✅ NEW: build URL
+        // build URL
         const url = 'generate_report.php?' + params.toString();
 
-        // ✅ NEW: update browser URL (THIS IS THE FIX)
+        // update browser URL 
         history.replaceState(null, '', '?' + params.toString());
 
         fetch(url)
@@ -597,7 +597,7 @@ $depts_result = mysqli_query($conn, $depts_query);
             .then(html => {
                 container.innerHTML = html;
 
-                // ✅ IMPORTANT: re-run scripts (fix charts disappearing)
+                // re-run scripts (fix charts disappearing)
                 const scripts = container.querySelectorAll("script");
                 scripts.forEach(oldScript => {
                     const newScript = document.createElement("script");

@@ -1,5 +1,5 @@
 <?php
-// staff_masterlist/edit_kpi_template.php
+// Configuration/edit_kpi_template.php
 include("../includes/auth.php");
 include("../config/db.php");
 $activePage = 'config';
@@ -251,7 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         margin: 0;
     }
     
-    /* Header styling - EXACT MATCH with reporting page */
+    /* Header styling  */
     .reports-header {
         background: #fcf2fa;
         padding-bottom: 16px;

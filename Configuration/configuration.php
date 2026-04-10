@@ -157,7 +157,7 @@ while ($row = $depts_result->fetch_assoc()) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-    /* Root variables - matching reporting page */
+    /* Root variables */
     :root {
         --primary: #4361ee;
         --primary-dark: #3a56d4;
@@ -184,14 +184,14 @@ while ($row = $depts_result->fetch_assoc()) {
         min-height: 100vh;
     }
     
-    /* Main content area matching reporting page */
+    /* Main content  */
     .reports-content {
         width: 100%;
         padding: 0;
         margin: 0;
     }
     
-    /* Header styling - EXACT MATCH with reporting page */
+    /* Header styling */
     .reports-header {
         background: #fcf2fa;
         padding-bottom: 16px;
@@ -212,7 +212,7 @@ while ($row = $depts_result->fetch_assoc()) {
         margin-bottom: 15px;
     }
     
-    /* Card wrapper styles - matching reporting page */
+    /* Card wrapper styles */
     .config-card {
         background: white;
         border-radius: 16px;
@@ -243,7 +243,7 @@ while ($row = $depts_result->fetch_assoc()) {
         padding: 20px;
     }
     
-    /* Button styling - matching reporting page */
+    /* Button styling */
     .btn-primary-custom {
         background: #e83e8c;
         border: none;
@@ -263,7 +263,7 @@ while ($row = $depts_result->fetch_assoc()) {
         color: white;
     }
     
-    /* Templates Grid - preserved but with refined styling */
+    /* Templates Grid */
     .templates-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -406,7 +406,7 @@ while ($row = $depts_result->fetch_assoc()) {
         padding: 12px 16px;
     }
     
-    /* Form styling - compact */
+    /* Form styling */
     .form-label {
         font-size: 12px;
         margin-bottom: 4px;
@@ -568,7 +568,7 @@ while ($row = $depts_result->fetch_assoc()) {
         <?php include("../includes/sidebar.php"); ?>
 
         <div class="reports-content">
-            <!-- Header - EXACT MATCH with reporting page -->
+            <!-- Header  -->
             <div class="reports-header">
                 <div>
                     <h1>Configuration</h1>
@@ -602,7 +602,7 @@ while ($row = $depts_result->fetch_assoc()) {
                 <div class="card-body-custom">
                     <p class="reports-subtitle" style="margin-bottom: 20px;">Create and manage KPI templates for different years</p>
                     
-                    <!-- Templates Grid -->
+                                        <!-- Templates Grid -->
                                         <div class="templates-grid">
                                             <?php while($template = $templates_result->fetch_assoc()): 
                                                 $is_active = ($template['status'] == 'active');
@@ -836,7 +836,7 @@ while ($row = $depts_result->fetch_assoc()) {
         </div>
     </div>
 
-    <!-- ==================== ADD EMPLOYEE MODAL ==================== -->
+ <!-- ==================== ADD EMPLOYEE MODAL ==================== -->
 <div class="modal fade" id="addEmployeeModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden;">

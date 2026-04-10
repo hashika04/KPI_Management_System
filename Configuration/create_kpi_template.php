@@ -1,5 +1,5 @@
 <?php
-// staff_masterlist/create_kpi_template.php
+// Configuration/create_kpi_template.php
 include("../includes/auth.php");
 include("../config/db.php");
 $activePage = 'config';
@@ -298,7 +298,7 @@ $suggested_section2 = $is_edit ? $template_data['section2_weight'] : ($previous_
         margin: 0;
     }
     
-    /* Header styling - EXACT MATCH with reporting page */
+    /* Header styling  */
     .reports-header {
         background: #fcf2fa;
         padding-bottom: 16px;

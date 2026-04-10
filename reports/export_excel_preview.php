@@ -76,7 +76,7 @@ function getEmployeeScores($conn, $year, $department = '') {
     return $employees;
 }
 
-// ==================== INDIVIDUAL REPORT (MUST COME FIRST) ====================
+// ==================== INDIVIDUAL REPORT ====================
 if ($report_type == 'individual') {
     // If no employee selected, show error message
     if (empty($selected_employee)) {

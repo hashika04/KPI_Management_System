@@ -1,5 +1,5 @@
 <?php
-// staff_masterlist/view_kpi_template.php
+// Configuration/view_kpi_template.php
 include("../includes/auth.php");
 include("../config/db.php");
 $activePage = 'config';
@@ -116,7 +116,7 @@ $section2_total_weight = array_sum(array_column($section2_items, 'weight'));
         margin: 0;
     }
     
-    /* Header styling - EXACT MATCH with reporting page */
+    /* Header styling*/
     .reports-header {
         background: #fcf2fa;
         padding-bottom: 16px;
