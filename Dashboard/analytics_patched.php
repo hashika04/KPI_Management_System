@@ -14,7 +14,9 @@ require_once __DIR__ . '/../includes/auth.php';
     <link rel="stylesheet" href="../asset/universal.css?v=2">
     <link rel="stylesheet" href="../asset/analytics.css?v=7">
 
-<!-- ==============================Design and Layout for Analytics Dashboard============================= -->
+<!-- ---------------------------------------- 
+    Design and Layout for Analytics Dashboard
+---------------------------------------------- -->
 <style>
 
 .cards-grid{
@@ -532,10 +534,6 @@ require_once __DIR__ . '/../includes/auth.php';
     }
 }
 </style>
-
-<!-- =================================End of Styles============================================================================= -->
-
-
 
 </head>
 <body>
@@ -1521,9 +1519,10 @@ const categoryColors = kpiRows.map(item => {
 
     }
 
-    /**
-     * Render the at-risk staff table and department statistics table with data, including handling empty states
-     */
+    /* ----------------------------------------------------------------------------
+     * Render the at-risk staff table and department statistics table with data, 
+        including handling empty states
+     -------------------------------------------------------------------------------*/
 
     function renderTables(data) {
         document.querySelector('#atRiskTable tbody').innerHTML = data.at_risk_staff.map(item => `
@@ -1602,8 +1601,10 @@ const categoryColors = kpiRows.map(item => {
         document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
     }
 
-    // Populate the staff selection dropdowns based on the current filters and dashboard data, 
-    // including handling empty states and sorting
+    /*--------------------------------------------------------------------------------------
+    Populate the staff selection dropdowns based on the current filters and dashboard data, 
+    including handling empty states and sorting
+    ------------------------------------------------------------------------------------------*/
     function populateStaffDropdown(data) {
         const select1 = document.getElementById('staff1Select');
         const select2 = document.getElementById('staff2Select');

@@ -6,6 +6,7 @@ error_reporting(0);
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/db.php';
 
+// Enable strict error reporting for mysqli and set charset
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conn->set_charset('utf8mb4');
 
@@ -26,6 +27,7 @@ $SECTION2_GROUP_WEIGHTS = [
     'Inventory & Cost Control' => 0.05,
     'Store Operations Support' => 0.15
 ];
+
 
 try {
     $action = $_GET['action'] ?? 'dashboard';

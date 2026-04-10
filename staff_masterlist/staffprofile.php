@@ -129,6 +129,8 @@ if (!$staff) {
 | LOAD KPI RECORDS FOR THIS STAFF
 |--------------------------------------------------------------------------
 */
+$records = [];
+
 $stmt = $conn->prepare("
     SELECT
         kd.`Date` AS evaluation_date,
@@ -136,18 +138,11 @@ $stmt = $conn->prepare("
         kd.`Score` AS score,
         km.`section`,
         km.`kpi_group`,
-        km.`kpi_description`,
-        kc.`Supervisor Comments` AS supervisor_comments,
-        kc.`Training/Development Recommendations` AS training_recommendations
+        km.`kpi_description`
     FROM kpi_data kd
     LEFT JOIN kpi_master_list km
         ON TRIM(km.`kpi_code`) = TRIM(kd.`KPI_Code`)
         AND km.`kpi_code` <> 'KPI_Code'
-    LEFT JOIN kpi_comment kc
-        ON TRIM(LOWER(kc.`Name`)) = TRIM(LOWER(kd.`Name`))
-        AND kc.`Year` = YEAR(STR_TO_DATE(kd.`Date`, '%Y-%m-%d'))
-        AND kc.`Year` > 0
-        AND kc.`Name` <> 'Name'
     WHERE TRIM(LOWER(kd.`Name`)) = TRIM(LOWER(?))
       AND kd.`Date` IS NOT NULL
       AND kd.`Date` <> ''
@@ -176,8 +171,6 @@ while ($row = $kpiResult->fetch_assoc()) {
         'section' => trim((string)($row['section'] ?? '')),
         'kpi_group' => trim((string)($row['kpi_group'] ?? '')),
         'kpi_description' => trim((string)($row['kpi_description'] ?? '')),
-        'supervisor_comments' => trim((string)($row['supervisor_comments'] ?? '')),
-        'training_recommendations' => trim((string)($row['training_recommendations'] ?? '')),
     ];
 }
 $stmt->close();
@@ -210,8 +203,6 @@ foreach ($records as $row) {
             'section1_scores' => [],
             'section2_groups' => [],
             'all_scores' => [],
-            'comments' => $row['supervisor_comments'],
-            'training' => $row['training_recommendations'],
         ];
     }
 
@@ -285,14 +276,12 @@ foreach ($groupedPeriods as $period => $entry) {
         : 0.0;
 
     $overallPercentage = round(($overallAverage5 / 5) * 100, 2);
-
+    
     $periodSummaries[] = [
         'period' => $period,
         'score_5' => $overallAverage5,
         'percentage' => $overallPercentage,
         'category_scores' => $categoryScores,
-        'comments' => $entry['comments'],
-        'training' => $entry['training'],
     ];
 }
 
@@ -303,12 +292,50 @@ $latest = end($periodSummaries) ?: [
     'score_5' => 0,
     'percentage' => 0,
     'category_scores' => [],
-    'comments' => '',
-    'training' => '',
 ];
 
-$latestComment = $latest['comments'] ?: 'No supervisor comment available.';
-$latestTraining = $latest['training'] ?: 'No training recommendation available.';
+$commentYear = null;
+
+if ($selectedYear !== '') {
+    $commentYear = (int)$selectedYear;
+} elseif (!empty($periodSummaries)) {
+    $latestPeriod = end($periodSummaries);
+    if (!empty($latestPeriod['period'])) {
+        $commentYear = (int)substr($latestPeriod['period'], 0, 4);
+    }
+}
+
+$latestComment = 'No supervisor comment available.';
+$latestTraining = 'No training recommendation available.';
+
+if ($commentYear !== null) {
+    $stmt = $conn->prepare("
+        SELECT
+            `Supervisor Comments` AS supervisor_comment,
+            `Training/Development Recommendations` AS training_recommendation
+        FROM kpi_comment
+        WHERE TRIM(LOWER(`Name`)) = TRIM(LOWER(?))
+          AND `Year` = ?
+          AND `Year` > 0
+          AND `Name` <> 'Name'
+        LIMIT 1
+    ");
+    $stmt->bind_param('si', $staffName, $commentYear);
+    $stmt->execute();
+    $commentResult = $stmt->get_result();
+    $commentRow = $commentResult->fetch_assoc();
+    $stmt->close();
+
+    if ($commentRow) {
+        $latestComment = trim((string)($commentRow['supervisor_comment'] ?? '')) !== ''
+            ? trim((string)$commentRow['supervisor_comment'])
+            : 'No supervisor comment available.';
+
+        $latestTraining = trim((string)($commentRow['training_recommendation'] ?? '')) !== ''
+            ? trim((string)$commentRow['training_recommendation'])
+            : 'No training recommendation available.';
+    }
+}
 
 $coreCompetencyLabels = [
     'S1.1' => 'Initiative',

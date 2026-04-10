@@ -1,6 +1,13 @@
 <?php
 $activePage = 'analytics';
 require_once __DIR__ . '/../includes/auth.php';
+
+/* ----------------------------------------------------------------------------
+    This page allows supervisors to compare two staff members side by side in the latest periods, using the latest KPI records, category performance, and trend behaviour. 
+    It includes detailed charts and narrative insights to help identify strengths,
+     weaknesses, and training opportunities for each staff member.
+-----------------------------------------------------------------------------------*/
+
 ?>
 
 <!DOCTYPE html>
