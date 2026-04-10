@@ -13,40 +13,328 @@ require_once __DIR__ . '/../includes/auth.php';
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <link rel="stylesheet" href="../asset/universal.css?v=2">
     <link rel="stylesheet" href="../asset/analytics.css?v=7">
-<style>
-/* FINAL OVERRIDES */
-.cards-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:24px}.alert-card,.stat-card{min-height:250px;border-radius:24px;padding:18px;box-shadow:0 10px 24px rgba(200,80,140,.08)}
-.risk-card-new{display:flex;flex-direction:column;gap:14px;margin-top:10px}.risk-main-box,.risk-sub-box{background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.7);border-radius:18px;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
-.risk-main-box{padding:18px;flex:1}.risk-sub-box{padding:14px}.risk-main-box span,.risk-sub-box span{display:block;font-size:.8rem;color:#8a7284;font-weight:700;margin-bottom:4px}.risk-main-box small{display:block;margin-top:2px;font-size:.78rem;color:#9a8795;font-weight:700}
-.risk-main-box h2{margin:4px 0;font-size:2rem;font-weight:900}.risk-main-box h3{margin:6px 0 0;font-size:1.8rem;font-weight:900}.risk-sub-box h1{margin:6px 0 0;font-size:2.4rem;font-weight:900}
-.high-risk-card .risk-main-box h2,.high-risk-card .risk-main-box h3,.high-risk-card .risk-sub-box h1{color:#dc2626}.moderate-risk-card .risk-main-box h2,.moderate-risk-card .risk-main-box h3,.moderate-risk-card .risk-sub-box h1{color:#ea580c}
-.chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:22px}.chart-span-2{grid-column:span 2}.chart-card,.table-card,.comparison-tool{background:rgba(255,255,255,.94);border:1px solid #f0d8e4;border-radius:24px;padding:22px;box-shadow:0 10px 28px rgba(200,80,140,.08)}
-#performanceTrendChart{height:360px}#performanceDistributionChart,#trendDistributionChart,#departmentComparisonChart,#kpiVsTargetChart{height:300px}#heatmapChart{height:420px}#riskHistogramChart{height:300px}
-.kpi-breakdown-list{display:flex;flex-direction:column;gap:12px}.kpi-item{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:14px;background:#f9fafb;border:1px solid #efe4eb}.kpi-item strong{color:#231942;font-size:.96rem}.kpi-item span{font-weight:800;color:#4f46e5}
-.comparison-tool{display:flex;flex-direction:column;justify-content:flex-start}.comparison-toolbar,.comparison-select{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}.comparison-toolbar .ghost-btn{grid-column:span 2}
-.comparison-select select,.comparison-toolbar select{border:1.5px solid #eed4e3;border-radius:14px;background:#fff;padding:10px 14px;min-height:46px;color:#3a2948;font-size:.95rem;box-shadow:0 4px 10px rgba(232,48,140,.04)}
-.comparison-action-row{margin-top:6px}.compare-main-btn{width:100%;min-height:50px}
-@media (max-width:1200px){.cards-grid,.chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chart-span-2{grid-column:span 2}}
-@media (max-width:768px){.cards-grid,.chart-grid,.comparison-toolbar,.comparison-select{grid-template-columns:1fr}.chart-span-2{grid-column:span 1}}
 
-/* analytics_patched final clean overrides */
-.comparison-toolbar{display:flex!important;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
-.comparison-toolbar select{flex:1 1 220px;min-width:220px;}
-.comparison-toolbar .ghost-btn{flex:0 0 auto!important;grid-column:auto!important;width:auto!important;min-width:130px;}
-.comparison-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.comparison-select-box label{display:block;margin:0 0 8px;font-size:.9rem;font-weight:700;color:#6f6376;}
-.comparison-select-box select{width:100%;border:1.5px solid #eed4e3;border-radius:14px;background:#fff;padding:10px 14px;min-height:46px;color:#3a2948;font-size:.95rem;box-shadow:0 4px 10px rgba(232,48,140,.04);}
-.compare-main-btn{max-width:none;}
-.comparison-tool-expanded{min-height:360px;padding:28px 28px 24px!important;}
-.comparison-tool-expanded .comparison-title-wrap{margin-bottom:20px;}
-.comparison-tool-expanded .comparison-toolbar{margin-bottom:20px!important;}
-.comparison-tool-expanded .comparison-select-grid{gap:18px;}
-.comparison-tool-expanded .comparison-select-box select{min-height:54px;font-size:1rem;}
-.comparison-tool-expanded .compare-main-btn{min-height:56px;font-size:1rem;}
-.comparison-tool-expanded .comparison-action-row{margin-top:14px;}
-#heatmapInsight,#riskHistogramInsight{min-height:68px;display:flex;align-items:flex-start;}
-@media (max-width: 900px){.comparison-select-grid{grid-template-columns:1fr;}}
-/* FINAL STAFF COMPARISON + MODAL FIXES */
+<!-- ==============================Design and Layout for Analytics Dashboard============================= -->
+<style>
+
+.cards-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:18px;
+    margin-bottom:24px
+}
+
+.alert-card,.stat-card{
+    min-height:250px;
+    border-radius:24px;
+    padding:18px;
+    box-shadow:0 10px 24px rgba(200,80,140,.08)
+}
+
+.risk-card-new{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-top:10px
+}
+
+.risk-main-box,.risk-sub-box{
+    background:rgba(255,255,255,.88);
+    border:1px solid rgba(255,255,255,.7);
+    border-radius:18px;
+    text-align:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55)
+}
+
+.risk-main-box{
+    padding:18px;
+    flex:1
+}
+
+.risk-sub-box{
+    padding:14px
+}
+
+.risk-main-box span,
+.risk-sub-box span{
+    display:block;
+    font-size:.8rem;
+    color:#8a7284;
+    font-weight:700;
+    margin-bottom:4px
+}
+
+.risk-main-box small{
+    display:block;
+    margin-top:2px;
+    font-size:.78rem;
+    color:#9a8795;
+    font-weight:700
+}
+
+.risk-main-box h2{
+    margin:4px 0;
+    font-size:2rem;
+    font-weight:900
+}
+
+.risk-main-box h3{
+    margin:6px 0 0;
+    font-size:1.8rem;
+    font-weight:900
+}
+
+.risk-sub-box h1{
+    margin:6px 0 0;
+    font-size:2.4rem;
+    font-weight:900
+}
+
+
+.high-risk-card
+.risk-main-box h2,
+.high-risk-card 
+.risk-main-box h3,
+.high-risk-card 
+
+.risk-sub-box h1{
+    color:#dc2626
+}
+
+.moderate-risk-card 
+.risk-main-box h2,
+.moderate-risk-card 
+.risk-main-box h3,
+.moderate-risk-card 
+
+.risk-sub-box h1{
+    color:#ea580c
+}
+.chart-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:22px;margin-top:22px
+}
+
+.chart-span-2{
+    grid-column:span 2
+}
+
+.chart-card,
+.table-card,
+.comparison-tool{
+    background:rgba(255,255,255,.94);
+    border:1px solid #f0d8e4;
+    border-radius:24px;
+    padding:22px;
+    box-shadow:0 10px 28px rgba(200,80,140,.08)
+}
+
+#performanceTrendChart{
+    height:360px
+}
+
+#performanceDistributionChart,
+#trendDistributionChart,
+#departmentComparisonChart,
+#kpiVsTargetChart{
+    height:300px
+}
+
+#heatmapChart{
+    height:420px
+}
+
+#riskHistogramChart{
+    height:300px
+}
+
+.kpi-breakdown-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px
+}
+
+.kpi-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 14px;
+    border-radius:14px;
+    background:#f9fafb;
+    border:1px solid #efe4eb
+}
+
+.kpi-item strong{
+    color:#231942;
+    font-size:.96rem
+}
+
+.kpi-item span{
+    font-weight:800;
+    color:#4f46e5
+}
+
+.comparison-tool{
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start
+}
+
+.comparison-toolbar,
+.comparison-select{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:14px
+}
+
+.comparison-toolbar .ghost-btn{
+    grid-column:span 2
+}
+
+.comparison-select select,
+.comparison-toolbar select{
+    border:1.5px solid #eed4e3;
+    border-radius:14px;
+    background:#fff;
+    padding:10px 14px;
+    min-height:46px;
+    color:#3a2948;
+    font-size:.95rem;
+    box-shadow:0 4px 10px rgba(232,48,140,.04)
+}
+
+.comparison-action-row{
+    margin-top:6px
+}
+
+.compare-main-btn{
+    width:100%;
+    min-height:50px
+}
+
+@media (max-width:1200px){
+    .cards-grid,.chart-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr))
+    }
+    
+    .chart-span-2{
+        grid-column:span 2
+    }}
+
+@media (max-width:768px){
+    .cards-grid,.chart-grid,
+    .comparison-toolbar,
+    .comparison-select{
+        grid-template-columns:1fr
+    }
+    
+    .chart-span-2{
+        grid-column:span 1}
+    }
+
+// Staff Comparison Tool Styles
+.comparison-toolbar{
+    display:flex!important;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+}
+
+.comparison-toolbar select{
+    flex:1 1 220px;
+    min-width:220px;
+}
+
+.comparison-toolbar 
+.ghost-btn{
+    flex:0 0 auto!important;
+    grid-column:auto!important;
+    width:auto!important;
+    min-width:130px;
+}
+
+.comparison-select-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+}
+
+.comparison-select-box label{
+    display:block;
+    margin:0 0 8px;
+    font-size:.9rem;
+    font-weight:700;
+    color:#6f6376;
+}
+
+
+.comparison-select-box select{
+    width:100%;border:1.5px solid #eed4e3;
+    border-radius:14px;background:#fff;
+    padding:10px 14px;
+    min-height:46px;
+    color:#3a2948;
+    font-size:.95rem;
+    box-shadow:0 4px 10px rgba(232,48,140,.04);
+}
+
+.compare-main-btn{
+    max-width:none;
+}
+.comparison-tool-expanded{
+    min-height:360px;
+    padding:28px 28px 24px!important;
+}
+
+.comparison-tool-expanded
+ .comparison-title-wrap{
+    margin-bottom:20px;
+}
+
+
+.comparison-tool-expanded 
+.comparison-toolbar{
+    margin-bottom:20px!important;
+}
+
+.comparison-tool-expanded 
+.comparison-select-grid{
+    gap:18px;
+}
+
+.comparison-tool-expanded
+ .comparison-select-box select{
+    min-height:54px;
+    font-size:1rem;
+}
+
+.comparison-tool-expanded
+ .compare-main-btn{
+    min-height:56px;
+    font-size:1rem;
+}
+
+.comparison-tool-expanded 
+.comparison-action-row{
+    margin-top:14px;
+}
+
+#heatmapInsight,
+#riskHistogramInsight{
+    min-height:68px;
+    display:flex;
+    align-items:flex-start;
+}
+
+@media (max-width: 900px){
+    .comparison-select-grid{
+        grid-template-columns:1fr;
+    }}
+
+
 .comparison-tool.chart-span-2.comparison-tool-expanded{
     grid-column: span 2 !important;
     width: 100% !important;
@@ -244,6 +532,11 @@ require_once __DIR__ . '/../includes/auth.php';
     }
 }
 </style>
+
+<!-- =================================End of Styles============================================================================= -->
+
+
+
 </head>
 <body>
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
@@ -251,11 +544,12 @@ require_once __DIR__ . '/../includes/auth.php';
     <main class="analytics-layout">
         <section class="page-header">
             <div class="header-top">
+                <!-- The header section with title and description -->
                 <h1>Analytics</h1>
                 <p>Interactive KPI analytics with database-driven filtering, drill-down, and staff comparison.</p>
             </div>
 
-
+                <!-- The filter toolbar with dynamic dropdowns and reset button -->
             <div class="filter-toolbar">
                 <select id="yearFilter">
                     <option value="">Years</option>
@@ -276,6 +570,7 @@ require_once __DIR__ . '/../includes/auth.php';
             </div>
         </section>
 
+    <!-- The main content area with summary cards (clickable) -->
     <section class="cards-grid">
         <article class="alert-card high-risk-card" id="highRiskCard">
             <div class="alert-card-head">
@@ -492,6 +787,8 @@ require_once __DIR__ . '/../includes/auth.php';
         </div>
         </div>
     <script>
+
+    
     const state = {
         year: '',
         department: 'All Departments',
@@ -506,6 +803,7 @@ require_once __DIR__ . '/../includes/auth.php';
 
     let latestDashboardData = null;
 
+    // Fetch JSON data with error handling
     async function fetchJson(params) {
         const url = './analytics_data_patched.php?' + new URLSearchParams(params).toString();
         const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -516,6 +814,7 @@ require_once __DIR__ . '/../includes/auth.php';
         return await response.json();
     }
 
+    // Set department options for dropdowns
     function setDepartmentOptions(departments) {
         const safeDepartments = Array.isArray(departments) ? departments : [];
         const selects = [
@@ -543,7 +842,7 @@ require_once __DIR__ . '/../includes/auth.php';
         });
     }
 
-
+    // Set year options for the year filter dropdown
     function setYearOptions(years) {
         const safeYears = Array.isArray(years) ? years : [];
         const yearFilter = document.getElementById('yearFilter');
@@ -561,6 +860,7 @@ require_once __DIR__ . '/../includes/auth.php';
         });
     }
 
+    // Render summary cards with data
     function renderSummary(data) {
         document.getElementById('totalStaff').textContent = Number(data.summary?.total_staff || 0);
         document.getElementById('avgKpi').textContent = Number(data.summary?.avg_kpi || 0).toFixed(2) + '%';
@@ -586,6 +886,7 @@ require_once __DIR__ . '/../includes/auth.php';
                 moderate ? Number(moderate.at_risk || 0) : 0;
             }
 
+    // Render the performance trend chart with actual, target, and forecast data
     function renderCharts(data) {
         const trendRows = data.performance_trend || [];
         const periods = trendRows.map(item => item.period);
@@ -609,6 +910,7 @@ require_once __DIR__ . '/../includes/auth.php';
             forecastConnectorY.push(actualSeries[lastActualIndex], forecastSeries[forecastStartIndex]);
         }
 
+        // Render the performance trend chart using Plotly
         Plotly.react('performanceTrendChart', [
             {
                 x: periods,
@@ -714,10 +1016,12 @@ require_once __DIR__ . '/../includes/auth.php';
             document.getElementById('performanceTrendInsight').textContent = data.insight;
         }
 
+        // Calculate combined at-risk count for the performance distribution chart
         const combinedAtRiskCount =
             Number(data.performance_distribution?.critical || 0) +
             Number(data.performance_distribution?.['at-risk'] || 0);
 
+        // Render the performance distribution donut chart using Plotly
         Plotly.react('performanceDistributionChart', [{
             labels: ['Excellence', 'Good', 'Moderate', 'At Risk'],
             values: [
@@ -811,6 +1115,7 @@ require_once __DIR__ . '/../includes/auth.php';
             displayModeBar: false
         });
 
+        // Add click event handlers to the performance distribution and trend distribution charts for drill-down details
         const performanceChart = document.getElementById('performanceDistributionChart');
             if (performanceChart) {
                 performanceChart.on('plotly_click', function(eventData) {
@@ -819,7 +1124,7 @@ require_once __DIR__ . '/../includes/auth.php';
                     openDetailsModal(`${label} Performance Details`, buildPerformanceSliceHtml(label));
                 });
             }
-
+        
             const trendChart = document.getElementById('trendDistributionChart');
             if (trendChart) {
                 trendChart.on('plotly_click', function(eventData) {
@@ -828,9 +1133,11 @@ require_once __DIR__ . '/../includes/auth.php';
                     openDetailsModal(`${label} Trend Details`, buildTrendSliceHtml(label));
                 });
             }
+
         document.getElementById('distributionInsight').textContent =
         `${Number(data.performance_distribution?.top || 0) + Number(data.performance_distribution?.good || 0)} staff are in the stronger performance bands, while ${combinedAtRiskCount} staff are in the at-risk band and need closer support.`;
 
+        // Provide insights based on the trend distribution data
         const trendInsightEl = document.getElementById('trendDistributionInsight');
         if (trendInsightEl) {
             const up = Number(data.trend_distribution?.up || 0);
@@ -845,6 +1152,7 @@ require_once __DIR__ . '/../includes/auth.php';
             }
         }
 
+        // Prepare data for the department comparison lollipop chart
         const deptRows = [...(data.department_comparison || [])].sort((a, b) => a.score - b.score);
 
             const deptNames = deptRows.map(item => item.department);
@@ -884,6 +1192,7 @@ require_once __DIR__ . '/../includes/auth.php';
                 }
             });
 
+            // Render the department comparison lollipop chart using Plotly
             Plotly.react('departmentComparisonChart', [
                 {
                     x: deptScores,
@@ -992,6 +1301,8 @@ require_once __DIR__ . '/../includes/auth.php';
                 document.getElementById('departmentInsight').textContent = 'No department data matched the current filters.';
             }
 
+/* Prepare data for the KPI category performance vs target chart, 
+including category labels, colors, and values. */
 
 const rawKpiRows = Array.isArray(data.kpi_vs_target) ? data.kpi_vs_target : [];
 const kpiRows = rawKpiRows.filter(item => item && item.category !== 'Other KPI');
@@ -1041,6 +1352,7 @@ const categoryColors = kpiRows.map(item => {
     return '#6366f1';
 });
 
+// Render the KPI category performance vs target chart using Plotly
     Plotly.react('kpiVsTargetChart', [
         {
             x: stackedCategoryLabels,
@@ -1127,9 +1439,12 @@ const categoryColors = kpiRows.map(item => {
         document.getElementById('kpiGapInsight').textContent = 'No KPI category data matched the current filters.';
     }
 
+    // Prepare data for the score movement heatmap, including dynamic extraction of departments and periods, and render the heatmap using Plotly
         const heatmapRows = data.heatmap || [];
         const heatmapColumns = [...new Set(heatmapRows.flatMap(row => Object.keys(row)).filter(key => key !== 'period'))];
         const heatmapValues = heatmapRows.map(row => heatmapColumns.map(col => row[col] ?? null));
+
+    // Render the heatmap chart using Plotly
         Plotly.react('heatmapChart', [{
             x: heatmapColumns,
             y: heatmapRows.map(row => row.period),
@@ -1161,7 +1476,10 @@ const categoryColors = kpiRows.map(item => {
             heatmapInsightEl.textContent = 'No score movement data matched the current filters.';
         }
 
+        // Prepare data for the risk histogram, render the bar chart using Plotly, and provide insights based on the distribution of staff across KPI score bands
         const riskHistogramRows = data.risk_histogram || [];
+
+        // Render the risk histogram bar chart using Plotly 
         Plotly.react('riskHistogramChart', [{
             x: riskHistogramRows.map(item => item.range),
             y: riskHistogramRows.map(item => item.count),
@@ -1169,6 +1487,8 @@ const categoryColors = kpiRows.map(item => {
             marker: { color: ['#ef4444', '#fb7185', '#f59e0b', '#3b82f6', '#10b981'] },
             hovertemplate: '%{x}<br>Staff: %{y}<extra></extra>'
         }], {
+            bargap: 0,
+            bargroupgap:0,
             margin: { t: 10, r: 10, b: 40, l: 40 },
             paper_bgcolor: 'transparent',
             plot_bgcolor: 'transparent',
@@ -1187,6 +1507,7 @@ const categoryColors = kpiRows.map(item => {
             riskHistogramInsightEl.textContent = 'No staff performance score data matched the current filters.';
         }
 
+
         const riskChart = document.getElementById('riskHistogramChart');
 
         riskChart.removeAllListeners?.('plotly_click');
@@ -1199,6 +1520,10 @@ const categoryColors = kpiRows.map(item => {
         });
 
     }
+
+    /**
+     * Render the at-risk staff table and department statistics table with data, including handling empty states
+     */
 
     function renderTables(data) {
         document.querySelector('#atRiskTable tbody').innerHTML = data.at_risk_staff.map(item => `
@@ -1271,14 +1596,14 @@ const categoryColors = kpiRows.map(item => {
             </div>
         `;
     }
-    function renderSuggestionPills(data) {
-        /* suggestions hidden in this finalized version */
-    }
+    function renderSuggestionPills(data) {}
 
     function updateSelectedChips() {
         document.getElementById('compareBtn').disabled = !(state.staff1 && state.staff2 && state.staff1 !== state.staff2);
     }
 
+    // Populate the staff selection dropdowns based on the current filters and dashboard data, 
+    // including handling empty states and sorting
     function populateStaffDropdown(data) {
         const select1 = document.getElementById('staff1Select');
         const select2 = document.getElementById('staff2Select');
