@@ -60,6 +60,4 @@ QR Generation Technical Details
    - Encoding: Full absolute URL (https://yourdomain.com/...) with encodeURIComponent().
    - Integration: QR codes are injected dynamically via JavaScript after report content loads, ensuring they always match the current filters.
 
-Notes for QR Scanning
-   - When running locally, your laptop and mobile phone must be connected to the same WiFi for QR codes to work.
 
