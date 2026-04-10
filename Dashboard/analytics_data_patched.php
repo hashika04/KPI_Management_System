@@ -105,7 +105,7 @@ function fetchKpiRecords(mysqli $conn): array
         FROM `kpi_data` kd
         INNER JOIN `staff` s
             ON s.`full_name` = kd.`Name`
-        LEFT JOIN `kpi_master_list` km
+        LEFT JOIN `kpi_template_items` km
             ON km.`kpi_code` = kd.`KPI_Code`
         LEFT JOIN `kpi_comment` kc
             ON kc.`Name` = kd.`Name`

@@ -107,14 +107,14 @@ if ($result) {
             }
 
             // Fetch weakest KPI groups — sorted ascending so worst appears first.
-            // Joins kpi_data → kpi_master_list on KPI_Code = kpi_code.
-            // kpi_master_list.kpi_group must not equal the header row value 'KPI_Group'.
+            // Joins kpi_data → kpi_template_items on KPI_Code = kpi_code.
+            // kpi_template_items.kpi_group must not equal the header row value 'KPI_Group'.
             $gSql = "
                 SELECT
                     m.kpi_group,
                     ROUND((AVG(k.Score) / 5) * 100, 1) AS avg_pct
                 FROM kpi_data k
-                INNER JOIN kpi_master_list m ON k.KPI_Code = m.kpi_code
+                INNER JOIN kpi_template_items m ON k.KPI_Code = m.kpi_code
                 WHERE k.Name = ?
                   AND YEAR(k.Date) = ?
                   AND m.kpi_group != 'KPI_Group'
@@ -182,7 +182,7 @@ $groupSql = "
         m.kpi_group  AS grp,
         ROUND((AVG(k.Score) / 5) * 100, 1) AS avg_pct
     FROM kpi_data k
-    INNER JOIN kpi_master_list m ON k.KPI_Code = m.kpi_code
+    INNER JOIN kpi_template_items m ON k.KPI_Code = m.kpi_code
     WHERE m.kpi_group != 'KPI_Group'
       AND YEAR(k.Date) = 2025
     GROUP BY m.kpi_group
@@ -232,7 +232,7 @@ $heatmapSql = "
         ROUND((AVG(k.Score) / 5) * 100, 1) AS avg_pct
     FROM kpi_data k
     INNER JOIN staff s          ON k.Name     = s.full_name
-    INNER JOIN kpi_master_list m ON k.KPI_Code = m.kpi_code
+    INNER JOIN kpi_template_items m ON k.KPI_Code = m.kpi_code
     WHERE m.kpi_group != 'KPI_Group'
       AND YEAR(k.Date) = 2025
     GROUP BY s.department, m.kpi_group
