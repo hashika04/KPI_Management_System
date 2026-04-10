@@ -118,6 +118,7 @@ $result = $conn->query($sql);
 
 
                 <div class="staff-card"
+                    data-staffcode="<?= strtolower($row['staff_code']) ?>"
                     data-name="<?= strtolower($row['full_name']) ?>"
                     data-department="<?= $row['department'] ?>"
                     data-score="<?= $percent ?>">
