@@ -1,5 +1,4 @@
 /* asset/staff_profile.css */
-/* asset/staff_profile.css - Add these rules at the top of the file */
 
 /* Force all images to be properly sized */
 img {
@@ -107,7 +106,7 @@ img {
     position: relative;
 }
 
-/* Fixed avatar size - not too big */
+/* Fixed avatar size*/
 .profile-avatar-large {
     width: 100px;
     height: 100px;
