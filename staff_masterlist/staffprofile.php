@@ -1422,7 +1422,7 @@ $currentTrendBadgeClass =
 
 <main class="staff-profile-page">
     <section class="staff-profile-header">
-        <a href="./stafflist.php" class="back-link">← Back to Staff List</a>
+        <a href="./stafflist.php" class="back-link">← Back to Staff Masterlist</a>
         <h1>Sales Assistant Profile</h1>
         <p>View profile information, review KPI performance, and manage supervisor-facing staff details.</p>
 

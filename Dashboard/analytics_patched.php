@@ -1852,7 +1852,6 @@ function closeDetailsModal() {
                     `).join('')}
                 </tbody>
             </table>
-            <p class="modal-note">If you want, next we can upgrade this popup to include a mini line chart.</p>
         `;
     }
 
