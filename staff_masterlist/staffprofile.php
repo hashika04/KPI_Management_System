@@ -140,7 +140,7 @@ $stmt = $conn->prepare("
         km.`kpi_group`,
         km.`kpi_description`
     FROM kpi_data kd
-    LEFT JOIN kpi_master_list km
+    LEFT JOIN kpi_template_items km
         ON TRIM(km.`kpi_code`) = TRIM(kd.`KPI_Code`)
     WHERE TRIM(LOWER(kd.`Name`)) = TRIM(LOWER(?))
       AND kd.`Date` IS NOT NULL

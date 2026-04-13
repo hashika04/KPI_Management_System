@@ -785,15 +785,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const targetInput = document.getElementById('speedoTarget');
     const actualSpan = document.getElementById('actualVal');
 
+    let speedometerChart = null; // global variable to hold chart instance
+
     function renderSpeedometer() {
         const year = yearSelect.value;
         const target = parseFloat(targetInput.value) || 80;
-        // Get yearly data from PHP (passed as JSON)
         const yearlyActuals = <?= json_encode((object)($yearlyData ?? [])) ?>;
         const actual = parseFloat(yearlyActuals[year]) || 0;
         const percentage = Math.min(Math.round((actual / target) * 100), 100);
         
         if (actualSpan) actualSpan.textContent = actual.toFixed(1) + '%';
+        
+        if (speedometerChart) {
+            speedometerChart.destroy();
+            speedometerChart = null;
+        }
 
         const options = {
             series: [percentage],
@@ -818,14 +824,11 @@ document.addEventListener('DOMContentLoaded', function () {
             colors: ['#e8308c']
         };
         
-        const chart = new ApexCharts(document.querySelector("#targetSpeedometer"), options);
-        chart.render();
+        speedometerChart = new ApexCharts(document.querySelector("#targetSpeedometer"), options);
+        speedometerChart.render();
     }
 
     renderSpeedometer();
-
-    yearSelect?.addEventListener('change', () => setTimeout(renderSpeedometer, 50));
-    targetInput?.addEventListener('input', () => setTimeout(renderSpeedometer, 50));
 });
 
 </script>
