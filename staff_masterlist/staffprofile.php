@@ -133,23 +133,23 @@ $records = [];
 
 $stmt = $conn->prepare("
     SELECT
-        kd.`Date` AS evaluation_date,
+        DATE_FORMAT(STR_TO_DATE(kd.`Date`, '%Y-%m-%d'), '%Y-%m') AS period,
         kd.`KPI_Code` AS kpi_code,
-        kd.`Score` AS score,
+        ROUND(AVG(kd.`Score`), 2) AS score,
         km.`section`,
         km.`kpi_group`,
         km.`kpi_description`
     FROM kpi_data kd
-    LEFT JOIN kpi_template_items km
+    LEFT JOIN kpi_master_list km
         ON TRIM(km.`kpi_code`) = TRIM(kd.`KPI_Code`)
-        AND km.`kpi_code` <> 'KPI_Code'
     WHERE TRIM(LOWER(kd.`Name`)) = TRIM(LOWER(?))
       AND kd.`Date` IS NOT NULL
       AND kd.`Date` <> ''
       AND kd.`KPI_Code` IS NOT NULL
       AND kd.`KPI_Code` <> ''
       AND kd.`Score` IS NOT NULL
-    ORDER BY STR_TO_DATE(kd.`Date`, '%Y-%m-%d') ASC, kd.`KPI_Code` ASC
+    GROUP BY period, kd.`KPI_Code`
+    ORDER BY period ASC, kd.`KPI_Code` ASC
 ");
 $staffName = trim((string)$staff['full_name']);
 $stmt->bind_param('s', $staffName);
@@ -158,15 +158,12 @@ $kpiResult = $stmt->get_result();
 $selectedYear = trim((string)($_GET['year'] ?? ''));
 
 while ($row = $kpiResult->fetch_assoc()) {
-    $date = DateTime::createFromFormat('Y-m-d', trim((string)$row['evaluation_date']));
-    if (!$date) {
-        continue;
-    }
-
+    $period = $row['period']; // already 'Y-m'
+    $year = (int)substr($period, 0, 4);
     $records[] = [
-        'period' => $date->format('Y-m'),
-        'year' => (int)$date->format('Y'),
-        'score' => (int)$row['score'],
+        'period' => $period,
+        'year' => $year,
+        'score' => (float)$row['score'],   // now an average, not necessarily integer
         'kpi_code' => trim((string)$row['kpi_code']),
         'section' => trim((string)($row['section'] ?? '')),
         'kpi_group' => trim((string)($row['kpi_group'] ?? '')),
