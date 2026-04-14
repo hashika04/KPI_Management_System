@@ -21,7 +21,7 @@ $yearlyData = ['2022' => 0, '2023' => 0, '2024' => 0, '2025' => 0];
 while ($row = $chartRes->fetch_assoc()) {
     $yearlyData[$row['kpi_year']] = $row['yearly_avg'];
 }
-$avgKPI = $yearlyData['2025'];
+$avgKPI = $yearlyData[$statYear] ?? 0;
 $jsDataString = implode(', ', array_values($yearlyData));
 
 include("../Dashboard/data.php");
@@ -69,6 +69,22 @@ $activePage = 'dashboard';
   <!-- ══════════════════════
        STAT CARDS
   ══════════════════════ -->
+  <!-- Year filter for stat cards (Top Performers, Average KPI, Critical KPI Group) -->
+    <div class="stat-year-filter" style="margin-bottom: 20px;">
+        <form method="GET" id="statYearForm">
+            <label for="stat_year">Stat Cards Year: </label>
+            <select name="stat_year" id="stat_year" onchange="this.form.submit()" class="year-filter-form">
+                <?php
+                $statYearSelected = isset($_GET['stat_year']) ? intval($_GET['stat_year']) : 2025;
+                $yearRes = $conn->query("SELECT DISTINCT YEAR(Date) as yr FROM kpi_data ORDER BY yr DESC");
+                while($yr = $yearRes->fetch_assoc()):
+                    $sel = ($yr['yr'] == $statYearSelected) ? 'selected' : '';
+                ?>
+                    <option value="<?= $yr['yr'] ?>" <?= $sel ?>><?= $yr['yr'] ?></option>
+                <?php endwhile; ?>
+            </select>
+        </form>
+    </div>
   <div class="stat-cards">
 
     <div class="stat-card stat-card--dept">
@@ -117,7 +133,7 @@ $activePage = 'dashboard';
     <div class="stat-card stat-card--kpi">
       <div class="stat-icon teal"><i class="ph ph-trend-up"></i></div>
       <div class="stat-value"><?= $avgKPI ?>%</div>
-      <div class="stat-label">Average KPI 2025</div>
+      <div class="stat-label">Average KPI </div>
       <div id="sparkline-kpi" class="sparkline-container"></div>
     </div>
 
@@ -126,7 +142,7 @@ $activePage = 'dashboard';
       <div class="stat-value truncate" title="<?= htmlspecialchars($groupLabels[0]) ?>">
           <?= htmlspecialchars($groupLabels[0]) ?>
       </div>
-      <div class="stat-label">Critical KPI Group</div>
+      <div class="stat-label">Critical KPI Group (<?= $statYear ?>)</div>
       <div id="group-bar-chart" class="group-bar-container"></div>
   </div>
 

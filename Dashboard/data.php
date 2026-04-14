@@ -5,13 +5,17 @@
 // FILTER VARIABLES
 // ══════════════════════════════════════════
 
+// Stat year – used for top performers, average KPI, critical group, heatmap
+$statYear = isset($_GET['stat_year']) ? intval($_GET['stat_year']) : 2025;
+
 // Default to 2025 if not set so nothing prints null.
 if (!isset($selectedYear) || !$selectedYear) {
     $selectedYear = 2025;
 }
 
 $podiumYear         = $selectedYear;
-$statYear           = 2025;   // Stat cards are always fixed to 2025
+// Stat year (default 2025, can be overridden by GET)
+$statYear = isset($_GET['stat_year']) ? intval($_GET['stat_year']) : 2025;
 $prevYear           = $podiumYear - 1;
 $currentYearFilter  = "= $podiumYear";
 
